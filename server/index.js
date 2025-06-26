@@ -1,5 +1,6 @@
 // Server principale per Air Tycoon 2 Clone
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -64,8 +65,13 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Root endpoint - Welcome page
+// Root endpoint - Redirect al gioco
 app.get('/', (req, res) => {
+    res.redirect('/game/index.html');
+});
+
+// API info endpoint
+app.get('/api', (req, res) => {
     res.json({
         name: 'Air Tycoon 2 API Server',
         version: '1.0.0',
@@ -90,8 +96,8 @@ app.use('/api/routes', routeRoutes);
 app.use('/api/airports', airportRoutes);
 app.use('/api/finance', financeRoutes);
 
-// Servire file statici del gioco (opzionale)
-app.use('/game', express.static('public'));
+// Servire file statici del gioco dalla root del progetto
+app.use('/game', express.static(path.join(__dirname, '..')));
 
 // =====================================================
 // ERROR HANDLING
