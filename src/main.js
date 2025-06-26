@@ -81,7 +81,9 @@ function initializeGame() {
     
     // Inizializza il gioco
     try {
+        console.log('🎮 Creazione istanza Game...');
         game = new Game();
+        console.log('✅ Game creato');
         
         // Gestione errori globali
         window.addEventListener('error', handleGlobalError);
@@ -96,20 +98,26 @@ function initializeGame() {
         // Salvataggio automatico prima di chiudere la pagina
         window.addEventListener('beforeunload', handleBeforeUnload);
         
-        console.log('✅ Gioco avviato con successo!');
+        console.log('✅ Event listeners configurati');
         
         // Mostra messaggio di benvenuto
+        console.log('🎉 Mostrando messaggio di benvenuto...');
         showWelcomeMessage();
         
         // Setup eventi UI
+        console.log('🔧 Setup eventi UI...');
         setupUIEvents();
         
         // Setup eventi del menu di gioco dopo che il game è inizializzato
+        console.log('🔧 Setup eventi menu di gioco...');
         setupGameMenuEvents();
+        
+        console.log('✅ Gioco avviato con successo!');
         
     } catch (error) {
         console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
-        showError('Errore durante l\'avvio del gioco. Ricarica la pagina per riprovare.');
+        console.error('❌ Stack trace:', error.stack);
+        showError('Errore durante l\'avvio del gioco. Controlla la console per dettagli. Ricarica la pagina per riprovare.');
     }
 }
 

@@ -105,17 +105,6 @@ WorldMap.prototype.loadAirports = function() {
     // Setup zoom-based visibility
     this.setupZoomBasedVisibility();
     
-    // DEBUG: Aggiungi alcuni marker di test per verificare che la mappa funzioni
-    if (airports.length > 0) {
-        console.log('🔧 DEBUG: Test aggiunta marker diretto...');
-        var testAirport = airports[0]; // Primo aeroporto
-        var testMarker = L.marker([testAirport.latitude, testAirport.longitude], {
-            title: 'TEST: ' + testAirport.name
-        });
-        testMarker.addTo(this.map);
-        console.log('🔧 DEBUG: Marker di test aggiunto:', testAirport.code, 'a', testAirport.latitude, testAirport.longitude);
-    }
-    
     console.log('✅ Creati marker per', airports.length, 'aeroporti');
 };
 
@@ -127,28 +116,28 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     // Determina icona e dimensioni basate su tipo e proprietà
     if (isPlayerHub) {
         // Hub del giocatore - icona speciale
-        iconHtml = '<div class="airport-icon player-hub">🏢</div>';
-        iconSize = [24, 24];
+        iconHtml = '<div class="airport-icon player-hub"></div>';
+        iconSize = [20, 20];
         zIndex = 1000;
     } else if (airport.size === 'hub') {
         // Hub mondiale - esagono rosso come nel gioco originale
-        iconHtml = '<div class="airport-icon world-hub">⬡</div>';
-        iconSize = [20, 20];
+        iconHtml = '<div class="airport-icon world-hub"></div>';
+        iconSize = [16, 16];
         zIndex = 900;
     } else if (airport.size === 'large') {
         // Aeroporto grande - cerchio blu
-        iconHtml = '<div class="airport-icon large-airport">⬢</div>';
-        iconSize = [16, 16];
+        iconHtml = '<div class="airport-icon large-airport"></div>';
+        iconSize = [12, 12];
         zIndex = 800;
     } else if (airport.size === 'medium') {
         // Aeroporto medio - quadrato
-        iconHtml = '<div class="airport-icon medium-airport">⬛</div>';
-        iconSize = [12, 12];
+        iconHtml = '<div class="airport-icon medium-airport"></div>';
+        iconSize = [8, 8];
         zIndex = 700;
     } else {
         // Aeroporto piccolo - punto
-        iconHtml = '<div class="airport-icon small-airport">●</div>';
-        iconSize = [8, 8];
+        iconHtml = '<div class="airport-icon small-airport"></div>';
+        iconSize = [6, 6];
         zIndex = 600;
     }
     
