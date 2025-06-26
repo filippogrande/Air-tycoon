@@ -18,6 +18,38 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- TABELLE PRINCIPALI
 -- =====================================================
 
+-- Tabella aeroporti
+CREATE TABLE airports (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    iata_code VARCHAR(3) UNIQUE NOT NULL,
+    icao_code VARCHAR(4) UNIQUE,
+    city VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    latitude DECIMAL(10,8) NOT NULL,
+    longitude DECIMAL(11,8) NOT NULL,
+    elevation INTEGER DEFAULT 0, -- metri sul livello del mare
+    timezone VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabella tipi di aeromobili
+CREATE TABLE aircraft_types (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    manufacturer VARCHAR(50) NOT NULL,
+    category VARCHAR(20) NOT NULL CHECK (category IN ('regional', 'narrow_body', 'wide_body', 'cargo')),
+    capacity INTEGER NOT NULL CHECK (capacity >= 0),
+    range_km INTEGER NOT NULL CHECK (range_km > 0),
+    fuel_consumption INTEGER NOT NULL CHECK (fuel_consumption > 0), -- litri per 100km
+    cruise_speed INTEGER NOT NULL CHECK (cruise_speed > 0), -- km/h
+    purchase_price BIGINT NOT NULL CHECK (purchase_price > 0),
+    maintenance_cost_per_hour INTEGER NOT NULL CHECK (maintenance_cost_per_hour >= 0),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Tabella utenti (per future funzionalità multi-utente)
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -37,7 +69,7 @@ CREATE TABLE companies (
     money BIGINT DEFAULT 1000000, -- Denaro in centesimi per evitare problemi di precisione
     reputation INTEGER DEFAULT 50 CHECK (reputation >= 0 AND reputation <= 100),
     founded_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    base_airport_code VARCHAR(3), -- Codice IATA aeroporto base
+    headquarters_airport_id INTEGER REFERENCES airports(id), -- Foreign key alla tabella airports
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -55,21 +87,19 @@ CREATE TABLE game_states (
 );
 
 -- Tabella aeromobili della flotta
-CREATE TABLE aircraft (
+CREATE TABLE fleet (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
-    aircraft_type VARCHAR(50) NOT NULL, -- Tipo come 'a320', 'b737-800', etc.
-    custom_name VARCHAR(100),
+    aircraft_type_id INTEGER REFERENCES aircraft_types(id) NOT NULL,
+    registration VARCHAR(20) UNIQUE NOT NULL, -- Codice registrazione aeromobile
     condition INTEGER DEFAULT 100 CHECK (condition >= 0 AND condition <= 100),
-    age_years DECIMAL(5,2) DEFAULT 0,
     total_flight_hours DECIMAL(10,2) DEFAULT 0,
-    status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'in-flight', 'maintenance', 'assigned')),
-    current_location VARCHAR(3), -- Codice IATA aeroporto corrente
-    assigned_route_id UUID, -- Riferimento alla rotta assegnata
+    status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'in_flight', 'maintenance', 'assigned')),
+    location_airport_id INTEGER REFERENCES airports(id),
     total_passengers BIGINT DEFAULT 0,
     total_revenue BIGINT DEFAULT 0, -- In centesimi
     total_flights INTEGER DEFAULT 0,
-    purchase_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_maintenance TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -79,24 +109,22 @@ CREATE TABLE aircraft (
 CREATE TABLE routes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
-    origin_airport VARCHAR(3) NOT NULL, -- Codice IATA
-    destination_airport VARCHAR(3) NOT NULL, -- Codice IATA
-    aircraft_id UUID REFERENCES aircraft(id) ON DELETE SET NULL,
-    frequency_per_week INTEGER DEFAULT 7 CHECK (frequency_per_week >= 1 AND frequency_per_week <= 21),
-    ticket_price INTEGER DEFAULT 0, -- In centesimi
-    is_active BOOLEAN DEFAULT TRUE,
-    status VARCHAR(20) DEFAULT 'planning' CHECK (status IN ('planning', 'active', 'suspended')),
+    origin_airport_id INTEGER REFERENCES airports(id) NOT NULL,
+    destination_airport_id INTEGER REFERENCES airports(id) NOT NULL,
     distance_km INTEGER,
+    base_price INTEGER DEFAULT 0, -- Prezzo base biglietto in centesimi
+    frequency_per_week INTEGER DEFAULT 7 CHECK (frequency_per_week >= 1 AND frequency_per_week <= 21),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'planning')),
     total_flights INTEGER DEFAULT 0,
     total_passengers BIGINT DEFAULT 0,
     total_revenue BIGINT DEFAULT 0, -- In centesimi
     total_costs BIGINT DEFAULT 0, -- In centesimi
     average_load_factor DECIMAL(5,2) DEFAULT 0, -- Percentuale 0-100
-    on_time_performance DECIMAL(5,2) DEFAULT 100, -- Percentuale 0-100
-    last_flight_date TIMESTAMP WITH TIME ZONE,
-    next_flight_date TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT different_airports CHECK (origin_airport_id != destination_airport_id)
+);
     
     CONSTRAINT different_airports CHECK (origin_airport != destination_airport)
 );
