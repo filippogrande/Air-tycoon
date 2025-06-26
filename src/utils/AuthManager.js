@@ -29,10 +29,10 @@ AuthManager.prototype.saveUsers = function() {
 };
 
 // Registra nuovo utente
-AuthManager.prototype.register = function(email, password, companyName) {
+AuthManager.prototype.register = function(email, password) {
     // Validazione input
-    if (!email || !password || !companyName) {
-        return { success: false, message: 'Tutti i campi sono obbligatori' };
+    if (!email || !password) {
+        return { success: false, message: 'Email e password sono obbligatori' };
     }
     
     if (password.length < 6) {
@@ -54,7 +54,6 @@ AuthManager.prototype.register = function(email, password, companyName) {
         id: userId,
         email: email,
         passwordHash: this.hashPassword(password),
-        companyName: companyName,
         createdAt: new Date().toISOString(),
         lastLogin: null,
         saves: {}
@@ -212,7 +211,6 @@ AuthManager.prototype.loginAsGuest = function() {
     this.currentUser = {
         id: 'guest_' + Date.now(),
         email: 'guest@localhost',
-        companyName: 'Guest Airlines',
         isGuest: true,
         saves: {}
     };

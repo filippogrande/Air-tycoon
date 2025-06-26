@@ -119,13 +119,12 @@ function handleRegister(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const companyName = formData.get('companyName').trim();
     const email = formData.get('email').trim();
     const password = formData.get('password');
     const confirmPassword = formData.get('confirmPassword');
     
     // Validazione
-    if (!companyName || !email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
         showMessage('Tutti i campi sono obbligatori', 'error');
         return;
     }
@@ -144,7 +143,7 @@ function handleRegister(e) {
     
     // Simula delay di rete
     setTimeout(function() {
-        const result = authManager.register(email, password, companyName);
+        const result = authManager.register(email, password);
         hideLoading();
         
         if (result.success) {
