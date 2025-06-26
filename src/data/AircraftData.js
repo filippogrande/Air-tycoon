@@ -1,4 +1,6 @@
 // Database degli aeromobili disponibili
+console.log('📂 Caricamento AircraftData.js...');
+
 class AircraftData {
     static aircraft = [
         // Aeromobili regionali

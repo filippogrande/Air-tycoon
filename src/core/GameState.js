@@ -1,4 +1,6 @@
 // Gestisce lo stato del gioco
+console.log('📂 Caricamento GameState.js...');
+
 class GameState {
     constructor() {
         this.company = {

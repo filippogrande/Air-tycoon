@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Air Tycoon 2</title>
+</head>
+<body>
+    <h1>Debug Air Tycoon 2</h1>
+    <div id="debug-output"></div>
+
+    <script>
+        const debugOutput = document.getElementById('debug-output');
+        
+        function log(message, isError = false) {
+            const div = document.createElement('div');
+            div.textContent = message;
+            div.style.color = isError ? 'red' : 'green';
+            div.style.fontFamily = 'monospace';
+            debugOutput.appendChild(div);
+            console.log(message);
+        }
+
+        // Lista dei file da caricare in ordine
+        const scripts = [
+            'src/data/AircraftData.js',
+            'src/data/AirportData.js',
+            'src/utils/APIClient.js',
+            'src/utils/SaveLoad.js',
+            'src/entities/Aircraft.js',
+            'src/entities/Airport.js',
+            'src/entities/Route.js',
+            'src/core/GameState.js',
+            'src/managers/FleetManager.js',
+            'src/managers/RouteManager.js',
+            'src/managers/FinanceManager.js',
+            'src/ui/UIManager.js',
+            'src/graphics/WorldMap.js',
+            'src/core/Game.js'
+        ];
+
+        let currentIndex = 0;
+
+        function loadNextScript() {
+            if (currentIndex >= scripts.length) {
+                log('✅ Tutti gli script caricati!');
+                checkClasses();
+                return;
+            }
+
+            const scriptPath = scripts[currentIndex];
+            log(`📂 Caricamento: ${scriptPath}`);
+
+            const script = document.createElement('script');
+            script.src = scriptPath;
+            
+            script.onload = function() {
+                log(`✅ Caricato: ${scriptPath}`);
+                currentIndex++;
+                setTimeout(loadNextScript, 100); // Piccola pausa tra i caricamenti
+            };
+            
+            script.onerror = function() {
+                log(`❌ Errore caricamento: ${scriptPath}`, true);
+                currentIndex++;
+                setTimeout(loadNextScript, 100);
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        function checkClasses() {
+            log('\n=== VERIFICA CLASSI ===');
+            const requiredClasses = [
+                'AircraftData', 'AirportData', 'APIClient', 'SaveLoad',
+                'Aircraft', 'Airport', 'Route', 'GameState',
+                'FleetManager', 'RouteManager', 'FinanceManager',
+                'UIManager', 'WorldMap', 'Game'
+            ];
+            
+            requiredClasses.forEach(className => {
+                if (window[className]) {
+                    log(`✅ ${className}: disponibile`);
+                } else {
+                    log(`❌ ${className}: NON DISPONIBILE`, true);
+                }
+            });
+        }
+
+        // Avvia il caricamento
+        loadNextScript();
+    </script>
+</body>
+</html>
