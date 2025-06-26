@@ -189,6 +189,7 @@ WorldMap.prototype.setupZoomBasedVisibility = function() {
 };
 
 WorldMap.prototype.updateAirportVisibility = function(zoom) {
+    var self = this; // Aggiungiamo self per scope corretto
     console.log('🔍 Aggiornamento visibilità aeroporti intelligente, zoom:', zoom);
     
     // Ottieni i bounds della mappa visibile

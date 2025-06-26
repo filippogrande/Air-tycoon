@@ -598,3 +598,55 @@ function updateGameMenuInfo() {
 }
 
 // Gestione eventi UI
+function setupUIEvents() {
+    console.log('🔧 Setup eventi UI base...');
+    
+    // Gestione resize finestra
+    window.addEventListener('resize', function() {
+        if (game && game.worldMap && game.worldMap.map) {
+            // Invalida la dimensione della mappa per Leaflet
+            setTimeout(function() {
+                game.worldMap.map.invalidateSize();
+            }, 100);
+        }
+    });
+    
+    // Gestione tasti di scelta rapida
+    document.addEventListener('keydown', function(e) {
+        // ESC per aprire/chiudere menu
+        if (e.key === 'Escape') {
+            toggleGameMenu();
+        }
+        
+        // Salvataggio rapido con Ctrl+S
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            if (game) {
+                game.saveGame();
+                showNotification('Gioco salvato!', 'success');
+            }
+        }
+    });
+    
+    console.log('✅ Eventi UI base configurati');
+}
+
+function setupGameMenuEvents() {
+    console.log('🔧 Setup eventi menu di gioco...');
+    
+    // Menu di gioco (hamburger menu)
+    var menuButton = document.getElementById('menu-button');
+    if (menuButton) {
+        menuButton.addEventListener('click', toggleGameMenu);
+    }
+    
+    // Altri eventi del menu (se il menu esiste)
+    // TODO: Aggiungere eventi specifici quando il menu sarà implementato
+    
+    console.log('✅ Eventi menu di gioco configurati');
+}
+
+function toggleGameMenu() {
+    // TODO: Implementare il toggle del menu di gioco
+    console.log('🍔 Toggle menu di gioco (da implementare)');
+}

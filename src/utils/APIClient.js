@@ -9,12 +9,20 @@ class APIClient {
         this.defaultHeaders = {
             'Content-Type': 'application/json'
         };
+        // Modalità offline temporanea per sviluppo
+        this.offlineMode = true; // Cambia a false quando il server è attivo
     }
 
     /**
      * Effettua una chiamata HTTP
      */
     async request(endpoint, options = {}) {
+        // Se in modalità offline, restituisci dati mock
+        if (this.offlineMode) {
+            console.log('🔌 APIClient in modalità offline, endpoint:', endpoint);
+            return this._getMockResponse(endpoint, options);
+        }
+        
         const url = `${this.baseUrl}${endpoint}`;
         const config = {
             headers: { ...this.defaultHeaders, ...options.headers },
@@ -47,6 +55,23 @@ class APIClient {
             console.error(`API Error [${endpoint}]:`, error);
             throw error;
         }
+    }
+    
+    /**
+     * Risposte mock per modalità offline
+     */
+    _getMockResponse(endpoint, options) {
+        const responses = {
+            '/health': { status: 'ok', message: 'Modalità offline attiva' },
+            '/auth/login': { success: true, token: 'mock-token', user: { id: 1, username: 'player' } },
+            '/auth/verify': { valid: true, user: { id: 1, username: 'player' } },
+            '/saves': [],
+            '/saves/save': { success: true, message: 'Salvato (modalità offline)' },
+            '/saves/load': null
+        };
+        
+        // Default response
+        return Promise.resolve(responses[endpoint] || { success: true, data: null });
     }
 
     // =====================================
