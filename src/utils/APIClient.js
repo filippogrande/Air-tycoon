@@ -22,11 +22,24 @@ class APIClient {
         };
 
         try {
-            const response = await fetch(url, config);
-            const data = await response.json();
+            let response, data;
             
-            if (!response.ok) {
-                throw new Error(data.error || `HTTP ${response.status}`);
+            // Usa fetch se disponibile, altrimenti fallback a XMLHttpRequest
+            if (window.fetch) {
+                response = await fetch(url, config);
+                data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+            } else {
+                // Fallback XMLHttpRequest per browser molto vecchi
+                const result = await this._xmlHttpRequest(url, config);
+                data = result.data;
+                
+                if (result.status >= 400) {
+                    throw new Error(data.error || `HTTP ${result.status}`);
+                }
             }
             
             return data;
@@ -420,6 +433,50 @@ class EnhancedSaveLoad {
             console.error('❌ Errore sincronizzazione database:', error);
             return false;
         }
+    }
+
+    /**
+     * Fallback XMLHttpRequest per browser senza fetch
+     */
+    _xmlHttpRequest(url, options) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const method = options.method || 'GET';
+            
+            xhr.open(method, url, true);
+            
+            // Imposta headers
+            if (options.headers) {
+                Object.keys(options.headers).forEach(key => {
+                    xhr.setRequestHeader(key, options.headers[key]);
+                });
+            }
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    try {
+                        const data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+                        resolve({ 
+                            status: xhr.status, 
+                            data: data 
+                        });
+                    } catch (e) {
+                        reject(new Error('Errore parsing risposta JSON'));
+                    }
+                }
+            };
+            
+            xhr.onerror = function() {
+                reject(new Error('Errore di rete'));
+            };
+            
+            // Invia richiesta
+            if (options.body) {
+                xhr.send(typeof options.body === 'string' ? options.body : JSON.stringify(options.body));
+            } else {
+                xhr.send();
+            }
+        });
     }
 }
 

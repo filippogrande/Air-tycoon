@@ -1,4 +1,35 @@
 // File principale - Avvio del gioco Air Tycoon 2 Clone
+
+// Polyfill per compatibilità browser
+(function() {
+    // Polyfill per requestAnimationFrame
+    if (!window.requestAnimationFrame) {
+        window.requestAnimationFrame = 
+            window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame ||
+            window.msRequestAnimationFrame ||
+            function(callback) {
+                return window.setTimeout(callback, 1000 / 60);
+            };
+    }
+    
+    // Polyfill per cancelAnimationFrame
+    if (!window.cancelAnimationFrame) {
+        window.cancelAnimationFrame = 
+            window.webkitCancelAnimationFrame ||
+            window.mozCancelAnimationFrame ||
+            window.msCancelAnimationFrame ||
+            function(id) {
+                clearTimeout(id);
+            };
+    }
+    
+    // Polyfill per fetch (base, per browser molto vecchi)
+    if (!window.fetch) {
+        console.warn('Fetch API non supportata, considera l\'aggiunta di un polyfill completo');
+    }
+})();
+
 let game;
 
 // Inizializzazione del gioco quando la pagina è caricata
@@ -41,14 +72,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Verifica compatibilità del browser
 function checkBrowserCompatibility() {
-    const requiredFeatures = [
-        'localStorage' in window,
-        'JSON' in window,
-        'Canvas' in window.HTMLCanvasElement.prototype.getContext,
-        'requestAnimationFrame' in window
-    ];
-    
-    return requiredFeatures.every(feature => feature);
+    try {
+        // Verifica localStorage
+        if (!window.localStorage) return false;
+        
+        // Verifica JSON
+        if (!window.JSON) return false;
+        
+        // Verifica Canvas support
+        const canvas = document.createElement('canvas');
+        if (!canvas.getContext) return false;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return false;
+        
+        // requestAnimationFrame è ora garantito dal polyfill
+        
+        return true;
+    } catch (error) {
+        console.error('Errore nel controllo compatibilità:', error);
+        return false;
+    }
 }
 
 // Gestione errori globali
