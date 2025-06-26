@@ -64,20 +64,28 @@ var MapVisibilityManager = {
     
     // Gestisce la visualizzazione delle etichette delle città
     updateCityLabels: function(map, airportMarkers, zoom) {
-        var shouldShowLabels = zoom >= 6; // Aumentato a zoom 6 per evitare sovrapposizioni precoci
-        
         for (var code in airportMarkers) {
             var marker = airportMarkers[code];
             if (!marker || !marker.airportData) continue;
             
             var airport = marker.airportData;
             
+            // Determina se mostrare l'etichetta in base alla dimensione dell'aeroporto
+            var shouldShowLabel = false;
+            if (airport.size === 'large') {
+                shouldShowLabel = zoom >= 5; // Aeroporti grandi: da zoom 5
+            } else if (airport.size === 'medium') {
+                shouldShowLabel = zoom >= 6; // Aeroporti medi: da zoom 6
+            } else { // small
+                shouldShowLabel = zoom >= 8; // Aeroporti piccoli: da zoom 8
+            }
+            
             // Se il marker è visibile sulla mappa
             if (map.hasLayer(marker)) {
-                if (shouldShowLabels && !marker.cityLabel) {
+                if (shouldShowLabel && !marker.cityLabel) {
                     // Crea etichetta città se non esiste
                     this.createCityLabel(map, marker, airport);
-                } else if (!shouldShowLabels && marker.cityLabel) {
+                } else if (!shouldShowLabel && marker.cityLabel) {
                     // Rimuovi etichetta città se non dovrebbe essere visibile
                     this.removeCityLabel(map, marker);
                 }
@@ -87,7 +95,10 @@ var MapVisibilityManager = {
             }
         }
         
-        console.log('🏷️ Etichette città:', shouldShowLabels ? 'MOSTRATE' : 'NASCOSTE', 'zoom:', zoom);
+        console.log('🏷️ Etichette città per zoom', zoom + ':',
+                   'Large ≥5:', zoom >= 5,
+                   'Medium ≥6:', zoom >= 6, 
+                   'Small ≥8:', zoom >= 8);
     },
     
     // Crea un'etichetta per la città dell'aeroporto
