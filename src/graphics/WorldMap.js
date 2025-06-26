@@ -104,8 +104,10 @@ WorldMap.prototype.loadAirports = function() {
     
     // Inizializza il MapVisibilityManager
     if (typeof MapVisibilityManager !== 'undefined') {
+        console.log('✅ MapVisibilityManager disponibile, inizializzazione...');
         var self = this;
         MapVisibilityManager.setupZoomBasedVisibility(this.map, function(zoom) {
+            console.log('🔍 Callback visibilità chiamato, zoom:', zoom);
             MapVisibilityManager.updateAirportVisibility(self.map, self.airportMarkers, zoom);
         });
     } else {
