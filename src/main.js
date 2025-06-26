@@ -664,10 +664,35 @@ function setupSettingsEvents() {
     // Salva partita
     if (saveBtn) {
         saveBtn.addEventListener('click', function() {
+            console.log('💾 Click su Salva Partita...');
             if (game) {
-                game.saveGame();
-                showNotification('Partita salvata!', 'success');
-                hideSettingsOverlay();
+                try {
+                    console.log('🎮 Chiamata game.saveGame()...');
+                    var success = game.saveGame();
+                    console.log('💾 Risultato salvataggio:', success);
+                    
+                    if (success) {
+                        if (game.uiManager && game.uiManager.showNotification) {
+                            game.uiManager.showNotification('Partita salvata!', 'success');
+                        } else {
+                            console.log('✅ Partita salvata!');
+                        }
+                        hideSettingsOverlay();
+                    } else {
+                        console.error('❌ Salvataggio fallito');
+                        if (game.uiManager && game.uiManager.showNotification) {
+                            game.uiManager.showNotification('Errore durante il salvataggio', 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Errore salvataggio:', error);
+                    console.error('❌ Stack trace:', error.stack);
+                    if (game.uiManager && game.uiManager.showNotification) {
+                        game.uiManager.showNotification('Errore: ' + error.message, 'error');
+                    }
+                }
+            } else {
+                console.error('❌ Game non disponibile');
             }
         });
     }
