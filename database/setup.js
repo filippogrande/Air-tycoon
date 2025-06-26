@@ -67,6 +67,15 @@ async function setupDatabase() {
             console.log(`✅ Database ${targetDatabase} creato con successo`);
         } else {
             console.log(`ℹ️  Database ${targetDatabase} già esistente`);
+            
+            // Controlla se dobbiamo fare un reset
+            const resetFlag = process.argv.includes('--reset') || process.env.RESET_DB === 'true';
+            if (resetFlag) {
+                await client.end();
+                await resetDatabase();
+                client = new Client(config);
+                await client.connect();
+            }
         }
         
         await client.end();
@@ -119,10 +128,41 @@ async function setupDatabase() {
     }
 }
 
+async function resetDatabase() {
+    let client;
+    
+    try {
+        console.log('🗑️  Reset completo database...');
+        
+        // Connessione al database target
+        const targetClient = new Client({
+            ...config,
+            database: targetDatabase
+        });
+        await targetClient.connect();
+        
+        // Elimina tutte le tabelle esistenti
+        console.log('🗑️  Eliminazione tabelle esistenti...');
+        await targetClient.query(`
+            DROP SCHEMA public CASCADE;
+            CREATE SCHEMA public;
+            GRANT ALL ON SCHEMA public TO ${config.user};
+            GRANT ALL ON SCHEMA public TO public;
+        `);
+        
+        await targetClient.end();
+        console.log('✅ Database resettato con successo');
+        
+    } catch (error) {
+        console.error('❌ Errore durante il reset:', error.message);
+        throw error;
+    }
+}
+
 // Esegui setup se chiamato direttamente
 if (require.main === module) {
     console.log('🛠️  Avvio setup database Air Tycoon 2...\n');
     setupDatabase();
 }
 
-module.exports = { setupDatabase };
+module.exports = { setupDatabase, resetDatabase };

@@ -8,7 +8,7 @@
     "dev": "nodemon server/index.js",
     "setup": "node database/setup.js",
     "db:setup": "node database/setup.js",
-    "db:reset": "node database/setup.js",
+    "db:reset": "node database/setup.js --reset",
     "test": "jest",
     "lint": "eslint server/"
   },
