@@ -115,30 +115,25 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     
     // Determina icona e dimensioni basate su tipo e proprietà
     if (isPlayerHub) {
-        // Hub del giocatore - icona speciale
+        // Hub del giocatore - target verde
         iconHtml = '<div class="airport-icon player-hub"></div>';
         iconSize = [20, 20];
         zIndex = 1000;
-    } else if (airport.size === 'hub') {
-        // Hub mondiale - esagono rosso come nel gioco originale
-        iconHtml = '<div class="airport-icon world-hub"></div>';
-        iconSize = [16, 16];
-        zIndex = 900;
-    } else if (airport.size === 'large') {
-        // Aeroporto grande - cerchio blu
-        iconHtml = '<div class="airport-icon large-airport"></div>';
-        iconSize = [12, 12];
-        zIndex = 800;
-    } else if (airport.size === 'medium') {
-        // Aeroporto medio - quadrato
-        iconHtml = '<div class="airport-icon medium-airport"></div>';
-        iconSize = [8, 8];
-        zIndex = 700;
     } else {
-        // Aeroporto piccolo - punto
-        iconHtml = '<div class="airport-icon small-airport"></div>';
-        iconSize = [6, 6];
-        zIndex = 600;
+        // Tutti gli altri aeroporti - map-pin con dimensioni diverse
+        iconHtml = '<div class="airport-icon standard-airport"></div>';
+        
+        // Dimensione dell'icona basata sulla dimensione dell'aeroporto
+        if (airport.size === 'large') {
+            iconSize = [14, 14];
+            zIndex = 800;
+        } else if (airport.size === 'medium') {
+            iconSize = [10, 10];
+            zIndex = 700;
+        } else {
+            iconSize = [8, 8];
+            zIndex = 600;
+        }
     }
     
     var airportIcon = L.divIcon({
