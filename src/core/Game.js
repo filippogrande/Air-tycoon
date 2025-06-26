@@ -1,25 +1,48 @@
-// Classe principale del gioco Air Tycoon 2 Clone
-class Game {
-    constructor() {
+// Game compatibile con tutti i browser
+console.log('📂 Caricamento Game.js...');
+
+function Game() {
+    console.log('🎮 Inizializzazione Game...');
+    
+    try {
+        // Inizializza componenti
         this.state = new GameState();
+        console.log('✅ GameState creato');
+        
         this.fleetManager = new FleetManager(this.state);
+        console.log('✅ FleetManager creato');
+        
         this.routeManager = new RouteManager(this.state);
+        console.log('✅ RouteManager creato');
+        
         this.financeManager = new FinanceManager(this.state);
+        console.log('✅ FinanceManager creato');
+        
         this.uiManager = new UIManager(this);
+        console.log('✅ UIManager creato');
+        
         this.worldMap = new WorldMap(this);
+        console.log('✅ WorldMap creato');
         
         this.isRunning = false;
         this.gameSpeed = 1; // 1x velocità normale
         this.lastUpdate = 0;
         
+        console.log('🎮 Avvio inizializzazione...');
         this.init();
-    }
-    
-    init() {
-        console.log('🛫 Air Tycoon 2 Clone - Inizializzazione...');
         
+    } catch (error) {
+        console.error('❌ Errore nel costruttore Game:', error);
+        throw error;
+    }
+}
+
+Game.prototype.init = function() {
+    console.log('🛫 Air Tycoon 2 Clone - Inizializzazione...');
+    
+    try {
         // Carica dati salvati se esistenti
-        const savedData = SaveLoad.loadGame();
+        var savedData = SaveLoad.loadGame();
         if (savedData) {
             this.state.loadFromData(savedData);
             console.log('💾 Dati salvati caricati');
@@ -28,154 +51,142 @@ class Game {
         }
         
         // Inizializza UI
+        console.log('🎨 Inizializzazione UI...');
         this.uiManager.init();
+        
+        console.log('🗺️ Inizializzazione WorldMap...');
         this.worldMap.init();
+        
+        console.log('🔄 Aggiornamento UI...');
         this.updateUI();
         
         // Avvia il game loop
+        console.log('▶️ Avvio game loop...');
         this.start();
         
         // Auto-save ogni 30 secondi
-        setInterval(() => {
-            this.saveGame();
+        var self = this;
+        setInterval(function() {
+            self.saveGame();
         }, 30000);
         
         console.log('✅ Gioco inizializzato correttamente');
+        
+    } catch (error) {
+        console.error('❌ Errore durante l\'inizializzazione:', error);
+        throw error;
     }
+};
+
+Game.prototype.setupNewGame = function() {
+    console.log('🆕 Setup nuova partita...');
     
-    setupNewGame() {
-        // Imposta valori iniziali per una nuova partita
-        this.state.company.name = "Air Express";
-        this.state.company.money = 1000000; // $1M iniziali
-        this.state.company.reputation = 50;
-        this.state.company.founded = new Date();
-        
-        // Aggiungi un aeroporto base (es. Milano Malpensa)
-        const baseAirport = AirportData.airports.find(a => a.code === 'MXP');
-        if (baseAirport) {
-            this.state.company.baseAirport = baseAirport.code;
-        }
-        
-        console.log('🆕 Nuova partita inizializzata');
-    }
+    // Imposta valori iniziali per una nuova partita
+    this.state.company.name = "Air Express";
+    this.state.company.money = 1000000; // $1M iniziali
+    this.state.company.reputation = 50;
     
-    start() {
-        if (!this.isRunning) {
-            this.isRunning = true;
-            this.lastUpdate = Date.now();
-            this.gameLoop();
-            console.log('▶️ Gioco avviato');
-        }
-    }
+    console.log('✅ Nuova partita configurata');
+};
+
+Game.prototype.start = function() {
+    this.isRunning = true;
+    this.lastUpdate = Date.now();
+    this.gameLoop();
+    console.log('▶️ Game loop avviato');
+};
+
+Game.prototype.pause = function() {
+    this.isRunning = false;
+    console.log('⏸️ Gioco in pausa');
+};
+
+Game.prototype.resume = function() {
+    this.isRunning = true;
+    this.lastUpdate = Date.now();
+    this.gameLoop();
+    console.log('▶️ Gioco ripreso');
+};
+
+Game.prototype.gameLoop = function() {
+    if (!this.isRunning) return;
     
-    pause() {
-        this.isRunning = false;
-        console.log('⏸️ Gioco in pausa');
-    }
+    var now = Date.now();
+    var deltaTime = (now - this.lastUpdate) * this.gameSpeed;
+    this.lastUpdate = now;
     
-    gameLoop() {
-        if (!this.isRunning) return;
-        
-        const now = Date.now();
-        const deltaTime = (now - this.lastUpdate) / 1000; // secondi
-        this.lastUpdate = now;
-        
-        // Aggiorna la logica del gioco
-        this.update(deltaTime);
-        
-        // Continua il loop
-        requestAnimationFrame(() => this.gameLoop());
-    }
+    // Aggiorna logica di gioco
+    this.update(deltaTime);
     
-    update(deltaTime) {
-        // Aggiorna il tempo di gioco (1 secondo reale = 1 ora di gioco)
-        const gameHours = deltaTime * this.gameSpeed * 3600; // ore di gioco
-        this.state.gameTime.addHours(gameHours);
-        
-        // Aggiorna manager
-        this.routeManager.update(deltaTime);
-        this.financeManager.update(deltaTime);
-        
-        // Aggiorna UI se necessario
-        if (Math.floor(now / 1000) !== Math.floor((now - deltaTime * 1000) / 1000)) {
-            this.updateUI();
-        }
-    }
+    // Programma prossimo frame
+    var self = this;
+    requestAnimationFrame(function() {
+        self.gameLoop();
+    });
+};
+
+Game.prototype.update = function(deltaTime) {
+    // Aggiorna tempo di gioco (accelerato)
+    var gameHours = deltaTime / (1000 * 60); // 1 minuto reale = 1 ora di gioco
+    this.state.gameTime.addHours(gameHours);
     
-    updateUI() {
-        // Aggiorna header con informazioni generali
-        document.getElementById('company-name').textContent = this.state.company.name;
-        document.getElementById('money').textContent = `💰 $${this.formatMoney(this.state.company.money)}`;
-        document.getElementById('reputation').textContent = `⭐ ${this.state.company.reputation}`;
-        document.getElementById('date').textContent = `📅 ${this.formatDate(this.state.gameTime.date)}`;
-        
-        // Aggiorna finanze
-        this.updateFinanceUI();
-    }
-    
-    updateFinanceUI() {
-        const monthlyIncome = this.financeManager.getMonthlyIncome();
-        const monthlyCosts = this.financeManager.getMonthlyCosts();
-        const monthlyProfit = monthlyIncome - monthlyCosts;
-        
-        const incomeEl = document.getElementById('monthly-income');
-        const costsEl = document.getElementById('monthly-costs');
-        const profitEl = document.getElementById('monthly-profit');
-        
-        if (incomeEl) incomeEl.textContent = `$${this.formatMoney(monthlyIncome)}`;
-        if (costsEl) costsEl.textContent = `$${this.formatMoney(monthlyCosts)}`;
-        if (profitEl) {
-            profitEl.textContent = `$${this.formatMoney(monthlyProfit)}`;
-            profitEl.style.color = monthlyProfit >= 0 ? '#4CAF50' : '#f44336';
-        }
-    }
-    
-    formatMoney(amount) {
-        return new Intl.NumberFormat('it-IT').format(Math.round(amount));
-    }
-    
-    formatDate(date) {
-        return date.toLocaleDateString('it-IT', { 
-            month: 'short', 
-            year: 'numeric' 
-        });
-    }
-    
-    buyAircraft(aircraftType) {
-        const aircraft = AircraftData.getAircraftByType(aircraftType);
-        if (!aircraft) {
-            console.error('Tipo di aeromobile non trovato:', aircraftType);
-            return false;
-        }
-        
-        if (this.state.company.money < aircraft.price) {
-            alert('Fondi insufficienti per acquistare questo aeromobile!');
-            return false;
-        }
-        
-        // Acquista l'aeromobile
-        this.state.company.money -= aircraft.price;
-        const newAircraft = this.fleetManager.addAircraft(aircraft);
-        
-        console.log('✈️ Aeromobile acquistato:', newAircraft.name);
+    // Aggiorna UI periodicamente
+    if (Math.floor(Date.now() / 1000) % 5 === 0) { // Ogni 5 secondi
         this.updateUI();
-        this.uiManager.updateFleetDisplay();
-        
-        return true;
     }
-    
-    createRoute(originCode, destinationCode, aircraftId) {
-        return this.routeManager.createRoute(originCode, destinationCode, aircraftId);
+};
+
+Game.prototype.updateUI = function() {
+    try {
+        this.uiManager.updateUI();
+    } catch (error) {
+        console.error('❌ Errore aggiornamento UI:', error);
     }
-    
-    saveGame() {
-        const saveData = this.state.toSaveData();
+};
+
+Game.prototype.saveGame = function() {
+    try {
+        var saveData = this.state.toSaveData();
         SaveLoad.saveGame(saveData);
-        console.log('💾 Gioco salvato automaticamente');
+        console.log('💾 Auto-save completato');
+        return true;
+    } catch (error) {
+        console.error('❌ Errore durante il salvataggio:', error);
+        return false;
     }
-    
-    setGameSpeed(speed) {
-        this.gameSpeed = Math.max(0.1, Math.min(10, speed));
-        console.log(`⏩ Velocità gioco: ${this.gameSpeed}x`);
+};
+
+Game.prototype.loadGame = function() {
+    try {
+        var savedData = SaveLoad.loadGame();
+        if (savedData) {
+            this.state.loadFromData(savedData);
+            this.updateUI();
+            console.log('📂 Gioco caricato');
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('❌ Errore durante il caricamento:', error);
+        return false;
     }
-}
+};
+
+Game.prototype.newGame = function() {
+    try {
+        this.state = new GameState();
+        this.setupNewGame();
+        this.updateUI();
+        SaveLoad.deleteSave();
+        console.log('🆕 Nuova partita avviata');
+        return true;
+    } catch (error) {
+        console.error('❌ Errore creazione nuova partita:', error);
+        return false;
+    }
+};
+
+// Rendi disponibile globalmente
+window.Game = Game;
+
+console.log('✅ Game compatibile caricato');

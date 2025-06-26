@@ -162,6 +162,10 @@ window.AircraftData = {
 window.AirportData = {
     airports: createAirportData(),
     
+    getAirports: function() {
+        return this.airports;
+    },
+    
     getAllAirports: function() {
         return this.airports.slice();
     },

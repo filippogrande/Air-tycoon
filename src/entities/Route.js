@@ -1,305 +1,236 @@
-// Classe per rappresentare una rotta aerea
-class Route {
-    constructor(originCode, destinationCode, aircraftId) {
-        this.id = this.generateId();
-        this.origin = originCode;
-        this.destination = destinationCode;
-        this.aircraftId = aircraftId;
-        
-        // Configurazione della rotta
-        this.frequency = 7; // voli per settimana
-        this.ticketPrice = 0; // calcolato automaticamente
-        this.isActive = true;
-        
-        // Calcoli della rotta
-        this.distance = 0;
-        this.flightTime = 0; // ore
-        this.demand = 0; // passeggeri potenziali
-        this.competition = 0;
-        
-        // Statistiche operative
-        this.totalFlights = 0;
-        this.totalPassengers = 0;
-        this.totalRevenue = 0;
-        this.totalCosts = 0;
-        this.averageLoadFactor = 0; // percentuale di riempimento
-        this.onTimePerformance = 100; // percentuale di puntualità
-        
-        // Stato della rotta
-        this.status = 'planning'; // 'planning', 'active', 'suspended'
-        this.lastFlightDate = null;
-        this.nextFlightDate = null;
-        
-        this.createdDate = new Date();
-        this.setupRoute();
-    }
+// Classe Route compatibile con tutti i browser
+console.log('📂 Caricamento Route.js...');
+
+function Route(originCode, destinationCode, aircraftId) {
+    this.id = this.generateId();
+    this.origin = originCode;
+    this.destination = destinationCode;
+    this.aircraftId = aircraftId;
     
-    generateId() {
-        return 'RT_' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    }
+    // Configurazione della rotta
+    this.frequency = 7; // voli per settimana
+    this.ticketPrice = 0; // calcolato automaticamente
+    this.isActive = true;
     
-    setupRoute() {
-        const originAirport = AirportData.getAirportByCode(this.origin);
-        const destinationAirport = AirportData.getAirportByCode(this.destination);
-        
-        if (!originAirport || !destinationAirport) {
-            console.error('Aeroporti non trovati per la rotta:', this.origin, this.destination);
-            return;
-        }
-        
-        // Calcola distanza e tempo di volo
-        this.distance = originAirport.calculateDistanceTo(destinationAirport);
-        
-        // Calcola domanda e prezzo suggerito
-        this.demand = originAirport.getDemandTo(destinationAirport);
-        this.ticketPrice = originAirport.getSuggestedTicketPrice(destinationAirport, 'narrow-body');
-        
-        console.log(`🛣️ Rotta creata: ${this.origin} → ${this.destination} (${Math.round(this.distance)}km)`);
-    }
+    // Calcoli della rotta
+    this.distance = 0;
+    this.flightTime = 0; // ore
+    this.demand = 0; // passeggeri potenziali
+    this.competition = 0;
     
-    // Calcola i ricavi potenziali per volo
-    calculateRevenuePerFlight(aircraft) {
-        if (!aircraft) return 0;
-        
-        const loadFactor = this.calculateLoadFactor();
-        const passengers = Math.round(aircraft.capacity * loadFactor);
-        
-        return passengers * this.ticketPrice;
-    }
+    // Statistiche operative
+    this.totalFlights = 0;
+    this.totalPassengers = 0;
+    this.totalRevenue = 0;
+    this.totalExpenses = 0;
+    this.loadFactor = 0; // % riempimento medio
     
-    // Calcola i costi per volo
-    calculateCostPerFlight(aircraft) {
-        if (!aircraft) return 0;
-        
-        const originAirport = AirportData.getAirportByCode(this.origin);
-        const destinationAirport = AirportData.getAirportByCode(this.destination);
-        
-        if (!originAirport || !destinationAirport) return 0;
-        
-        this.flightTime = aircraft.getFlightTime(this.distance);
-        
-        // Costi operativi
-        const operatingCost = aircraft.getOperatingCostPerHour() * this.flightTime;
-        
-        // Tasse aeroportuali
-        const landingFees = originAirport.landingFee + destinationAirport.landingFee;
-        const parkingFees = (originAirport.parkingFee + destinationAirport.parkingFee) * 2; // andata e ritorno
-        
-        // Costo carburante
-        const fuelNeeded = aircraft.fuelConsumption * this.distance;
-        const avgFuelPrice = (originAirport.fuelPrice + destinationAirport.fuelPrice) / 2;
-        const fuelCost = fuelNeeded * avgFuelPrice;
-        
-        // Costi dell'equipaggio (stimati)
-        const crewCost = this.flightTime * 200; // €200 per ora per l'equipaggio
-        
-        return operatingCost + landingFees + parkingFees + fuelCost + crewCost;
-    }
+    // Stato della rotta
+    this.profitability = 0; // % profitto
+    this.reputation = 50; // 0-100
+    this.established = new Date();
     
-    // Calcola il fattore di carico (percentuale di riempimento)
-    calculateLoadFactor() {
-        // Fattore base basato sulla domanda
-        const demandFactor = Math.min(1, this.demand / 200);
-        
-        // Fattore prezzo (prezzi più bassi = più passeggeri)
-        const avgPrice = 150; // prezzo medio di riferimento
-        const priceFactor = Math.max(0.3, Math.min(1.2, avgPrice / this.ticketPrice));
-        
-        // Fattore concorrenza
-        const competitionFactor = Math.max(0.5, 1 - (this.competition / 100));
-        
-        // Fattore frequenza (più voli = più conveniente)
-        const frequencyFactor = Math.min(1.2, this.frequency / 7);
-        
-        // Fattore stagionale e casuale
-        const randomFactor = 0.8 + Math.random() * 0.4; // ±20% di variazione
-        
-        const loadFactor = demandFactor * priceFactor * competitionFactor * frequencyFactor * randomFactor;
-        
-        return Math.max(0.1, Math.min(1, loadFactor));
-    }
-    
-    // Calcola il profitto per volo
-    calculateProfitPerFlight(aircraft) {
-        const revenue = this.calculateRevenuePerFlight(aircraft);
-        const cost = this.calculateCostPerFlight(aircraft);
-        
-        return revenue - cost;
-    }
-    
-    // Calcola il profitto mensile stimato
-    calculateMonthlyProfit(aircraft) {
-        const profitPerFlight = this.calculateProfitPerFlight(aircraft);
-        const flightsPerMonth = (this.frequency * 4.33); // 4.33 settimane per mese
-        
-        return profitPerFlight * flightsPerMonth;
-    }
-    
-    // Simula l'esecuzione di un volo
-    executeFlight(aircraft) {
-        if (!aircraft || aircraft.status !== 'available') {
-            return false;
-        }
-        
-        const loadFactor = this.calculateLoadFactor();
-        const passengers = Math.round(aircraft.capacity * loadFactor);
-        const revenue = passengers * this.ticketPrice;
-        const cost = this.calculateCostPerFlight(aircraft);
-        const profit = revenue - cost;
-        
-        // Aggiorna statistiche della rotta
-        this.totalFlights++;
-        this.totalPassengers += passengers;
-        this.totalRevenue += revenue;
-        this.totalCosts += cost;
-        this.averageLoadFactor = (this.averageLoadFactor * (this.totalFlights - 1) + loadFactor) / this.totalFlights;
-        
-        // Aggiorna l'aeromobile
-        aircraft.updateCondition(this.flightTime);
-        aircraft.completeFlight(passengers, revenue);
-        
-        // Aggiorna date
-        this.lastFlightDate = new Date();
-        this.calculateNextFlightDate();
-        
-        // Simula la puntualità
-        this.updateOnTimePerformance();
-        
-        console.log(`✈️ Volo completato: ${this.origin}-${this.destination}, ${passengers} passeggeri, €${Math.round(profit)} profitto`);
-        
-        return {
-            passengers,
-            revenue,
-            cost,
-            profit,
-            loadFactor
-        };
-    }
-    
-    calculateNextFlightDate() {
-        if (!this.lastFlightDate) {
-            this.nextFlightDate = new Date();
-            return;
-        }
-        
-        const daysUntilNext = 7 / this.frequency; // giorni tra i voli
-        this.nextFlightDate = new Date(this.lastFlightDate.getTime() + (daysUntilNext * 24 * 60 * 60 * 1000));
-    }
-    
-    updateOnTimePerformance() {
-        const originAirport = AirportData.getAirportByCode(this.origin);
-        const destinationAirport = AirportData.getAirportByCode(this.destination);
-        
-        let delayMinutes = 0;
-        
-        if (originAirport) {
-            delayMinutes += originAirport.getWeatherImpact().delay;
-        }
-        if (destinationAirport) {
-            delayMinutes += destinationAirport.getWeatherImpact().delay;
-        }
-        
-        // Considera il volo puntuale se il ritardo è < 15 minuti
-        const isOnTime = delayMinutes < 15;
-        
-        // Aggiorna la media della puntualità
-        this.onTimePerformance = (this.onTimePerformance * (this.totalFlights - 1) + (isOnTime ? 100 : 0)) / this.totalFlights;
-    }
-    
-    // Modifica la frequenza dei voli
-    setFrequency(newFrequency) {
-        this.frequency = Math.max(1, Math.min(21, newFrequency)); // 1-21 voli per settimana
-        this.calculateNextFlightDate();
-    }
-    
-    // Modifica il prezzo del biglietto
-    setTicketPrice(newPrice) {
-        this.ticketPrice = Math.max(10, newPrice); // minimo €10
-    }
-    
-    // Sospende la rotta
-    suspend() {
-        this.status = 'suspended';
-        this.isActive = false;
-    }
-    
-    // Riattiva la rotta
-    activate() {
-        this.status = 'active';
-        this.isActive = true;
-        this.calculateNextFlightDate();
-    }
-    
-    // Dati per il salvataggio
-    toSaveData() {
-        return {
-            id: this.id,
-            origin: this.origin,
-            destination: this.destination,
-            aircraftId: this.aircraftId,
-            frequency: this.frequency,
-            ticketPrice: this.ticketPrice,
-            isActive: this.isActive,
-            status: this.status,
-            totalFlights: this.totalFlights,
-            totalPassengers: this.totalPassengers,
-            totalRevenue: this.totalRevenue,
-            totalCosts: this.totalCosts,
-            averageLoadFactor: this.averageLoadFactor,
-            onTimePerformance: this.onTimePerformance,
-            lastFlightDate: this.lastFlightDate ? this.lastFlightDate.toISOString() : null,
-            nextFlightDate: this.nextFlightDate ? this.nextFlightDate.toISOString() : null,
-            createdDate: this.createdDate.toISOString()
-        };
-    }
-    
-    // Carica dati salvati
-    loadFromData(data) {
-        this.id = data.id;
-        this.frequency = data.frequency;
-        this.ticketPrice = data.ticketPrice;
-        this.isActive = data.isActive;
-        this.status = data.status;
-        this.totalFlights = data.totalFlights;
-        this.totalPassengers = data.totalPassengers;
-        this.totalRevenue = data.totalRevenue;
-        this.totalCosts = data.totalCosts;
-        this.averageLoadFactor = data.averageLoadFactor;
-        this.onTimePerformance = data.onTimePerformance;
-        this.lastFlightDate = data.lastFlightDate ? new Date(data.lastFlightDate) : null;
-        this.nextFlightDate = data.nextFlightDate ? new Date(data.nextFlightDate) : null;
-        this.createdDate = new Date(data.createdDate);
-    }
-    
-    // Informazioni per l'interfaccia
-    getDisplayInfo() {
-        return {
-            id: this.id,
-            origin: this.origin,
-            destination: this.destination,
-            distance: Math.round(this.distance),
-            frequency: this.frequency,
-            ticketPrice: this.ticketPrice,
-            demand: this.demand,
-            averageLoadFactor: Math.round(this.averageLoadFactor * 100),
-            onTimePerformance: Math.round(this.onTimePerformance),
-            totalFlights: this.totalFlights,
-            totalProfit: this.totalRevenue - this.totalCosts,
-            status: this.getStatusText(),
-            isActive: this.isActive
-        };
-    }
-    
-    getStatusText() {
-        switch (this.status) {
-            case 'planning': return 'In pianificazione';
-            case 'active': return 'Attiva';
-            case 'suspended': return 'Sospesa';
-            default: return 'Sconosciuto';
-        }
-    }
-    
-    getRouteName() {
-        return `${this.origin} → ${this.destination}`;
-    }
+    // Inizializza la rotta
+    this.initialize();
 }
+
+// Metodi del prototipo
+Route.prototype.generateId = function() {
+    return 'route_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+};
+
+Route.prototype.initialize = function() {
+    var originAirport = AirportData.getAirportByCode(this.origin);
+    var destinationAirport = AirportData.getAirportByCode(this.destination);
+    
+    if (!originAirport || !destinationAirport) {
+        throw new Error('Aeroporti non validi per la rotta');
+    }
+    
+    // Calcola distanza
+    this.distance = this.calculateDistance(originAirport, destinationAirport);
+    
+    // Verifica che l'aeromobile possa coprire la distanza
+    var aircraft = this.getAircraft();
+    if (aircraft && this.distance > aircraft.range) {
+        throw new Error('Aeromobile non ha autonomia sufficiente per questa rotta');
+    }
+    
+    // Calcola tempo di volo
+    if (aircraft) {
+        this.flightTime = this.distance / aircraft.speed;
+    }
+    
+    // Calcola domanda
+    this.demand = this.calculateDemand(originAirport, destinationAirport);
+    
+    // Calcola prezzo suggerito
+    this.ticketPrice = this.calculateOptimalPrice();
+    
+    console.log('Rotta creata: ' + this.origin + ' → ' + this.destination + 
+                ' (' + this.distance + 'km, €' + this.ticketPrice + ')');
+};
+
+Route.prototype.calculateDistance = function(origin, destination) {
+    var R = 6371; // Raggio della Terra in km
+    var lat1Rad = origin.latitude * Math.PI / 180;
+    var lat2Rad = destination.latitude * Math.PI / 180;
+    var deltaLatRad = (destination.latitude - origin.latitude) * Math.PI / 180;
+    var deltaLonRad = (destination.longitude - origin.longitude) * Math.PI / 180;
+    
+    var a = Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
+            Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+            Math.sin(deltaLonRad / 2) * Math.sin(deltaLonRad / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    
+    return Math.round(R * c);
+};
+
+Route.prototype.calculateDemand = function(origin, destination) {
+    var baseDemand = (origin.demandLevel + destination.demandLevel) / 2;
+    
+    // Fattore distanza
+    var distanceFactor = 1;
+    if (this.distance < 500) distanceFactor = 0.7;
+    else if (this.distance > 10000) distanceFactor = 0.8;
+    
+    // Fattore competizione
+    var competitionFactor = Math.max(0.3, 1 - (origin.competitionLevel / 100));
+    
+    return Math.round(baseDemand * distanceFactor * competitionFactor);
+};
+
+Route.prototype.calculateOptimalPrice = function() {
+    var basePrice = 0.1; // €0.1 per km base
+    var distancePrice = this.distance * basePrice;
+    
+    // Fattori di aggiustamento
+    var demandFactor = this.demand / 50; // normalizzato
+    var competitionFactor = Math.max(0.7, 1 - (this.competition / 100));
+    
+    return Math.round(distancePrice * demandFactor * competitionFactor);
+};
+
+Route.prototype.getAircraft = function() {
+    // Simuliamo l'ottenimento dell'aeromobile
+    // In un gioco reale, questo prenderebbe da FleetManager
+    return AircraftData.getAircraftByType('a320'); // Per ora usa A320 di default
+};
+
+Route.prototype.getOriginAirport = function() {
+    return AirportData.getAirportByCode(this.origin);
+};
+
+Route.prototype.getDestinationAirport = function() {
+    return AirportData.getAirportByCode(this.destination);
+};
+
+Route.prototype.simulateFlight = function() {
+    if (!this.isActive) return null;
+    
+    var aircraft = this.getAircraft();
+    if (!aircraft) return null;
+    
+    // Simula riempimento basato su domanda e prezzo
+    var maxPassengers = Math.min(aircraft.capacity, this.demand);
+    var priceAttractiveness = Math.max(0.2, 1 - (this.ticketPrice / (this.distance * 0.2)));
+    var actualPassengers = Math.floor(maxPassengers * priceAttractiveness * Math.random() * 1.2);
+    actualPassengers = Math.min(actualPassengers, aircraft.capacity);
+    
+    // Calcola costi
+    var fuelCost = this.distance * aircraft.fuelConsumption * 0.8;
+    var airportFees = 1000; // Semplificato
+    var crewCost = 500; // Semplificato
+    var totalExpenses = fuelCost + airportFees + crewCost;
+    
+    // Calcola ricavi
+    var revenue = actualPassengers * this.ticketPrice;
+    var profit = revenue - totalExpenses;
+    
+    // Aggiorna statistiche
+    this.totalFlights++;
+    this.totalPassengers += actualPassengers;
+    this.totalRevenue += revenue;
+    this.totalExpenses += totalExpenses;
+    this.loadFactor = this.totalPassengers / (this.totalFlights * aircraft.capacity) * 100;
+    this.profitability = ((this.totalRevenue - this.totalExpenses) / this.totalRevenue) * 100;
+    
+    return {
+        passengers: actualPassengers,
+        revenue: revenue,
+        expenses: totalExpenses,
+        profit: profit,
+        loadFactor: (actualPassengers / aircraft.capacity) * 100
+    };
+};
+
+Route.prototype.setTicketPrice = function(price) {
+    this.ticketPrice = Math.max(10, price); // Minimo €10
+};
+
+Route.prototype.setFrequency = function(frequency) {
+    this.frequency = Math.max(1, Math.min(21, frequency)); // 1-21 voli/settimana
+};
+
+Route.prototype.activate = function() {
+    this.isActive = true;
+};
+
+Route.prototype.deactivate = function() {
+    this.isActive = false;
+};
+
+Route.prototype.getWeeklyProfit = function() {
+    if (this.totalFlights === 0) return 0;
+    var avgProfitPerFlight = (this.totalRevenue - this.totalExpenses) / this.totalFlights;
+    return avgProfitPerFlight * this.frequency;
+};
+
+Route.prototype.isProfitable = function() {
+    return this.totalRevenue > this.totalExpenses;
+};
+
+Route.prototype.toSaveData = function() {
+    return {
+        id: this.id,
+        origin: this.origin,
+        destination: this.destination,
+        aircraftId: this.aircraftId,
+        frequency: this.frequency,
+        ticketPrice: this.ticketPrice,
+        isActive: this.isActive,
+        totalFlights: this.totalFlights,
+        totalPassengers: this.totalPassengers,
+        totalRevenue: this.totalRevenue,
+        totalExpenses: this.totalExpenses,
+        loadFactor: this.loadFactor,
+        profitability: this.profitability,
+        reputation: this.reputation,
+        established: this.established.toISOString()
+    };
+};
+
+Route.prototype.loadFromData = function(data) {
+    this.id = data.id;
+    this.frequency = data.frequency || 7;
+    this.ticketPrice = data.ticketPrice || 0;
+    this.isActive = data.isActive !== false;
+    this.totalFlights = data.totalFlights || 0;
+    this.totalPassengers = data.totalPassengers || 0;
+    this.totalRevenue = data.totalRevenue || 0;
+    this.totalExpenses = data.totalExpenses || 0;
+    this.loadFactor = data.loadFactor || 0;
+    this.profitability = data.profitability || 0;
+    this.reputation = data.reputation || 50;
+    this.established = new Date(data.established || Date.now());
+};
+
+Route.prototype.toString = function() {
+    return this.origin + ' → ' + this.destination + 
+           ' (€' + this.ticketPrice + ', ' + this.frequency + 'x/settimana)';
+};
+
+// Rendi disponibile globalmente
+window.Route = Route;
+
+console.log('✅ Route compatibile caricato');

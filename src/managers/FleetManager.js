@@ -1,271 +1,237 @@
-// Gestore della flotta di aeromobili
-class FleetManager {
-    constructor(gameState) {
-        this.gameState = gameState;
-    }
+// FleetManager compatibile con tutti i browser
+console.log('📂 Caricamento FleetManager.js...');
+
+function FleetManager(gameState) {
+    this.gameState = gameState;
+}
+
+// Aggiunge un aeromobile alla flotta
+FleetManager.prototype.addAircraft = function(aircraftData, customName) {
+    if (customName === undefined) customName = null;
     
-    // Aggiunge un aeromobile alla flotta
-    addAircraft(aircraftData, customName = null) {
-        try {
-            const aircraft = new Aircraft(aircraftData.type, customName);
-            this.gameState.fleet.push(aircraft);
-            
-            console.log(`✈️ Aeromobile aggiunto alla flotta: ${aircraft.name} (${aircraft.id})`);
+    try {
+        var aircraft = new Aircraft(aircraftData.type, customName);
+        this.gameState.fleet.push(aircraft);
+        
+        console.log('✈️ Aeromobile aggiunto alla flotta: ' + aircraft.name + ' (' + aircraft.id + ')');
+        return aircraft;
+    } catch (error) {
+        console.error('Errore nell\'aggiunta dell\'aeromobile:', error);
+        return null;
+    }
+};
+
+// Rimuove un aeromobile dalla flotta
+FleetManager.prototype.removeAircraft = function(aircraftId) {
+    for (var i = this.gameState.fleet.length - 1; i >= 0; i--) {
+        if (this.gameState.fleet[i].id === aircraftId) {
+            var aircraft = this.gameState.fleet[i];
+            this.gameState.fleet.splice(i, 1);
+            console.log('🗑️ Aeromobile rimosso dalla flotta: ' + aircraft.name);
             return aircraft;
-        } catch (error) {
-            console.error('Errore nell\'aggiunta dell\'aeromobile:', error);
-            return null;
         }
     }
+    console.warn('⚠️ Aeromobile non trovato: ' + aircraftId);
+    return null;
+};
+
+// Ottiene un aeromobile per ID
+FleetManager.prototype.getAircraft = function(aircraftId) {
+    for (var i = 0; i < this.gameState.fleet.length; i++) {
+        if (this.gameState.fleet[i].id === aircraftId) {
+            return this.gameState.fleet[i];
+        }
+    }
+    return null;
+};
+
+// Ottiene tutti gli aeromobili
+FleetManager.prototype.getAllAircraft = function() {
+    return this.gameState.fleet.slice(); // Copia dell'array
+};
+
+// Ottiene aeromobili disponibili
+FleetManager.prototype.getAvailableAircraft = function() {
+    var available = [];
+    for (var i = 0; i < this.gameState.fleet.length; i++) {
+        if (this.gameState.fleet[i].status === 'available') {
+            available.push(this.gameState.fleet[i]);
+        }
+    }
+    return available;
+};
+
+// Ottiene aeromobili per tipo
+FleetManager.prototype.getAircraftByType = function(type) {
+    var result = [];
+    for (var i = 0; i < this.gameState.fleet.length; i++) {
+        if (this.gameState.fleet[i].type === type) {
+            result.push(this.gameState.fleet[i]);
+        }
+    }
+    return result;
+};
+
+// Acquista un aeromobile
+FleetManager.prototype.purchaseAircraft = function(aircraftType, customName) {
+    if (customName === undefined) customName = null;
     
-    // Rimuove un aeromobile dalla flotta
-    removeAircraft(aircraftId) {
-        const index = this.gameState.fleet.findIndex(aircraft => aircraft.id === aircraftId);
-        
-        if (index === -1) {
-            console.error('Aeromobile non trovato:', aircraftId);
-            return false;
-        }
-        
-        const aircraft = this.gameState.fleet[index];
-        
-        // Verifica se l'aeromobile è assegnato a una rotta
-        if (aircraft.assignedRoute) {
-            console.warn('Impossibile vendere: aeromobile assegnato a una rotta');
-            return false;
-        }
-        
-        // Calcola il valore di rivendita
-        const resaleValue = aircraft.getResaleValue();
-        this.gameState.company.money += resaleValue;
-        
-        // Rimuove dalla flotta
-        this.gameState.fleet.splice(index, 1);
-        
-        console.log(`💰 Aeromobile venduto: ${aircraft.name} per €${Math.round(resaleValue)}`);
+    var aircraftData = AircraftData.getAircraftByType(aircraftType);
+    if (!aircraftData) {
+        console.error('❌ Tipo di aeromobile non valido: ' + aircraftType);
+        return null;
+    }
+    
+    if (!this.gameState.canAfford(aircraftData.price)) {
+        console.error('❌ Fondi insufficienti per acquistare: ' + aircraftData.name);
+        return null;
+    }
+    
+    var aircraft = this.addAircraft(aircraftData, customName);
+    if (aircraft) {
+        this.gameState.subtractMoney(aircraftData.price);
+        console.log('💰 Acquistato ' + aircraft.name + ' per €' + aircraftData.price.toLocaleString());
+    }
+    
+    return aircraft;
+};
+
+// Vende un aeromobile
+FleetManager.prototype.sellAircraft = function(aircraftId) {
+    var aircraft = this.getAircraft(aircraftId);
+    if (!aircraft) {
+        console.error('❌ Aeromobile non trovato: ' + aircraftId);
+        return false;
+    }
+    
+    var sellPrice = aircraft.retire();
+    this.removeAircraft(aircraftId);
+    this.gameState.addMoney(sellPrice);
+    
+    console.log('💰 Venduto ' + aircraft.name + ' per €' + sellPrice.toLocaleString());
+    return true;
+};
+
+// Esegue manutenzione su un aeromobile
+FleetManager.prototype.performMaintenance = function(aircraftId) {
+    var aircraft = this.getAircraft(aircraftId);
+    if (!aircraft) {
+        console.error('❌ Aeromobile non trovato: ' + aircraftId);
+        return false;
+    }
+    
+    var cost = aircraft.performMaintenance();
+    if (this.gameState.canAfford(cost)) {
+        this.gameState.subtractMoney(cost);
+        console.log('🔧 Manutenzione completata per ' + aircraft.name + ' (€' + cost.toLocaleString() + ')');
         return true;
+    } else {
+        console.error('❌ Fondi insufficienti per la manutenzione');
+        return false;
     }
+};
+
+// Ottiene statistiche della flotta
+FleetManager.prototype.getFleetStatistics = function() {
+    var stats = {
+        totalAircraft: this.gameState.fleet.length,
+        availableAircraft: 0,
+        flyingAircraft: 0,
+        maintenanceAircraft: 0,
+        retiredAircraft: 0,
+        totalValue: 0,
+        totalRevenue: 0,
+        totalExpenses: 0,
+        averageCondition: 0,
+        totalFlightHours: 0
+    };
     
-    // Trova un aeromobile per ID
-    getAircraftById(aircraftId) {
-        return this.gameState.fleet.find(aircraft => aircraft.id === aircraftId);
-    }
-    
-    // Ottiene tutti gli aeromobili disponibili
-    getAvailableAircraft() {
-        return this.gameState.fleet.filter(aircraft => aircraft.status === 'available');
-    }
-    
-    // Ottiene aeromobili assegnati a rotte
-    getAssignedAircraft() {
-        return this.gameState.fleet.filter(aircraft => aircraft.assignedRoute !== null);
-    }
-    
-    // Ottiene aeromobili in volo
-    getAircraftInFlight() {
-        return this.gameState.fleet.filter(aircraft => aircraft.status === 'in-flight');
-    }
-    
-    // Ottiene aeromobili che necessitano manutenzione
-    getAircraftNeedingMaintenance() {
-        return this.gameState.fleet.filter(aircraft => aircraft.needsMaintenance());
-    }
-    
-    // Esegue manutenzione su un aeromobile
-    performMaintenance(aircraftId) {
-        const aircraft = this.getAircraftById(aircraftId);
-        
-        if (!aircraft) {
-            console.error('Aeromobile non trovato per manutenzione:', aircraftId);
-            return false;
-        }
-        
-        if (aircraft.status === 'in-flight') {
-            console.warn('Impossibile eseguire manutenzione: aeromobile in volo');
-            return false;
-        }
-        
-        const maintenanceCost = aircraft.performMaintenance();
-        
-        if (this.gameState.company.money < maintenanceCost) {
-            console.warn('Fondi insufficienti per la manutenzione');
-            return false;
-        }
-        
-        this.gameState.company.money -= maintenanceCost;
-        
-        console.log(`🔧 Manutenzione completata per ${aircraft.name}: €${Math.round(maintenanceCost)}`);
-        return true;
-    }
-    
-    // Calcola i costi di manutenzione totali
-    calculateMaintenanceCosts() {
-        return this.gameState.fleet.reduce((total, aircraft) => {
-            if (aircraft.needsMaintenance()) {
-                return total + (aircraft.purchasePrice * 0.05);
-            }
-            return total;
-        }, 0);
-    }
-    
-    // Calcola il valore totale della flotta
-    getTotalFleetValue() {
-        return this.gameState.fleet.reduce((total, aircraft) => {
-            return total + aircraft.getResaleValue();
-        }, 0);
-    }
-    
-    // Calcola le statistiche della flotta
-    getFleetStatistics() {
-        const stats = {
-            totalAircraft: this.gameState.fleet.length,
-            availableAircraft: this.getAvailableAircraft().length,
-            assignedAircraft: this.getAssignedAircraft().length,
-            aircraftInFlight: this.getAircraftInFlight().length,
-            aircraftNeedingMaintenance: this.getAircraftNeedingMaintenance().length,
-            totalCapacity: 0,
-            averageCondition: 0,
-            totalFlightHours: 0,
-            totalPassengers: 0,
-            totalRevenue: 0,
-            fleetValue: this.getTotalFleetValue()
-        };
-        
-        if (stats.totalAircraft > 0) {
-            this.gameState.fleet.forEach(aircraft => {
-                stats.totalCapacity += aircraft.capacity;
-                stats.averageCondition += aircraft.condition;
-                stats.totalFlightHours += aircraft.totalFlightHours;
-                stats.totalPassengers += aircraft.totalPassengers;
-                stats.totalRevenue += aircraft.totalRevenue;
-            });
-            
-            stats.averageCondition = stats.averageCondition / stats.totalAircraft;
-        }
-        
+    if (this.gameState.fleet.length === 0) {
         return stats;
     }
     
-    // Aggiorna lo stato degli aeromobili
-    update(deltaTime) {
-        this.gameState.fleet.forEach(aircraft => {
-            // Aggiorna l'età degli aeromobili
-            const ageIncrease = deltaTime / (365 * 24 * 3600); // anni
-            aircraft.age += ageIncrease;
-            
-            // Degrado naturale della condizione
-            const naturalWear = deltaTime * 0.000001; // molto lento quando non in uso
-            aircraft.condition = Math.max(0, aircraft.condition - naturalWear);
-            
-            // Aggiorna la posizione se necessario
-            this.updateAircraftLocation(aircraft);
-        });
+    var totalCondition = 0;
+    
+    for (var i = 0; i < this.gameState.fleet.length; i++) {
+        var aircraft = this.gameState.fleet[i];
         
-        // Programma manutenzioni automatiche se abilitato
-        this.scheduleAutoMaintenance();
+        // Conteggio per status
+        switch (aircraft.status) {
+            case 'available':
+                stats.availableAircraft++;
+                break;
+            case 'flying':
+                stats.flyingAircraft++;
+                break;
+            case 'maintenance':
+                stats.maintenanceAircraft++;
+                break;
+            case 'retired':
+                stats.retiredAircraft++;
+                break;
+        }
+        
+        // Somme
+        stats.totalValue += aircraft.purchasePrice * (aircraft.condition / 100) * 0.5;
+        stats.totalRevenue += aircraft.totalRevenue || 0;
+        stats.totalExpenses += aircraft.totalExpenses || 0;
+        stats.totalFlightHours += aircraft.totalFlightHours || 0;
+        totalCondition += aircraft.condition || 100;
     }
     
-    updateAircraftLocation(aircraft) {
-        // Se l'aeromobile è assegnato a una rotta ma non in volo, dovrebbe essere nell'aeroporto di origine
-        if (aircraft.assignedRoute && aircraft.status === 'available') {
-            const route = this.gameState.routes.find(r => r.id === aircraft.assignedRoute);
-            if (route) {
-                aircraft.location = route.origin;
-            }
+    stats.averageCondition = totalCondition / this.gameState.fleet.length;
+    
+    return stats;
+};
+
+// Ottiene aeromobili che necessitano manutenzione
+FleetManager.prototype.getAircraftNeedingMaintenance = function() {
+    var needMaintenance = [];
+    for (var i = 0; i < this.gameState.fleet.length; i++) {
+        if (this.gameState.fleet[i].needsMaintenance && this.gameState.fleet[i].needsMaintenance()) {
+            needMaintenance.push(this.gameState.fleet[i]);
+        }
+    }
+    return needMaintenance;
+};
+
+// Ottiene il miglior aeromobile per una rotta
+FleetManager.prototype.getBestAircraftForRoute = function(distance, passengerDemand) {
+    var availableAircraft = this.getAvailableAircraft();
+    var bestAircraft = null;
+    var bestScore = -1;
+    
+    for (var i = 0; i < availableAircraft.length; i++) {
+        var aircraft = availableAircraft[i];
+        
+        // Verifica se può coprire la distanza
+        if (!aircraft.canFly || !aircraft.canFly(distance)) {
+            continue;
+        }
+        
+        // Calcola punteggio (semplificato)
+        var capacityScore = Math.min(1, aircraft.capacity / passengerDemand);
+        var efficiencyScore = 1 / (aircraft.fuelConsumption || 1);
+        var conditionScore = aircraft.condition / 100;
+        
+        var totalScore = capacityScore + efficiencyScore + conditionScore;
+        
+        if (totalScore > bestScore) {
+            bestScore = totalScore;
+            bestAircraft = aircraft;
         }
     }
     
-    scheduleAutoMaintenance() {
-        // Cerca aeromobili che necessitano manutenzione urgente
-        const urgentMaintenanceAircraft = this.gameState.fleet.filter(aircraft => 
-            aircraft.condition < 20 && aircraft.status === 'available'
-        );
-        
-        urgentMaintenanceAircraft.forEach(aircraft => {
-            if (this.gameState.company.money >= aircraft.purchasePrice * 0.05) {
-                console.log(`🚨 Manutenzione urgente programmata per ${aircraft.name}`);
-                this.performMaintenance(aircraft.id);
-            }
-        });
-    }
-    
-    // Ottiene raccomandazioni per l'acquisto di aeromobili
-    getAircraftRecommendations() {
-        const recommendations = [];
-        const currentFleet = this.gameState.fleet;
-        const activeRoutes = this.gameState.routes.filter(r => r.isActive);
-        
-        // Analizza le esigenze basate sulle rotte
-        activeRoutes.forEach(route => {
-            const assignedAircraft = currentFleet.find(a => a.assignedRoute === route.id);
-            
-            if (!assignedAircraft) {
-                // Rotta senza aeromobile assegnato
-                const suitableAircraft = this.findSuitableAircraftForRoute(route);
-                if (suitableAircraft.length > 0) {
-                    recommendations.push({
-                        type: 'route-coverage',
-                        route: route,
-                        suggestedAircraft: suitableAircraft,
-                        priority: 'high'
-                    });
-                }
-            }
-        });
-        
-        // Analizza la diversificazione della flotta
-        const fleetTypes = [...new Set(currentFleet.map(a => a.type))];
-        const missingTypes = ['regional', 'narrow-body', 'wide-body'].filter(type => 
-            !fleetTypes.includes(type)
-        );
-        
-        missingTypes.forEach(type => {
-            recommendations.push({
-                type: 'fleet-diversification',
-                aircraftType: type,
-                reason: 'Diversificazione della flotta',
-                priority: 'medium'
-            });
-        });
-        
-        return recommendations;
-    }
-    
-    findSuitableAircraftForRoute(route) {
-        const availableTypes = AircraftData.getAllAircraftTypes();
-        const suitableTypes = [];
-        
-        availableTypes.forEach(type => {
-            const aircraftData = AircraftData.getAircraftByType(type);
-            if (aircraftData && aircraftData.range >= route.distance) {
-                suitableTypes.push({
-                    type: type,
-                    data: aircraftData,
-                    efficiency: this.calculateRouteEfficiency(route, aircraftData)
-                });
-            }
-        });
-        
-        // Ordina per efficienza
-        return suitableTypes.sort((a, b) => b.efficiency - a.efficiency);
-    }
-    
-    calculateRouteEfficiency(route, aircraftData) {
-        // Calcola un punteggio di efficienza basato su capacità, costi e redditività
-        const capacityMatch = Math.min(1, route.demand / aircraftData.capacity);
-        const fuelEfficiency = 1 / (aircraftData.fuelConsumption || 1);
-        const priceEfficiency = 1000000 / aircraftData.price; // preferisce aeromobili meno costosi
-        
-        return (capacityMatch * 0.4 + fuelEfficiency * 0.3 + priceEfficiency * 0.3) * 100;
-    }
-    
-    // Esporta dati della flotta per report
-    exportFleetData() {
-        return {
-            timestamp: new Date().toISOString(),
-            statistics: this.getFleetStatistics(),
-            aircraft: this.gameState.fleet.map(aircraft => aircraft.getDisplayInfo()),
-            recommendations: this.getAircraftRecommendations()
-        };
-    }
-}
+    return bestAircraft;
+};
+
+// Aggiorna tutti gli aeromobili (chiamato dal game loop)
+FleetManager.prototype.update = function(deltaTime) {
+    // Placeholder per aggiornamenti futuri
+    // Es: degrado automatico, manutenzione automatica, ecc.
+};
+
+// Rendi disponibile globalmente
+window.FleetManager = FleetManager;
+
+console.log('✅ FleetManager compatibile caricato');
