@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Tycoon 2 - Seleziona Salvataggio</title>
+    <link rel="stylesheet" href="styles/game-select.css">
+</head>
+<body>
+    <div class="game-select-container">
+        <div class="background-animation">
+            <div class="airplane">✈️</div>
+            <div class="clouds">
+                <div class="cloud">☁️</div>
+                <div class="cloud">☁️</div>
+                <div class="cloud">☁️</div>
+            </div>
+        </div>
+        
+        <header class="header">
+            <div class="user-info">
+                <h1>🛫 Air Tycoon 2</h1>
+                <div class="user-details">
+                    <span id="welcome-text">Benvenuto, <strong id="company-name"></strong></span>
+                    <button id="logout-btn" class="logout-btn">🚪 Logout</button>
+                </div>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <div class="saves-section">
+                <div class="section-header">
+                    <h2>💾 I tuoi Salvataggi</h2>
+                    <button id="new-game-btn" class="action-btn primary">
+                        🆕 Nuovo Gioco
+                    </button>
+                </div>
+                
+                <div id="saves-container" class="saves-grid">
+                    <!-- I salvataggi verranno inseriti qui dinamicamente -->
+                </div>
+                
+                <div id="no-saves" class="no-saves hidden">
+                    <div class="no-saves-content">
+                        <div class="no-saves-icon">📂</div>
+                        <h3>Nessun salvataggio trovato</h3>
+                        <p>Inizia una nuova partita per creare il tuo primo salvataggio!</p>
+                        <button id="start-first-game" class="action-btn primary">
+                            🚀 Inizia Prima Partita
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Modal per nuovo gioco -->
+        <div id="new-game-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🆕 Nuovo Gioco</h3>
+                    <button id="close-modal" class="close-btn">×</button>
+                </div>
+                
+                <form id="new-game-form" class="modal-body">
+                    <div class="input-group">
+                        <label for="save-name">💾 Nome Salvataggio</label>
+                        <input type="text" id="save-name" name="saveName" required 
+                               placeholder="es. Partita Europa 2024">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="company-name-input">🏢 Nome Compagnia</label>
+                        <input type="text" id="company-name-input" name="companyName" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="starting-airport">🏢 Aeroporto di Partenza</label>
+                        <select id="starting-airport" name="startingAirport" required>
+                            <option value="">Seleziona aeroporto...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="difficulty">🎯 Difficoltà</label>
+                        <select id="difficulty" name="difficulty" required>
+                            <option value="easy">🟢 Facile - Budget iniziale alto</option>
+                            <option value="normal" selected>🟡 Normale - Budget bilanciato</option>
+                            <option value="hard">🔴 Difficile - Budget limitato</option>
+                        </select>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-new-game" class="action-btn secondary">
+                            ❌ Annulla
+                        </button>
+                        <button type="submit" class="action-btn primary">
+                            🚀 Inizia Gioco
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modal conferma eliminazione -->
+        <div id="delete-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🗑️ Elimina Salvataggio</h3>
+                    <button id="close-delete-modal" class="close-btn">×</button>
+                </div>
+                
+                <div class="modal-body">
+                    <p>Sei sicuro di voler eliminare il salvataggio <strong id="delete-save-name"></strong>?</p>
+                    <p class="warning-text">⚠️ Questa azione non può essere annullata!</p>
+                    
+                    <div class="modal-actions">
+                        <button id="cancel-delete" class="action-btn secondary">
+                            ❌ Annulla
+                        </button>
+                        <button id="confirm-delete" class="action-btn danger">
+                            🗑️ Elimina
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-content">
+                <div class="loading-spinner">✈️</div>
+                <p id="loading-text">Caricamento...</p>
+            </div>
+        </div>
+        
+        <!-- Message toast -->
+        <div id="message-toast" class="message-toast hidden">
+            <span id="toast-text"></span>
+            <button id="toast-close" class="toast-close">×</button>
+        </div>
+    </div>
+    
+    <script src="src/utils/AuthManager.js"></script>
+    <script src="src/data/SimpleData.js"></script>
+    <script src="src/game-select.js"></script>
+</body>
+</html>

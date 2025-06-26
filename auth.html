@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Tycoon 2 - Login</title>
+    <link rel="stylesheet" href="styles/auth.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-background">
+            <div class="clouds cloud1">☁️</div>
+            <div class="clouds cloud2">☁️</div>
+            <div class="clouds cloud3">☁️</div>
+            <div class="plane">✈️</div>
+        </div>
+        
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>🛫 Air Tycoon 2</h1>
+                <p>Costruisci il tuo impero aereo</p>
+            </div>
+            
+            <!-- Form di Login -->
+            <div id="login-form" class="auth-form active">
+                <h2>Accedi al tuo account</h2>
+                <form id="loginForm">
+                    <div class="input-group">
+                        <label for="login-email">📧 Email</label>
+                        <input type="email" id="login-email" name="email" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="login-password">🔒 Password</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn primary">
+                        ✈️ Accedi
+                    </button>
+                    
+                    <div class="auth-switch">
+                        <p>Non hai un account? 
+                            <a href="#" id="show-register">Registrati qui</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Form di Registrazione -->
+            <div id="register-form" class="auth-form">
+                <h2>Crea un nuovo account</h2>
+                <form id="registerForm">
+                    <div class="input-group">
+                        <label for="register-name">👤 Nome Compagnia</label>
+                        <input type="text" id="register-name" name="companyName" required 
+                               placeholder="es. Sky Express Airlines">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="register-email">📧 Email</label>
+                        <input type="email" id="register-email" name="email" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="register-password">🔒 Password</label>
+                        <input type="password" id="register-password" name="password" required
+                               minlength="6">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="register-confirm">🔒 Conferma Password</label>
+                        <input type="password" id="register-confirm" name="confirmPassword" required>
+                    </div>
+                    
+                    <button type="submit" class="auth-btn primary">
+                        🚀 Registrati
+                    </button>
+                    
+                    <div class="auth-switch">
+                        <p>Hai già un account? 
+                            <a href="#" id="show-login">Accedi qui</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Guest Mode -->
+            <div class="guest-mode">
+                <button id="guest-btn" class="auth-btn secondary">
+                    🎮 Gioca come Ospite
+                </button>
+                <p class="guest-note">
+                    I salvataggi dell'ospite sono temporanei e verranno persi
+                </p>
+            </div>
+        </div>
+        
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-spinner">
+                <div class="spinner">✈️</div>
+                <p>Caricamento in corso...</p>
+            </div>
+        </div>
+        
+        <!-- Message overlay -->
+        <div id="message-overlay" class="message-overlay hidden">
+            <div class="message-content">
+                <span id="message-text"></span>
+                <button id="message-close" class="close-btn">×</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="src/utils/AuthManager.js"></script>
+    <script src="src/auth.js"></script>
+</body>
+</html>

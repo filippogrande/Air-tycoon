@@ -132,6 +132,21 @@
     </div>
 
     <!-- Scripts -->
+    <!-- Controllo autenticazione -->
+    <script src="src/utils/AuthManager.js"></script>
+    <script>
+        // Controllo autenticazione all'avvio
+        document.addEventListener('DOMContentLoaded', function() {
+            var authManager = new AuthManager();
+            if (!authManager.loadCurrentUser()) {
+                // Utente non loggato, reindirizza al login
+                window.location.href = 'auth.html';
+                return;
+            }
+            console.log('✅ Utente autenticato:', authManager.getCurrentUser().companyName);
+        });
+    </script>
+    
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
