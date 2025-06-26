@@ -102,8 +102,16 @@ WorldMap.prototype.loadAirports = function() {
     
     console.log('📋 Marker creati:', Object.keys(this.airportMarkers).length);
     
-    // Setup zoom-based visibility
-    this.setupZoomBasedVisibility();
+    // Inizializza il MapVisibilityManager
+    if (typeof MapVisibilityManager !== 'undefined') {
+        var self = this;
+        MapVisibilityManager.setupZoomBasedVisibility(this.map, function(zoom) {
+            MapVisibilityManager.updateAirportVisibility(self.map, self.airportMarkers, zoom);
+        });
+    } else {
+        console.warn('⚠️ MapVisibilityManager non caricato, usando logica semplificata');
+        this.setupZoomBasedVisibility();
+    }
     
     console.log('✅ Creati marker per', airports.length, 'aeroporti');
 };
@@ -168,289 +176,56 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     return marker;
 };
 
-WorldMap.prototype.setupZoomBasedVisibility = function() {
-    var self = this;
+WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
+    // Usa RouteUIManager se disponibile, altrimenti fallback
+    if (typeof RouteUIManager !== 'undefined') {
+        return RouteUIManager.createAirportPopup(airport, isPlayerHub);
+    }
     
-    // Aggiorna visibilità al cambio zoom
-    this.map.on('zoomend', function() {
-        var zoom = self.map.getZoom();
-        self.updateAirportVisibility(zoom);
-    });
-    
-    // Aggiorna visibilità quando si sposta la mappa
-    this.map.on('moveend', function() {
-        var zoom = self.map.getZoom();
-        self.updateAirportVisibility(zoom);
-    });
-    
-    // Imposta visibilità iniziale
-    this.updateAirportVisibility(this.map.getZoom());
+    // Fallback semplice
+    return '<div class="airport-popup">' +
+           '<h3>' + (airport.name || 'Nome non disponibile') + '</h3>' +
+           '<p><strong>Codice:</strong> ' + (airport.code || 'N/A') + '</p>' +
+           '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
+           '</div>';
 };
 
-WorldMap.prototype.updateAirportVisibility = function(zoom) {
-    var self = this; // Aggiungiamo self per scope corretto
-    console.log('🔍 Aggiornamento visibilità aeroporti intelligente, zoom:', zoom);
+WorldMap.prototype.setupZoomBasedVisibility = function() {
+    // Fallback se MapVisibilityManager non è disponibile
+    var self = this;
     
-    // Ottieni i bounds della mappa visibile
-    var bounds = this.map.getBounds();
-    var visibleAirports = this.getAirportsInView(bounds);
+    this.map.on('zoomend', function() {
+        self.updateAirportVisibilitySimple();
+    });
     
-    // Calcola aeroporti da mostrare con sistema anti-clutter
-    var airportsToShow = this.calculateVisibleAirports(visibleAirports, zoom);
+    this.map.on('moveend', function() {
+        self.updateAirportVisibilitySimple();
+    });
     
+    this.updateAirportVisibilitySimple();
+};
+
+WorldMap.prototype.updateAirportVisibilitySimple = function() {
+    // Logica semplificata per compatibilità
+    var zoom = this.map.getZoom();
     var visibleCount = 0;
     
-    // Nascondi tutti i marker prima
     for (var code in this.airportMarkers) {
         var marker = this.airportMarkers[code];
-        if (this.map.hasLayer(marker)) {
+        var shouldShow = zoom >= 3; // Mostra tutti gli aeroporti a zoom >= 3
+        
+        if (shouldShow && !this.map.hasLayer(marker)) {
+            marker.addTo(this.map);
+            visibleCount++;
+        } else if (!shouldShow && this.map.hasLayer(marker)) {
             this.map.removeLayer(marker);
         }
     }
     
-    // Mostra solo gli aeroporti selezionati
-    for (var i = 0; i < airportsToShow.length; i++) {
-        var airportCode = airportsToShow[i];
-        var marker = this.airportMarkers[airportCode];
-        
-        if (marker && !this.map.hasLayer(marker)) {
-            marker.addTo(this.map);
-            visibleCount++;
-        }
-    }
-    
-    console.log('✅ Aeroporti visibili:', visibleCount, '/', Object.keys(this.airportMarkers).length, 
-                '(da', visibleAirports.length, 'nell\'area)');
-    
-    // DEBUG: Se non vediamo abbastanza aeroporti, mostra informazioni aggiuntive
-    if (visibleCount < 5 && zoom <= 4) {
-        console.log('⚠️ DEBUG: Pochi aeroporti visibili, dettagli:');
-        console.log('   - Bounds mappa:', bounds.toBBoxString());
-        console.log('   - Aeroporti nell\'area:', visibleAirports.length);
-        console.log('   - Max aeroporti per zoom', zoom + ':', this.getMaxAirportsForZoom(zoom));
-        console.log('   - Min distanza per zoom', zoom + ':', this.getMinDistanceForZoom(zoom), 'km');
-        
-        if (visibleAirports.length > 0) {
-            console.log('   - Primi 3 aeroporti nell\'area:', visibleAirports.slice(0, 3).map(function(a) {
-                var rating = self.calculateAirportRating(a);
-                return a.code + ' (' + a.size + ') B:' + (a.businessLevel || 'N/A') + 
-                       ' T:' + (a.touristLevel || 'N/A') + ' rating:' + Math.round(rating);
-            }));
-        }
-    }
-};
-
-// Ottieni aeroporti nell'area visibile della mappa
-WorldMap.prototype.getAirportsInView = function(bounds) {
-    var airportsInView = [];
-    
-    for (var code in this.airportMarkers) {
-        var marker = this.airportMarkers[code];
-        var airport = marker.airportData;
-        var latlng = L.latLng(airport.latitude, airport.longitude);
-        
-        if (bounds.contains(latlng)) {
-            airportsInView.push(airport);
-        }
-    }
-    
-    return airportsInView;
-};
-
-// Calcola quali aeroporti mostrare basandosi su zoom e importanza
-WorldMap.prototype.calculateVisibleAirports = function(airportsInView, zoom) {
-    var self = this;
-    
-    // Calcola rating per ogni aeroporto
-    var airportsWithRating = airportsInView.map(function(airport) {
-        return {
-            airport: airport,
-            rating: self.calculateAirportRating(airport),
-            isPlayerHub: self.game.hubManager && self.game.hubManager.hasHub(airport.code)
-        };
-    });
-    
-    // Ordina per rating (più alto = più importante)
-    airportsWithRating.sort(function(a, b) {
-        // Hub del giocatore sempre in cima
-        if (a.isPlayerHub && !b.isPlayerHub) return -1;
-        if (!a.isPlayerHub && b.isPlayerHub) return 1;
-        
-        return b.rating - a.rating;
-    });
-    
-    // Determina quanti aeroporti mostrare basandosi su zoom
-    var maxAirports = this.getMaxAirportsForZoom(zoom);
-    var minDistance = this.getMinDistanceForZoom(zoom);
-    
-    var selectedAirports = [];
-    
-    for (var i = 0; i < airportsWithRating.length && selectedAirports.length < maxAirports; i++) {
-        var current = airportsWithRating[i];
-        
-        // Hub del giocatore sempre visibili
-        if (current.isPlayerHub) {
-            selectedAirports.push(current.airport.code);
-            continue;
-        }
-        
-        // Controlla se l'aeroporto è troppo vicino ad altri già selezionati
-        var tooClose = false;
-        for (var j = 0; j < selectedAirports.length; j++) {
-            var selectedCode = selectedAirports[j];
-            var selectedAirport = AirportData.getAirportByCode(selectedCode);
-            
-            if (selectedAirport) {
-                var distance = this.calculateDistance(
-                    current.airport.latitude, current.airport.longitude,
-                    selectedAirport.latitude, selectedAirport.longitude
-                );
-                
-                // Se troppo vicino ad un aeroporto più importante, salta
-                if (distance < minDistance) {
-                    var selectedRating = this.calculateAirportRating(selectedAirport);
-                    if (selectedRating > current.rating * 0.9) { // 10% di tolleranza
-                        tooClose = true;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        if (!tooClose) {
-            selectedAirports.push(current.airport.code);
-        }
-    }
-    
-    return selectedAirports;
-};
-
-// Calcola rating di importanza per un aeroporto
-WorldMap.prototype.calculateAirportRating = function(airport) {
-    // Calcola rating basato su business e tourist level
-    var businessLevel = airport.businessLevel || 50;  // Default 50 se mancante
-    var touristLevel = airport.touristLevel || 50;    // Default 50 se mancante
-    
-    // Il traffico business vale di più del turistico per l'importanza dell'aeroporto
-    // Business: peso 1.5, Tourist: peso 1.0
-    var combinedTraffic = (businessLevel * 1.5) + (touristLevel * 1.0);
-    
-    // Converti in rating base (moltiplica per 10000 per ottenere valori ragionevoli)
-    var baseRating = combinedTraffic * 10000;
-    
-    // Bonus per tipo di aeroporto
-    var typeMultiplier = 1;
-    switch (airport.size) {
-        case 'hub':
-            typeMultiplier = 3.0;
-            break;
-        case 'large':
-            typeMultiplier = 2.0;
-            break;
-        case 'medium':
-            typeMultiplier = 1.2;
-            break;
-        case 'regional':
-        case 'small':
-            typeMultiplier = 1.0;
-            break;
-        default:
-            typeMultiplier = 1.0;
-    }
-    
-    var finalRating = baseRating * typeMultiplier;
-    
-    // Debug occasionale per verificare i calcoli
-    if (Math.random() < 0.1) { // 10% delle volte
-        console.log('🧮 Rating calcolato per', airport.code + ':', 
-                   'business=' + businessLevel, 
-                   'tourist=' + touristLevel, 
-                   'combined=' + Math.round(combinedTraffic),
-                   'final=' + Math.round(finalRating));
-    }
-    
-    return finalRating;
-};
-
-// Determina numero massimo di aeroporti da mostrare per livello di zoom (WIP: aumentiamo i numeri)
-WorldMap.prototype.getMaxAirportsForZoom = function(zoom) {
-    if (zoom <= 2) return 50;    // Vista mondo: più aeroporti importanti 
-    if (zoom <= 3) return 100;   // Continente: molti più aeroporti
-    if (zoom <= 4) return 200;   // Regione: ancora di più
-    if (zoom <= 5) return 400;   // Area: molti aeroporti
-    if (zoom <= 6) return 600;   // Zona: la maggior parte
-    if (zoom <= 7) return 800;   // Dettaglio: quasi tutti
-    return 1500;                 // Massimo zoom: tutti
-};
-
-// Determina distanza minima tra aeroporti per livello di zoom (WIP: riduciamo le distanze)
-WorldMap.prototype.getMinDistanceForZoom = function(zoom) {
-    if (zoom <= 2) return 400;   // Vista mondo: meno distanziati
-    if (zoom <= 3) return 200;   // Continente: meno distanziati
-    if (zoom <= 4) return 100;   // Regione: ancora meno
-    if (zoom <= 5) return 50;    // Area: vicini
-    if (zoom <= 6) return 25;    // Zona: molto vicini
-    if (zoom <= 7) return 10;    // Dettaglio: qualsiasi distanza
-    return 0;                    // Massimo zoom: nessuna restrizione
+    console.log('✅ Visibilità semplificata: aeroporti visibili:', visibleCount);
 };
 
 // Calcola distanza tra due punti in km (formula Haversine semplificata)
-WorldMap.prototype.calculateDistance = function(lat1, lon1, lat2, lon2) {
-    var R = 6371; // Raggio della Terra in km
-    var dLat = (lat2 - lat1) * Math.PI / 180;
-    var dLon = (lon2 - lon1) * Math.PI / 180;
-    
-    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-    
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-};
-
-WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
-    try {
-        // Per ora ignoriamo isPlayerHub e mostriamo sempre un popup semplice
-        
-        // Cambia testo bottone se pannello rotte è aperto
-        var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
-                             'Aggiungi a Rotta' : 'Crea Rotta';
-        
-        var actions = '<div class="airport-actions">' +
-                     '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
-                     '</div>';
-        
-        // Tipo di aeroporto
-        var hubStatus = airport.size === 'hub' ? '⬡ Hub Mondiale' : 
-                       (airport.size === 'large' ? '⬢ Aeroporto Grande' : 
-                       (airport.size === 'medium' ? '◆ Aeroporto Medio' : '● Aeroporto Regionale'));
-        
-        // Mostra business e tourist level
-        var businessLevel = airport.businessLevel || 'N/A';
-        var touristLevel = airport.touristLevel || 'N/A';
-        var trafficInfo = 'Business: ' + businessLevel + ' | Turismo: ' + touristLevel;
-        
-        return '<div class="airport-popup">' +
-               '<h3>' + (airport.name || 'Nome non disponibile') + '</h3>' +
-               '<p><strong>Codice:</strong> ' + (airport.code || 'N/A') + '</p>' +
-               '<p><strong>Città:</strong> ' + (airport.city || 'N/A') + '</p>' +
-               '<p><strong>Paese:</strong> ' + (airport.country || 'N/A') + '</p>' +
-               '<p><strong>Tipo:</strong> ' + hubStatus + '</p>' +
-               '<p><strong>Traffico:</strong> ' + trafficInfo + '</p>' +
-               actions +
-               '</div>';
-    } catch (error) {
-        console.error('❌ Errore nella creazione del popup aeroporto:', error);
-        return '<div class="airport-popup">' +
-               '<h3>' + (airport.name || 'Errore') + '</h3>' +
-               '<p>Si è verificato un errore nel caricamento dei dati dell\'aeroporto.</p>' +
-               '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
-               '</div>';
-    }
-};
-
-
-
 WorldMap.prototype.loadRoutes = function() {
     if (!this.game.state || !this.game.state.routes) return;
     
@@ -841,51 +616,22 @@ WorldMap.prototype.render = function() {
     }
 };
 
-// METODI PER CREAZIONE ROTTE
+// METODI PER CREAZIONE ROTTE - Migrati a RouteUIManager
 
 WorldMap.prototype.openRouteCreationPanel = function() {
-    console.log('🛣️ Apertura pannello creazione rotte...');
-    
-    var panel = document.getElementById('route-creation-panel');
-    var triggerBtn = document.getElementById('open-route-panel');
-    
-    if (panel && triggerBtn) {
-        // Mostra pannello e nascondi bottone
-        panel.classList.add('active');
-        triggerBtn.classList.add('hidden');
-        
-        // Aggiorna stato
-        this.routeCreationState.isOpen = true;
-        
-        // Auto-popolamento slot origine
-        this.autoPopulateOriginSlot();
-        
-        // Aggiorna popup per mostrare "Aggiungi a Rotta"
-        this.updateAllAirportPopups();
-        
-        console.log('✅ Pannello rotte aperto');
+    if (typeof RouteUIManager !== 'undefined') {
+        return RouteUIManager.openRouteCreationPanel();
     }
+    console.warn('⚠️ RouteUIManager non disponibile');
+    return false;
 };
 
 WorldMap.prototype.closeRouteCreationPanel = function() {
-    console.log('🛣️ Chiusura pannello creazione rotte...');
-    
-    var panel = document.getElementById('route-creation-panel');
-    var triggerBtn = document.getElementById('open-route-panel');
-    
-    if (panel && triggerBtn) {
-        // Nascondi pannello e mostra bottone
-        panel.classList.remove('active');
-        triggerBtn.classList.remove('hidden');
-        
-        // Reset stato
-        this.resetRouteCreationState();
-        
-        // Aggiorna popup per mostrare "Crea Rotta"
-        this.updateAllAirportPopups();
-        
-        console.log('✅ Pannello rotte chiuso');
+    if (typeof RouteUIManager !== 'undefined') {
+        return RouteUIManager.closeRouteCreationPanel();
     }
+    console.warn('⚠️ RouteUIManager non disponibile');
+    return false;
 };
 
 WorldMap.prototype.resetRouteCreationState = function() {
@@ -1063,24 +809,12 @@ WorldMap.prototype.updateRouteInfo = function() {
         return;
     }
     
-    // Calcola distanza
-    var distance = this.calculateDistance(
-        origin.latitude, origin.longitude,
-        destination.latitude, destination.longitude
-    );
-    
-    // Calcola tempo di volo stimato (assumendo velocità media di 800 km/h)
-    var flightHours = distance / 800;
-    var hours = Math.floor(flightHours);
-    var minutes = Math.round((flightHours - hours) * 60);
-    var flightTime = hours + 'h ' + minutes + 'm';
-    
-    // Calcola stime traffico con errore
-    var estimates = this.calculateTrafficEstimatesWithError(origin, destination, distance, 'basic');
+    // Calcola stime traffico con errore usando RouteCalculator
+    var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
     
     // Aggiorna display
-    document.getElementById('route-distance').textContent = Math.round(distance);
-    document.getElementById('flight-time').textContent = flightTime;
+    document.getElementById('route-distance').textContent = Math.round(estimates.distance);
+    document.getElementById('flight-time').textContent = estimates.flightTime.formatted;
     document.getElementById('estimated-passengers').textContent = estimates.displayPassengers;
     document.getElementById('estimated-cargo').textContent = estimates.displayCargo;
     
@@ -1269,8 +1003,8 @@ WorldMap.prototype.updateRouteConfigDisplay = function() {
     var origin = this.routeCreationState.originAirport;
     var destination = this.routeCreationState.destinationAirport;
     
-    // Calcola distanza
-    var distance = this.calculateDistance(
+    // Calcola distanza usando RouteCalculator
+    var distance = RouteCalculator.calculateDistance(
         origin.latitude, origin.longitude,
         destination.latitude, destination.longitude
     );
@@ -1290,7 +1024,7 @@ WorldMap.prototype.updateRouteConfigDisplay = function() {
     document.getElementById('config-flight-time').textContent = hours + 'h ' + minutes + 'm';
     
     // Calcola stime traffico con errore
-    var estimates = this.calculateTrafficEstimatesWithError(origin, destination, distance, this.routeConfigState.analysisLevel);
+    var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, this.routeConfigState.analysisLevel);
     
     // Salva dati nello stato
     this.routeConfigState.estimatedPassengers = estimates.displayPassengers;
@@ -1389,7 +1123,7 @@ WorldMap.prototype.calculateCountriesOverflown = function(origin, destination) {
     // Semplificazione: calcola in base alla distanza geografica
     // In un'implementazione reale, useresti un servizio di routing aereo
     
-    var distance = this.calculateDistance(
+    var distance = RouteCalculator.calculateDistance(
         origin.latitude, origin.longitude,
         destination.latitude, destination.longitude
     );
@@ -1437,8 +1171,7 @@ WorldMap.prototype.improveRouteAnalysis = function() {
     // Ricalcola stime con migliore accuratezza
     var origin = this.routeCreationState.originAirport;
     var destination = this.routeCreationState.destinationAirport;
-    var distance = this.calculateDistance(origin.latitude, origin.longitude, destination.latitude, destination.longitude);
-    var estimates = this.calculateTrafficEstimatesWithError(origin, destination, distance, 'improved');
+    var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'improved');
     
     this.routeConfigState.estimatedPassengers = estimates.displayPassengers;
     this.routeConfigState.estimatedCargo = estimates.displayCargo;
@@ -1634,80 +1367,6 @@ WorldMap.prototype.clearDestination = function() {
 };
 
 // Calcola stime di traffico passeggeri e cargo con errore casuale
-WorldMap.prototype.calculateTrafficEstimatesWithError = function(origin, destination, distance, analysisLevel) {
-    // Calcola stime base di traffico per la rotta
-    
-    // Fattori base degli aeroporti
-    var originFactor = this.getAirportTrafficFactor(origin);
-    var destinationFactor = this.getAirportTrafficFactor(destination);
-    var routeFactor = (originFactor + destinationFactor) / 2;
-    
-    // Fattore distanza (rotte più lunghe hanno meno frequenza ma più capacità)
-    var distanceFactor = 1.0;
-    if (distance > 3000) {
-        distanceFactor = 1.2; // Rotte intercontinentali
-    } else if (distance > 1500) {
-        distanceFactor = 1.1; // Rotte continentali lunghe
-    } else if (distance < 500) {
-        distanceFactor = 0.8; // Rotte regionali brevi
-    }
-    
-    // Calcolo passeggeri base (per giorno)
-    var basePassengers = Math.round(routeFactor * distanceFactor * 150);
-    
-    // Calcolo cargo base (tonnellate per giorno)
-    var baseCargo = Math.round(routeFactor * distanceFactor * 12);
-    
-    // Applica errore casuale basato sul livello di analisi
-    var passengerError, cargoError;
-    if (analysisLevel === 'improved') {
-        passengerError = 0.10; // ±10%
-        cargoError = 0.08;     // ±8%
-    } else {
-        passengerError = 0.30; // ±30%
-        cargoError = 0.25;     // ±25%
-    }
-    
-    // Genera errore casuale
-    var passengerMultiplier = 1 + (Math.random() - 0.5) * 2 * passengerError;
-    var cargoMultiplier = 1 + (Math.random() - 0.5) * 2 * cargoError;
-    
-    var finalPassengers = Math.max(10, Math.round(basePassengers * passengerMultiplier));
-    var finalCargo = Math.max(1, Math.round(baseCargo * cargoMultiplier));
-    
-    return {
-        displayPassengers: finalPassengers,
-        displayCargo: finalCargo,
-        realPassengers: basePassengers,  // Valori reali senza errore (per calcoli interni)
-        realCargo: baseCargo,
-        realRevenue: (basePassengers * 120) + (baseCargo * 800) // €120/passeggero, €800/tonnellata
-    };
-};
-
-WorldMap.prototype.getAirportTrafficFactor = function(airport) {
-    // Calcola fattore di traffico basato su dimensione e livelli business/turistico
-    
-    var sizeFactor = 1.0;
-    switch (airport.size) {
-        case 'hub':
-            sizeFactor = 3.0;
-            break;
-        case 'large':
-            sizeFactor = 2.0;
-            break;
-        case 'medium':
-            sizeFactor = 1.2;
-            break;
-        default: // small/regional
-            sizeFactor = 0.6;
-            break;
-    }
-    
-    // Fattore business e turistico (0-100 scale)
-    var businessLevel = airport.businessLevel || 50;
-    var touristLevel = airport.touristLevel || 50;
-    var activityFactor = (businessLevel + touristLevel) / 100; // Media 0.5-1.0
-    
-    return sizeFactor * activityFactor;
-};
-
+// Fine del file - Tutte le funzioni di calcolo sono state spostate nei moduli utils/
+window.WorldMap = WorldMap;
+console.log('✅ WorldMap con Leaflet caricato');
