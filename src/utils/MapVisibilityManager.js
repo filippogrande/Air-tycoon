@@ -57,6 +57,71 @@ var MapVisibilityManager = {
         
         console.log('✅ Aeroporti visibili:', visibleCount, '/', Object.keys(airportMarkers).length, 
                     '(da', visibleAirports.length, 'nell\'area)');
+        
+        // Aggiorna etichette città in base allo zoom
+        this.updateCityLabels(map, airportMarkers, zoom);
+    },
+    
+    // Gestisce la visualizzazione delle etichette delle città
+    updateCityLabels: function(map, airportMarkers, zoom) {
+        var shouldShowLabels = zoom >= 4; // Mostra etichette da zoom 4 in su (Europa intera e più)
+        
+        for (var code in airportMarkers) {
+            var marker = airportMarkers[code];
+            if (!marker || !marker.airportData) continue;
+            
+            var airport = marker.airportData;
+            
+            // Se il marker è visibile sulla mappa
+            if (map.hasLayer(marker)) {
+                if (shouldShowLabels && !marker.cityLabel) {
+                    // Crea etichetta città se non esiste
+                    this.createCityLabel(map, marker, airport);
+                } else if (!shouldShowLabels && marker.cityLabel) {
+                    // Rimuovi etichetta città se non dovrebbe essere visibile
+                    this.removeCityLabel(map, marker);
+                }
+            } else if (marker.cityLabel) {
+                // Se il marker non è visibile, rimuovi anche l'etichetta
+                this.removeCityLabel(map, marker);
+            }
+        }
+        
+        console.log('🏷️ Etichette città:', shouldShowLabels ? 'MOSTRATE' : 'NASCOSTE', 'zoom:', zoom);
+    },
+    
+    // Crea un'etichetta per la città dell'aeroporto
+    createCityLabel: function(map, marker, airport) {
+        var cityName = airport.city || airport.code;
+        
+        // Crea l'etichetta come DivIcon
+        var labelIcon = L.divIcon({
+            className: 'airport-city-label',
+            html: '<span class="city-name">' + cityName + '</span>',
+            iconSize: [100, 20],
+            iconAnchor: [50, -15] // Posiziona sopra il marker dell'aeroporto
+        });
+        
+        // Crea marker per l'etichetta
+        var labelMarker = L.marker([airport.latitude, airport.longitude], {
+            icon: labelIcon,
+            interactive: false, // Non interattivo per non interferire con i click
+            zIndexOffset: -100   // Sotto i marker degli aeroporti
+        });
+        
+        // Aggiungi alla mappa
+        labelMarker.addTo(map);
+        
+        // Salva riferimento nel marker principale
+        marker.cityLabel = labelMarker;
+    },
+    
+    // Rimuove l'etichetta della città
+    removeCityLabel: function(map, marker) {
+        if (marker.cityLabel) {
+            map.removeLayer(marker.cityLabel);
+            marker.cityLabel = null;
+        }
     },
     
     // Ottieni aeroporti nell'area visibile della mappa
