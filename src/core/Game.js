@@ -18,6 +18,9 @@ function Game() {
         this.financeManager = new FinanceManager(this.state);
         console.log('✅ FinanceManager creato');
         
+        this.hubManager = new HubManager(this.state);
+        console.log('✅ HubManager creato');
+        
         this.uiManager = new UIManager(this);
         console.log('✅ UIManager creato');
         

@@ -187,6 +187,56 @@ window.AirportData = {
             }
         }
         return result;
+    },
+    
+    // Filtra aeroporti per tipo hub
+    getHubAirports: function() {
+        var result = [];
+        for (var i = 0; i < this.airports.length; i++) {
+            if (this.airports[i].size === 'hub') {
+                result.push(this.airports[i]);
+            }
+        }
+        return result;
+    },
+    
+    // Filtra aeroporti regionali
+    getRegionalAirports: function() {
+        var result = [];
+        for (var i = 0; i < this.airports.length; i++) {
+            if (this.airports[i].size === 'regional' || this.airports[i].size === 'small') {
+                result.push(this.airports[i]);
+            }
+        }
+        return result;
+    },
+    
+    // Ottieni aeroporti in un raggio (km) da coordinate
+    getAirportsInRadius: function(lat, lng, radiusKm) {
+        var result = [];
+        for (var i = 0; i < this.airports.length; i++) {
+            var airport = this.airports[i];
+            var distance = this.calculateDistance(lat, lng, airport.latitude, airport.longitude);
+            if (distance <= radiusKm) {
+                result.push({
+                    airport: airport,
+                    distance: distance
+                });
+            }
+        }
+        return result.sort(function(a, b) { return a.distance - b.distance; });
+    },
+    
+    // Calcola distanza tra due punti (formula haversine)
+    calculateDistance: function(lat1, lon1, lat2, lon2) {
+        var R = 6371; // Raggio Terra in km
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
     }
 };
 

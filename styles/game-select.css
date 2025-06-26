@@ -453,6 +453,14 @@ body {
     border-color: #3498db;
 }
 
+.input-help {
+    display: block;
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin-top: 5px;
+    font-style: italic;
+}
+
 .modal-actions {
     display: flex;
     gap: 15px;

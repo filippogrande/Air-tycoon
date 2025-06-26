@@ -140,22 +140,22 @@ function populateStartingAirports() {
         return;
     }
     
-    // Filtra aeroporti principali (hub) per facilitare la scelta
-    const majorAirports = window.AirportData.airports
-        .filter(airport => airport.size === 'hub' || airport.passengerTraffic > 10000000)
+    // Filtra solo aeroporti hub per la partenza
+    const hubAirports = window.AirportData.airports
+        .filter(airport => airport.size === 'hub')
         .sort((a, b) => b.passengerTraffic - a.passengerTraffic)
-        .slice(0, 20); // I 20 aeroporti più grandi
+        .slice(0, 25); // I 25 hub più grandi
     
-    select.innerHTML = '<option value="">Seleziona aeroporto...</option>';
+    select.innerHTML = '<option value="">Seleziona hub di partenza...</option>';
     
-    majorAirports.forEach(airport => {
+    hubAirports.forEach(airport => {
         const option = document.createElement('option');
         option.value = airport.code;
         option.textContent = `${airport.name} (${airport.code}) - ${airport.city}, ${airport.country}`;
         select.appendChild(option);
     });
     
-    console.log('✈️ Caricati', majorAirports.length, 'aeroporti di partenza');
+    console.log('🏢 Caricati', hubAirports.length, 'hub disponibili per la partenza');
 }
 
 function setupEventListeners() {
