@@ -36,6 +36,24 @@ let game;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🛫 Air Tycoon 2 Clone - Avvio in corso...');
     
+    // Aspetta che Leaflet sia caricato
+    function waitForLeaflet(callback) {
+        if (typeof L !== 'undefined') {
+            callback();
+        } else {
+            console.log('⏳ Attendo caricamento Leaflet...');
+            setTimeout(function() { waitForLeaflet(callback); }, 100);
+        }
+    }
+    
+    waitForLeaflet(function() {
+        console.log('✅ Leaflet caricato');
+        initializeGame();
+    });
+});
+
+function initializeGame() {
+    
     // Debug: verifica che tutte le classi siano caricate
     const requiredClasses = [
         'GameState', 'Aircraft', 'Airport', 'Route', 
@@ -87,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
         showError('Errore durante l\'avvio del gioco. Ricarica la pagina per riprovare.');
     }
-});
+}
 
 // Verifica compatibilità del browser
 function checkBrowserCompatibility() {

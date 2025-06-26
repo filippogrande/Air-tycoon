@@ -41,28 +41,54 @@ Game.prototype.init = function() {
     console.log('🛫 Air Tycoon 2 Clone - Inizializzazione...');
     
     try {
+        console.log('🔄 Caricamento dati salvati...');
         // Carica dati salvati se esistenti
         var savedData = SaveLoad.loadGame();
         if (savedData) {
             this.state.loadFromData(savedData);
             console.log('💾 Dati salvati caricati');
         } else {
+            console.log('🆕 Avvio nuovo gioco...');
             this.setupNewGame();
         }
         
         // Inizializza UI
         console.log('🎨 Inizializzazione UI...');
-        this.uiManager.init();
+        try {
+            this.uiManager.init();
+            console.log('✅ UI inizializzata');
+        } catch (error) {
+            console.error('❌ Errore inizializzazione UI:', error);
+            throw error;
+        }
         
         console.log('🗺️ Inizializzazione WorldMap...');
-        this.worldMap.init();
+        try {
+            this.worldMap.init();
+            console.log('✅ WorldMap inizializzata');
+        } catch (error) {
+            console.error('❌ Errore inizializzazione WorldMap:', error);
+            throw error;
+        }
         
         console.log('🔄 Aggiornamento UI...');
-        this.updateUI();
+        try {
+            this.updateUI();
+            console.log('✅ UI aggiornata');
+        } catch (error) {
+            console.error('❌ Errore aggiornamento UI:', error);
+            throw error;
+        }
         
         // Avvia il game loop
         console.log('▶️ Avvio game loop...');
-        this.start();
+        try {
+            this.start();
+            console.log('✅ Game loop avviato');
+        } catch (error) {
+            console.error('❌ Errore avvio game loop:', error);
+            throw error;
+        }
         
         // Auto-save ogni 30 secondi
         var self = this;

@@ -36,5 +36,41 @@ UIManager.prototype.showNotification = function(message, type) {
     console.log('🔔 ' + (type || 'INFO') + ': ' + message);
 };
 
+UIManager.prototype.showAirportInfo = function(airport) {
+    console.log('🏢 Mostra info aeroporto:', airport.code);
+    
+    var infoPanel = document.getElementById('airport-info');
+    if (infoPanel) {
+        var nameEl = document.getElementById('airport-name');
+        var detailsEl = document.getElementById('airport-details');
+        
+        if (nameEl) nameEl.textContent = airport.name + ' (' + airport.code + ')';
+        if (detailsEl) {
+            detailsEl.innerHTML = 
+                '<p><strong>Città:</strong> ' + airport.city + '</p>' +
+                '<p><strong>Paese:</strong> ' + airport.country + '</p>' +
+                '<p><strong>Traffico:</strong> ' + airport.passengerTraffic.toLocaleString() + ' pax/anno</p>';
+        }
+        
+        infoPanel.classList.remove('hidden');
+    }
+};
+
+UIManager.prototype.hideAirportInfo = function() {
+    console.log('🏢 Nascondi info aeroporto');
+    
+    var infoPanel = document.getElementById('airport-info');
+    if (infoPanel) {
+        infoPanel.classList.add('hidden');
+    }
+};
+
+UIManager.prototype.startRouteCreation = function(originAirportCode) {
+    console.log('🛣️ Inizio creazione rotta da:', originAirportCode);
+    
+    // TODO: Implementare UI per creazione rotta
+    this.showNotification('Creazione rotta da ' + originAirportCode + ' - Funzionalità in sviluppo', 'info');
+};
+
 window.UIManager = UIManager;
 console.log('✅ UIManager compatibile caricato');

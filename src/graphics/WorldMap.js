@@ -12,32 +12,51 @@ function WorldMap(game) {
 WorldMap.prototype.init = function() {
     console.log('🗺️ Inizializzazione WorldMap con Leaflet...');
     
-    // Inizializza mappa Leaflet centrata sul mondo
-    this.map = L.map('world-map', {
-        center: [30, 0], // Centro del mondo
-        zoom: 2,
-        minZoom: 2,
-        maxZoom: 10,
-        worldCopyJump: true,
-        zoomControl: true
-    });
-    
-    // Aggiungi tile layer con stile pulito per aviazione
-    // Usiamo CartoDB Positron per uno stile pulito e minimale
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19
-    }).addTo(this.map);
-    
-    console.log('✅ Mappa Leaflet inizializzata');
-    
-    // Carica aeroporti e rotte
-    this.loadAirports();
-    this.loadRoutes();
-    
-    // Setup eventi
-    this.setupMapEvents();
+    try {
+        // Verifica che Leaflet sia disponibile
+        if (typeof L === 'undefined') {
+            console.error('❌ Leaflet non caricato');
+            return;
+        }
+        
+        // Verifica che l'elemento mappa esista
+        var mapElement = document.getElementById('world-map');
+        if (!mapElement) {
+            console.error('❌ Elemento world-map non trovato');
+            return;
+        }
+        
+        // Inizializza mappa Leaflet centrata sul mondo
+        this.map = L.map('world-map', {
+            center: [30, 0], // Centro del mondo
+            zoom: 2,
+            minZoom: 2,
+            maxZoom: 10,
+            worldCopyJump: true,
+            zoomControl: true
+        });
+        
+        // Aggiungi tile layer con stile pulito per aviazione
+        // Usiamo CartoDB Positron per uno stile pulito e minimale
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(this.map);
+        
+        console.log('✅ Mappa Leaflet inizializzata');
+        
+        // Carica aeroporti e rotte
+        this.loadAirports();
+        this.loadRoutes();
+        
+        // Setup eventi
+        this.setupMapEvents();
+        
+    } catch (error) {
+        console.error('❌ Errore inizializzazione WorldMap:', error);
+        // Non rilanciare l'errore per non bloccare il gioco
+    }
 };
 
 WorldMap.prototype.loadAirports = function() {
