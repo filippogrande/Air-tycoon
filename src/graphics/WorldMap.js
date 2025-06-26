@@ -410,61 +410,22 @@ WorldMap.prototype.calculateDistance = function(lat1, lon1, lat2, lon2) {
 
 WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
     try {
-        var hubInfo = '';
-        var actions = '';
+        // Per ora ignoriamo isPlayerHub e mostriamo sempre un popup semplice
         
-        if (isPlayerHub) {
-            var hub = this.game.hubManager.getHub(airport.code);
-            var maintenanceCost = hub && typeof hub.monthlyMaintenanceCost === 'number' ? 
-                                 hub.monthlyMaintenanceCost.toLocaleString() : 'N/A';
-            
-            hubInfo = '<div class="hub-info">' +
-                     '<p><strong>🏢 Il tuo Hub</strong></p>' +
-                     '<p><strong>Gates:</strong> ' + (hub ? hub.facilities.gates : 'N/A') + '</p>' +
-                     '<p><strong>Piste:</strong> ' + (hub ? hub.facilities.runways : 'N/A') + '</p>' +
-                     '<p><strong>Manutenzione:</strong> €' + maintenanceCost + '/mese</p>' +
-                     '</div>';
-            
-            // Cambia testo bottone se pannello rotte è aperto
-            var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
-                                 'Aggiungi a Rotta' : 'Crea Rotta';
-            
-            actions = '<div class="airport-actions">' +
-                     '<button onclick="game.worldMap.manageHub(\'' + airport.code + '\')">Gestisci Hub</button>' +
+        // Cambia testo bottone se pannello rotte è aperto
+        var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
+                             'Aggiungi a Rotta' : 'Crea Rotta';
+        
+        var actions = '<div class="airport-actions">' +
                      '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
                      '</div>';
-        } else {
-            var canBuildHub = airport.size === 'hub' || airport.size === 'large';
-            
-            // Cambia testo bottone se pannello rotte è aperto
-            var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
-                                 'Aggiungi a Rotta' : 'Crea Rotta';
-            
-            if (canBuildHub) {
-                var buildCost = this.game.hubManager ? 
-                               this.game.hubManager.calculateHubBuildCost(airport) : 
-                               'N/A';
-                
-                var buildCostText = typeof buildCost === 'number' ? buildCost.toLocaleString() : buildCost;
-                
-                actions = '<div class="airport-actions">' +
-                         '<button onclick="game.worldMap.buildHubAt(\'' + airport.code + '\')">Costruisci Hub (€' + buildCostText + ')</button>' +
-                         '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
-                         '</div>';
-            } else {
-                actions = '<div class="airport-actions">' +
-                         '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
-                         '<p class="small-text">💡 Solo aeroporti grandi possono diventare hub</p>' +
-                         '</div>';
-            }
-        }
         
-        var hubStatus = isPlayerHub ? '🏢 Il tuo Hub' : 
-                       (airport.size === 'hub' ? '⬡ Hub Mondiale' : 
+        // Tipo di aeroporto
+        var hubStatus = airport.size === 'hub' ? '⬡ Hub Mondiale' : 
                        (airport.size === 'large' ? '⬢ Aeroporto Grande' : 
-                       (airport.size === 'medium' ? '◆ Aeroporto Medio' : '● Aeroporto Regionale')));
+                       (airport.size === 'medium' ? '◆ Aeroporto Medio' : '● Aeroporto Regionale'));
         
-        // Mostra business e tourist level invece di traffico
+        // Mostra business e tourist level
         var businessLevel = airport.businessLevel || 'N/A';
         var touristLevel = airport.touristLevel || 'N/A';
         var trafficInfo = 'Business: ' + businessLevel + ' | Turismo: ' + touristLevel;
@@ -476,7 +437,6 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
                '<p><strong>Paese:</strong> ' + (airport.country || 'N/A') + '</p>' +
                '<p><strong>Tipo:</strong> ' + hubStatus + '</p>' +
                '<p><strong>Traffico:</strong> ' + trafficInfo + '</p>' +
-               hubInfo +
                actions +
                '</div>';
     } catch (error) {
@@ -1599,8 +1559,7 @@ WorldMap.prototype.updateAllAirportPopups = function() {
         var marker = this.airportMarkers[code];
         if (marker && marker.airportData) {
             var airport = marker.airportData;
-            var isPlayerHub = self.game.hubManager && self.game.hubManager.isPlayerHub(airport.code);
-            var newContent = self.createAirportPopup(airport, isPlayerHub);
+            var newContent = self.createAirportPopup(airport, false); // Sempre false per ora
             
             // Aggiorna il contenuto del popup bindato
             marker.setPopupContent(newContent);
