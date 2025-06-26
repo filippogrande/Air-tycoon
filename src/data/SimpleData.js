@@ -70,7 +70,7 @@ function createAirportData() {
             continent: 'Europa',
             latitude: 45.6306,
             longitude: 8.7281,
-            size: 'hub',
+            size: 'large',  // Aeroporto internazionale grande
             runwayLength: 3920,
             maxAircraftSize: 'large',
             businessLevel: 85,
@@ -84,7 +84,7 @@ function createAirportData() {
             continent: 'Europa',
             latitude: 41.8003,
             longitude: 12.2389,
-            size: 'hub',
+            size: 'large',  // Aeroporto internazionale grande
             runwayLength: 3900,
             maxAircraftSize: 'large',
             businessLevel: 80,
@@ -98,7 +98,7 @@ function createAirportData() {
             continent: 'Europa',
             latitude: 51.4706,
             longitude: -0.4619,
-            size: 'hub',
+            size: 'large',  // Aeroporto internazionale molto grande
             runwayLength: 3900,
             maxAircraftSize: 'large',
             businessLevel: 95,
@@ -112,7 +112,7 @@ function createAirportData() {
             continent: 'Europa',
             latitude: 49.0097,
             longitude: 2.5479,
-            size: 'hub',
+            size: 'large',  // Aeroporto internazionale grande
             runwayLength: 4200,
             maxAircraftSize: 'large',
             businessLevel: 90,
@@ -126,11 +126,69 @@ function createAirportData() {
             continent: 'Nord America',
             latitude: 40.6413,
             longitude: -73.7781,
-            size: 'hub',
+            size: 'large',  // Aeroporto internazionale molto grande
             runwayLength: 4400,
             maxAircraftSize: 'large',
             businessLevel: 98,
             touristLevel: 85
+        },
+        // Aeroporti medi per test icone
+        {
+            code: 'BLQ',
+            name: 'Bologna Guglielmo Marconi',
+            city: 'Bologna',
+            country: 'Italia',
+            continent: 'Europa',
+            latitude: 44.5354,
+            longitude: 11.2887,
+            size: 'medium',  // Aeroporto regionale
+            runwayLength: 2800,
+            maxAircraftSize: 'medium',
+            businessLevel: 65,
+            touristLevel: 70
+        },
+        {
+            code: 'VRN',
+            name: 'Verona Villafranca',
+            city: 'Verona',
+            country: 'Italia',
+            continent: 'Europa',
+            latitude: 45.3957,
+            longitude: 10.8885,
+            size: 'medium',  // Aeroporto regionale
+            runwayLength: 3000,
+            maxAircraftSize: 'medium',
+            businessLevel: 55,
+            touristLevel: 80
+        },
+        // Aeroporti piccoli per test icone
+        {
+            code: 'AOT',
+            name: 'Aosta Airport',
+            city: 'Aosta',
+            country: 'Italia',
+            continent: 'Europa',
+            latitude: 45.7386,
+            longitude: 7.3697,
+            size: 'small',  // Aeroporto locale
+            runwayLength: 1800,
+            maxAircraftSize: 'small',
+            businessLevel: 30,
+            touristLevel: 60
+        },
+        {
+            code: 'ELB',
+            name: 'Elba Airport',
+            city: 'Portoferraio',
+            country: 'Italia',
+            continent: 'Europa',
+            latitude: 42.7603,
+            longitude: 10.2394,
+            size: 'small',  // Aeroporto turistico piccolo
+            runwayLength: 1000,
+            maxAircraftSize: 'small',
+            businessLevel: 20,
+            touristLevel: 90
         }
     ];
 }

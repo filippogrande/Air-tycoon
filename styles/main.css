@@ -235,7 +235,7 @@ body {
     100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); }
 }
 
-/* Hub mondiali - target rosso */
+/* Hub di altre compagnie - target rosso */
 .airport-icon.world-hub {
     background: #e74c3c;
     border: 2px solid #c0392b;
