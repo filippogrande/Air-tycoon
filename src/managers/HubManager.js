@@ -133,6 +133,11 @@ HubManager.prototype.getPlayerHubs = function() {
     return this.playerHubs;
 };
 
+// Ottieni lista codici aeroporti hub del giocatore
+HubManager.prototype.getPlayerHubCodes = function() {
+    return Object.keys(this.playerHubs);
+};
+
 // Ottieni lista codici hub del giocatore
 HubManager.prototype.getPlayerHubCodes = function() {
     return Object.keys(this.playerHubs);

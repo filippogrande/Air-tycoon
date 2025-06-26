@@ -5,7 +5,7 @@ function RouteManager(gameState) {
     this.gameState = gameState;
 }
 
-RouteManager.prototype.createRoute = function(originCode, destinationCode, aircraftId) {
+RouteManager.prototype.createRoute = function(originCode, destinationCode, aircraftId, routeConfig) {
     console.log('🛠️ RouteManager: Creazione rotta', originCode, '→', destinationCode);
     
     // Validazioni base
@@ -62,6 +62,15 @@ RouteManager.prototype.createRoute = function(originCode, destinationCode, aircr
     
     try {
         var route = new Route(originCode, destinationCode, aircraftId);
+        
+        // Aggiungi configurazione aggiuntiva se fornita
+        if (routeConfig) {
+            route.routeType = routeConfig.routeType || 'passenger';
+            route.creationCost = routeConfig.creationCost || 0;
+            route.estimatedPassengers = routeConfig.estimatedPassengers || 0;
+            route.estimatedCargo = routeConfig.estimatedCargo || 0;
+        }
+        
         this.gameState.routes.push(route);
         
         console.log('✅ Rotta creata con successo:', route.toString());
