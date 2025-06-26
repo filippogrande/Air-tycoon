@@ -2,7 +2,14 @@
 console.log('📂 Caricamento AircraftData.js...');
 
 class AircraftData {
-    static aircraft = [
+    // Metodo statico per ottenere la lista degli aeromobili
+    static getAircraft() {
+        return AircraftData.aircraft;
+    }
+}
+
+// Definisci la proprietà statica dopo la classe
+AircraftData.aircraft = [
         // Aeromobili regionali
         {
             type: 'atr72',
@@ -207,20 +214,18 @@ class AircraftData {
             yearIntroduced: 2010,
             description: 'Cargo freighter medio-lungo raggio'
         }
-    ];
-    
-    // Ottiene tutti gli aeromobili
-    static getAllAircraft() {
-        return [...this.aircraft];
-    }
-    
-    // Ottiene un aeromobile per tipo
-    static getAircraftByType(type) {
-        return this.aircraft.find(aircraft => aircraft.type === type);
-    }
-    
-    // Ottiene aeromobili per categoria
-    static getAircraftByCategory(category) {
+]; // Fine array
+
+// Metodi statici della classe AircraftData
+AircraftData.getAllAircraft = function() {
+    return [...this.aircraft];
+};
+
+AircraftData.getAircraftByType = function(type) {
+    return this.aircraft.find(aircraft => aircraft.type === type);
+};
+
+AircraftData.getAircraftByCategory = function(category) {
         return this.aircraft.filter(aircraft => aircraft.category === category);
     }
     
