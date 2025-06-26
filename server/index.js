@@ -25,7 +25,9 @@ const PORT = process.env.PORT || 3001;
 // Sicurezza
 app.use(helmet({
     contentSecurityPolicy: false, // Disabilita per permettere inline scripts del gioco
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    hsts: false, // Disabilita HSTS per sviluppo locale
+    noSniff: false // Permette il caricamento di file JS
 }));
 
 // Compressione

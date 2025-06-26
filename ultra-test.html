@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ultra Test</title>
+</head>
+<body>
+    <h1>Ultra Test Caricamento</h1>
+    <p id="result">In attesa...</p>
+    
+    <script>
+        console.log('📝 Script inline eseguito');
+        
+        // Controlla ogni secondo se il file è stato caricato
+        let attempts = 0;
+        const checkInterval = setInterval(() => {
+            attempts++;
+            const result = document.getElementById('result');
+            
+            if (window.ultraTestLoaded) {
+                result.textContent = '✅ File ultra-test.js caricato!';
+                result.style.color = 'green';
+                clearInterval(checkInterval);
+            } else if (attempts >= 5) {
+                result.textContent = '❌ File ultra-test.js NON caricato dopo 5 secondi';
+                result.style.color = 'red';
+                clearInterval(checkInterval);
+            } else {
+                result.textContent = `⏳ Tentativo ${attempts}/5...`;
+            }
+        }, 1000);
+    </script>
+    
+    <!-- File di test -->
+    <script src="ultra-test.js"></script>
+</body>
+</html>
