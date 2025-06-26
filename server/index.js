@@ -67,7 +67,7 @@ app.get('/health', (req, res) => {
 
 // Root endpoint - Redirect al gioco
 app.get('/', (req, res) => {
-    res.redirect('/game/index.html');
+    res.redirect(302, '/game/index.html');
 });
 
 // API info endpoint
