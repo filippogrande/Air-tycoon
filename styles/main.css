@@ -115,9 +115,7 @@ body {
 #world-map {
     height: 100%;
     width: 100%;
-    border: 2px solid #4a90e2;
-    border-radius: 10px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
     overflow: hidden;
 }
 
@@ -163,6 +161,139 @@ body {
     margin-bottom: 15px;
     color: #666;
     line-height: 1.5;
+}
+
+.airport-actions {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
+
+.airport-actions button {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.airport-actions button:hover {
+    background: #357abd;
+    transform: translateY(-1px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Stili per i marker degli aeroporti */
+.airport-marker {
+    background: transparent !important;
+    border: none !important;
+}
+
+.airport-icon {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.airport-icon:hover {
+    transform: scale(1.2);
+    z-index: 1000;
+}
+
+/* Hub del giocatore - icona animata verde */
+.airport-icon.player-hub {
+    background: radial-gradient(circle, #2ecc71, #27ae60);
+    color: white;
+    border: 2px solid #fff;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Hub mondiali - esagono rosso */
+.airport-icon.world-hub {
+    background: radial-gradient(circle, #e74c3c, #c0392b);
+    color: white;
+    border: 2px solid #fff;
+    font-size: 18px;
+}
+
+/* Aeroporti grandi - cerchio blu */
+.airport-icon.large-airport {
+    background: radial-gradient(circle, #3498db, #2980b9);
+    color: white;
+    border: 2px solid #fff;
+}
+
+/* Aeroporti medi - quadrato arancione */
+.airport-icon.medium-airport {
+    background: radial-gradient(circle, #f39c12, #e67e22);
+    color: white;
+    border: 1px solid #fff;
+    border-radius: 20%;
+    font-size: 12px;
+}
+
+/* Aeroporti piccoli - punto grigio */
+.airport-icon.small-airport {
+    background: radial-gradient(circle, #95a5a6, #7f8c8d);
+    color: white;
+    border: 1px solid #fff;
+    font-size: 8px;
+}
+
+/* Popup degli aeroporti */
+.leaflet-popup-content {
+    margin: 10px 15px;
+    line-height: 1.4;
+    font-size: 13px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.airport-popup {
+    min-width: 200px;
+}
+
+.airport-popup h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: bold;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 5px;
+}
+
+.airport-popup p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.hub-info {
+    background: #ecf0f1;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    border-left: 4px solid #2ecc71;
+}
+
+.hub-info p {
+    margin: 5px 0;
+    color: #2c3e50;
 }
 
 .airport-actions {

@@ -101,6 +101,16 @@ function initializeGame() {
         // Mostra messaggio di benvenuto
         showWelcomeMessage();
         
+        // Setup eventi UI
+        setupUIEvents();
+        setupGameMenuEvents();
+        
+        try {
+            initializeGame();
+        } catch (error) {
+            console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
+            showError('Errore durante l\'avvio del gioco. Ricarica la pagina per riprovare.');
+        }
     } catch (error) {
         console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
         showError('Errore durante l\'avvio del gioco. Ricarica la pagina per riprovare.');
@@ -382,3 +392,205 @@ Comandi disponibili:
 
 // Inizializzazione completata
 console.log('🎮 Sistema di gioco caricato e pronto!');
+
+// Setup eventi del menu di gioco
+function setupGameMenuEvents() {
+    console.log('🎮 Setup eventi menu di gioco...');
+    
+    // Apri menu di gioco
+    var gameMenuBtn = document.getElementById('game-menu-btn');
+    var gameMenuModal = document.getElementById('game-menu-modal');
+    var closeGameMenuBtn = document.getElementById('close-game-menu');
+    
+    if (gameMenuBtn && gameMenuModal) {
+        gameMenuBtn.addEventListener('click', function() {
+            console.log('📋 Apertura menu di gioco');
+            updateGameMenuInfo();
+            gameMenuModal.classList.remove('hidden');
+        });
+    }
+    
+    if (closeGameMenuBtn && gameMenuModal) {
+        closeGameMenuBtn.addEventListener('click', function() {
+            gameMenuModal.classList.add('hidden');
+        });
+    }
+    
+    // Salva e continua
+    var saveAndContinueBtn = document.getElementById('save-and-continue');
+    if (saveAndContinueBtn) {
+        saveAndContinueBtn.addEventListener('click', function() {
+            console.log('💾 Salvataggio partita...');
+            if (game && game.saveGame) {
+                try {
+                    game.saveGame();
+                    alert('✅ Partita salvata con successo!');
+                    gameMenuModal.classList.add('hidden');
+                } catch (error) {
+                    console.error('❌ Errore nel salvataggio:', error);
+                    alert('❌ Errore nel salvataggio: ' + error.message);
+                }
+            }
+        });
+    }
+    
+    // Torna alla selezione giochi
+    var returnToGameSelectBtn = document.getElementById('return-to-game-select');
+    if (returnToGameSelectBtn) {
+        returnToGameSelectBtn.addEventListener('click', function() {
+            console.log('🔙 Ritorno alla selezione giochi...');
+            if (confirm('Vuoi davvero tornare alla selezione dei giochi? Assicurati di aver salvato la partita.')) {
+                // Salva automaticamente prima di uscire
+                if (game && game.saveGame) {
+                    try {
+                        game.saveGame();
+                        console.log('💾 Partita salvata automaticamente prima dell\'uscita');
+                    } catch (error) {
+                        console.warn('⚠️ Errore nel salvataggio automatico:', error);
+                    }
+                }
+                window.location.href = 'game-select.html';
+            }
+        });
+    }
+    
+    // Impostazioni (placeholder)
+    var gameSettingsBtn = document.getElementById('game-settings');
+    if (gameSettingsBtn) {
+        gameSettingsBtn.addEventListener('click', function() {
+            alert('⚙️ Funzionalità impostazioni in sviluppo');
+        });
+    }
+    
+    // Logout
+    var logoutFromGameBtn = document.getElementById('logout-from-game');
+    if (logoutFromGameBtn) {
+        logoutFromGameBtn.addEventListener('click', function() {
+            console.log('🚪 Logout dal gioco...');
+            if (confirm('Vuoi davvero fare il logout? Assicurati di aver salvato la partita.')) {
+                // Salva automaticamente prima del logout
+                if (game && game.saveGame) {
+                    try {
+                        game.saveGame();
+                        console.log('💾 Partita salvata automaticamente prima del logout');
+                    } catch (error) {
+                        console.warn('⚠️ Errore nel salvataggio automatico:', error);
+                    }
+                }
+                
+                // Effettua logout
+                var authManager = new AuthManager();
+                authManager.logout();
+                window.location.href = 'auth.html';
+            }
+        });
+    }
+    
+    // Gestione salvataggio rapido
+    var saveGameBtn = document.getElementById('save-game-btn');
+    if (saveGameBtn) {
+        saveGameBtn.addEventListener('click', function() {
+            console.log('💾 Salvataggio rapido...');
+            if (game && game.saveGame) {
+                try {
+                    game.saveGame();
+                    // Mostra feedback visivo temporaneo
+                    saveGameBtn.textContent = '✅ Salvato!';
+                    saveGameBtn.style.background = '#2ecc71';
+                    setTimeout(function() {
+                        saveGameBtn.textContent = '💾 Salva';
+                        saveGameBtn.style.background = '';
+                    }, 2000);
+                } catch (error) {
+                    console.error('❌ Errore nel salvataggio rapido:', error);
+                    saveGameBtn.textContent = '❌ Errore';
+                    saveGameBtn.style.background = '#e74c3c';
+                    setTimeout(function() {
+                        saveGameBtn.textContent = '💾 Salva';
+                        saveGameBtn.style.background = '';
+                    }, 2000);
+                }
+            }
+        });
+    }
+    
+    // Gestione pausa
+    var pauseBtn = document.getElementById('pause-btn');
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', function() {
+            if (game) {
+                if (game.isPaused) {
+                    game.resume();
+                    pauseBtn.textContent = '⏸️ Pausa';
+                    console.log('▶️ Gioco ripreso');
+                } else {
+                    game.pause();
+                    pauseBtn.textContent = '▶️ Riprendi';
+                    console.log('⏸️ Gioco in pausa');
+                }
+            }
+        });
+    }
+    
+    console.log('✅ Eventi menu di gioco configurati');
+}
+
+// Aggiorna informazioni nel menu di gioco
+function updateGameMenuInfo() {
+    console.log('📊 Aggiornamento info menu di gioco...');
+    
+    try {
+        var authManager = new AuthManager();
+        var currentUser = authManager.getCurrentUser();
+        var currentSave = authManager.getCurrentSave();
+        
+        // Nome del salvataggio
+        var saveNameEl = document.getElementById('current-save-name');
+        if (saveNameEl) {
+            saveNameEl.textContent = currentSave ? currentSave.name : 'Nessun salvataggio';
+        }
+        
+        // Nome compagnia
+        var companyNameEl = document.getElementById('current-company-name');
+        if (companyNameEl && game && game.state) {
+            companyNameEl.textContent = game.state.company.name || 'Sconosciuta';
+        }
+        
+        // Tempo di gioco (placeholder)
+        var playTimeEl = document.getElementById('play-time');
+        if (playTimeEl) {
+            // Calcola tempo dalla data di creazione del salvataggio se disponibile
+            if (currentSave && currentSave.metadata && currentSave.metadata.createdAt) {
+                var startTime = new Date(currentSave.metadata.createdAt);
+                var now = new Date();
+                var playTime = Math.round((now - startTime) / (1000 * 60)); // minuti
+                
+                if (playTime < 60) {
+                    playTimeEl.textContent = playTime + ' minuti';
+                } else {
+                    var hours = Math.floor(playTime / 60);
+                    var minutes = playTime % 60;
+                    playTimeEl.textContent = hours + 'h ' + minutes + 'm';
+                }
+            } else {
+                playTimeEl.textContent = 'N/A';
+            }
+        }
+        
+        // Ultimo salvataggio
+        var lastSaveEl = document.getElementById('last-save-time');
+        if (lastSaveEl) {
+            if (currentSave && currentSave.metadata && currentSave.metadata.lastSaved) {
+                var lastSave = new Date(currentSave.metadata.lastSaved);
+                lastSaveEl.textContent = lastSave.toLocaleString('it-IT');
+            } else {
+                lastSaveEl.textContent = 'Mai salvato';
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Errore aggiornamento info menu:', error);
+    }
+}
+
+// Gestione eventi UI
