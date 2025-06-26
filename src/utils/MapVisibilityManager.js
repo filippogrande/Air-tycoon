@@ -27,28 +27,47 @@ var MapVisibilityManager = {
     updateAirportVisibility: function(map, airportMarkers, zoom) {
         console.log('🔍 Aggiornamento visibilità aeroporti intelligente, zoom:', zoom);
         
-        // Ottieni i bounds della mappa visibile
-        var bounds = map.getBounds();
-        var visibleAirports = this.getAirportsInView(bounds, airportMarkers);
-        
-        // Calcola aeroporti da mostrare con sistema anti-clutter
-        var airportsToShow = this.calculateVisibleAirports(map, visibleAirports, zoom);
-        
-        var visibleCount = 0;
+        // Considera TUTTI gli aeroporti per il sistema anti-clutter
+        var allAirports = [];
         for (var code in airportMarkers) {
             var marker = airportMarkers[code];
-            var shouldShow = airportsToShow.indexOf(code) !== -1;
-            
-            if (shouldShow && !map.hasLayer(marker)) {
-                map.addLayer(marker);
-                visibleCount++;
-            } else if (!shouldShow && map.hasLayer(marker)) {
+            if (marker && marker.airportData) {
+                allAirports.push({
+                    code: code,
+                    airport: marker.airportData,
+                    marker: marker
+                });
+            }
+        }
+        
+        // Calcola aeroporti da mostrare con sistema anti-clutter
+        var airportsToShow = this.calculateVisibleAirports(map, allAirports, zoom);
+        
+        var visibleCount = 0;
+        var hiddenCount = 0;
+        
+        // Prima fase: rimuovi TUTTI i marker
+        for (var code in airportMarkers) {
+            var marker = airportMarkers[code];
+            if (map.hasLayer(marker)) {
                 map.removeLayer(marker);
             }
         }
         
-        console.log('✅ Aeroporti visibili:', visibleCount, '/', Object.keys(airportMarkers).length, 
-                   'zoom:', zoom, 'bounds:', bounds.toBBoxString());
+        // Seconda fase: aggiungi solo quelli che devono essere visibili
+        for (var i = 0; i < airportsToShow.length; i++) {
+            var code = airportsToShow[i];
+            var marker = airportMarkers[code];
+            if (marker) {
+                map.addLayer(marker);
+                visibleCount++;
+            }
+        }
+        
+        hiddenCount = Object.keys(airportMarkers).length - visibleCount;
+        
+        console.log('✅ Aeroporti visibili:', visibleCount, '/ nascosti:', hiddenCount, '/ totali:', Object.keys(airportMarkers).length,
+                   'zoom:', zoom);
     },
     
     // Ottieni aeroporti nell'area visibile
@@ -113,8 +132,9 @@ var MapVisibilityManager = {
             }
         }
         
-        console.log('🎯 Anti-clutter: selezionati', selectedAirports.length, 'aeroporti da', airportsInView.length, 
-                   'zoom:', zoom, 'minPixels:', minPixelDistance);
+        console.log('🎯 Anti-clutter: aeroporti in vista:', airportsInView.length, 
+                   'selezionati:', selectedAirports.length, 'da', airportsInView.length, 
+                   'zoom:', zoom, 'maxAirports:', maxAirports, 'minPixels:', minPixelDistance);
         
         return selectedAirports;
     },
