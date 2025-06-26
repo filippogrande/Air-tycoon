@@ -483,6 +483,7 @@ class EnhancedSaveLoad {
 // Crea istanza globale del nuovo sistema di salvataggio
 const enhancedSaveLoad = new EnhancedSaveLoad();
 
-// Export per uso nei moduli
+// Export per uso nei moduli (apiClient già dichiarato sopra)
 window.apiClient = apiClient;
-window.SaveLoad = enhancedSaveLoad; // Sostituisce il SaveLoad esistente
+// NON sovrascrivere SaveLoad - lascia che Game.js usi la classe originale
+// window.SaveLoad = enhancedSaveLoad;

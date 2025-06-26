@@ -126,20 +126,33 @@
     </div>
 
     <!-- Scripts -->
-    <script src="src/core/Game.js"></script>
-    <script src="src/core/GameState.js"></script>
+    <!-- Dati e utilities prima -->
+    <script src="src/data/AircraftData.js"></script>
+    <script src="src/data/AirportData.js"></script>
+    <script src="src/utils/APIClient.js"></script>
+    <script src="src/utils/SaveLoad.js"></script>
+    
+    <!-- Entità -->
     <script src="src/entities/Aircraft.js"></script>
     <script src="src/entities/Airport.js"></script>
     <script src="src/entities/Route.js"></script>
+    
+    <!-- Core system -->
+    <script src="src/core/GameState.js"></script>
+    
+    <!-- Manager -->
     <script src="src/managers/FleetManager.js"></script>
     <script src="src/managers/RouteManager.js"></script>
     <script src="src/managers/FinanceManager.js"></script>
+    
+    <!-- UI e Graphics -->
     <script src="src/ui/UIManager.js"></script>
     <script src="src/graphics/WorldMap.js"></script>
-    <script src="src/data/AircraftData.js"></script>
-    <script src="src/data/AirportData.js"></script>
-    <script src="src/utils/SaveLoad.js"></script>
-    <script src="src/utils/APIClient.js"></script>
+    
+    <!-- Game principale -->
+    <script src="src/core/Game.js"></script>
+    
+    <!-- Main entry point -->
     <script src="src/main.js"></script>
 </body>
 </html>

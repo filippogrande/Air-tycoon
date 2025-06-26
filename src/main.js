@@ -36,11 +36,29 @@ let game;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🛫 Air Tycoon 2 Clone - Avvio in corso...');
     
+    // Debug: verifica che tutte le classi siano caricate
+    const requiredClasses = [
+        'GameState', 'Aircraft', 'Airport', 'Route', 
+        'FleetManager', 'RouteManager', 'FinanceManager',
+        'UIManager', 'WorldMap', 'AircraftData', 'AirportData'
+    ];
+    
+    const missingClasses = requiredClasses.filter(className => !window[className]);
+    if (missingClasses.length > 0) {
+        console.error('❌ Classi mancanti:', missingClasses);
+        showError(`Errore: classi non caricate: ${missingClasses.join(', ')}`);
+        return;
+    }
+    
+    console.log('✅ Tutte le classi sono caricate');
+    
     // Verifica compatibilità browser
     if (!checkBrowserCompatibility()) {
         showError('Il tuo browser non supporta tutte le funzionalità richieste dal gioco.');
         return;
     }
+    
+    console.log('✅ Browser compatibile');
     
     // Inizializza il gioco
     try {
