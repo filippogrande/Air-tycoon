@@ -38,20 +38,26 @@ var RouteUIManager = {
         console.log('🛣️ Chiusura pannello creazione rotte...');
         
         var panel = document.getElementById('route-creation-panel');
+        var configPanel = document.getElementById('route-config-panel');
         var triggerBtn = document.getElementById('open-route-panel');
         
-        if (panel && triggerBtn) {
-            // Nascondi pannello e mostra bottone
+        // Chiudi entrambi i pannelli
+        if (panel) {
             panel.classList.remove('active');
-            triggerBtn.classList.remove('hidden');
-            
-            // Reset stato
-            this.resetRouteCreationState();
-            
-            console.log('✅ Pannello rotte chiuso');
-            return true;
         }
-        return false;
+        if (configPanel) {
+            configPanel.classList.remove('active');
+        }
+        
+        if (triggerBtn) {
+            triggerBtn.classList.remove('hidden');
+        }
+        
+        // Reset stato
+        this.resetRouteCreationState();
+        
+        console.log('✅ Pannelli rotte chiusi');
+        return true;
     },
     
     // Reset stato creazione rotte
@@ -433,7 +439,120 @@ var RouteUIManager = {
             this.routeCreationState.destinationAirport?.code,
             'Locked:', this.routeCreationState.originLocked);
         return true;
-    }
+    },
+    
+    // Apri pannello configurazione rotta
+    openRouteConfigPanel: function() {
+        console.log('⚙️ Apertura pannello configurazione rotta...');
+        
+        // Verifica che abbiamo origine e destinazione
+        if (!this.routeCreationState.originAirport || !this.routeCreationState.destinationAirport) {
+            console.warn('⚠️ Origine o destinazione mancante per configurazione rotta');
+            return false;
+        }
+        
+        // Nascondi pannello selezione
+        var selectionPanel = document.getElementById('route-creation-panel');
+        if (selectionPanel) {
+            selectionPanel.classList.remove('active');
+        }
+        
+        // Mostra pannello configurazione
+        var configPanel = document.getElementById('route-config-panel');
+        if (configPanel) {
+            configPanel.classList.add('active');
+            
+            // Popola i dati della rotta
+            this.populateRouteConfigData();
+            
+            console.log('✅ Pannello configurazione rotta aperto');
+            return true;
+        }
+        
+        console.error('❌ Pannello configurazione rotta non trovato');
+        return false;
+    },
+    
+    // Popola i dati nel pannello configurazione
+    populateRouteConfigData: function() {
+        var origin = this.routeCreationState.originAirport;
+        var destination = this.routeCreationState.destinationAirport;
+        
+        if (!origin || !destination) return;
+        
+        // Aggiorna origine e destinazione
+        var originSpan = document.getElementById('config-origin');
+        var destinationSpan = document.getElementById('config-destination');
+        
+        if (originSpan) originSpan.textContent = origin.name + ' (' + origin.code + ')';
+        if (destinationSpan) destinationSpan.textContent = destination.name + ' (' + destination.code + ')';
+        
+        // Calcola dati rotta
+        if (typeof RouteCalculator !== 'undefined') {
+            var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+            
+            // Aggiorna distanza e tempo di volo
+            var distanceSpan = document.getElementById('config-distance');
+            var flightTimeSpan = document.getElementById('config-flight-time');
+            
+            if (distanceSpan) distanceSpan.textContent = Math.round(estimates.distance);
+            if (flightTimeSpan) flightTimeSpan.textContent = estimates.flightTime.formatted;
+        }
+        
+        // Calcola costi
+        this.updateRouteConfigCosts();
+    },
+    
+    // Aggiorna costi nel pannello configurazione
+    updateRouteConfigCosts: function() {
+        // Per ora impostiamo un costo base, in futuro può essere calcolato dinamicamente
+        var baseCost = 50000; // €50,000 costo base
+        
+        var costSpan = document.getElementById('route-creation-cost');
+        if (costSpan) {
+            costSpan.textContent = baseCost.toLocaleString();
+        }
+        
+        // Abilita il bottone di creazione
+        var confirmBtn = document.getElementById('confirm-create-route');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+        }
+    },
+    
+    // Chiudi pannello configurazione e torna alla selezione
+    backToSelection: function() {
+        console.log('⬅️ Ritorno alla selezione aeroporti...');
+        
+        // Nascondi pannello configurazione
+        var configPanel = document.getElementById('route-config-panel');
+        if (configPanel) {
+            configPanel.classList.remove('active');
+        }
+        
+        // Mostra pannello selezione
+        var selectionPanel = document.getElementById('route-creation-panel');
+        if (selectionPanel) {
+            selectionPanel.classList.add('active');
+        }
+        
+        console.log('✅ Tornato alla selezione aeroporti');
+        return true;
+    },
+    
+    // Chiudi pannello configurazione rotta
+    closeRouteConfigPanel: function() {
+        console.log('🔄 Chiusura pannello configurazione rotta...');
+        
+        var configPanel = document.getElementById('route-config-panel');
+        if (configPanel) {
+            configPanel.classList.remove('active');
+            console.log('✅ Pannello configurazione chiuso');
+            return true;
+        }
+        
+        return false;
+    },
 };
 
 // Export per uso globale

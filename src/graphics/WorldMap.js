@@ -423,6 +423,23 @@ WorldMap.prototype.setupRouteCreationEvents = function() {
             self.selectSlot('destination');
         });
     }
+    
+    // Bottoni pannello configurazione rotta
+    var backToSelectionBtn = document.getElementById('back-to-selection');
+    if (backToSelectionBtn) {
+        backToSelectionBtn.addEventListener('click', function() {
+            if (typeof RouteUIManager !== 'undefined' && RouteUIManager.backToSelection) {
+                RouteUIManager.backToSelection();
+            }
+        });
+    }
+    
+    var confirmCreateBtn = document.getElementById('confirm-create-route');
+    if (confirmCreateBtn) {
+        confirmCreateBtn.addEventListener('click', function() {
+            self.confirmCreateRoute();
+        });
+    }
 };
 
 // Gestisce click su aeroporto
@@ -835,6 +852,45 @@ WorldMap.prototype.updateAllAirportPopups = function() {
     }
     
     console.log('✅ Popup aeroporti aggiornati');
+};
+
+// Conferma creazione rotta
+WorldMap.prototype.confirmCreateRoute = function() {
+    console.log('✅ Conferma creazione rotta...');
+    
+    if (!this.routeCreationState.originAirport || !this.routeCreationState.destinationAirport) {
+        console.warn('⚠️ Origine o destinazione mancante');
+        return false;
+    }
+    
+    var origin = this.routeCreationState.originAirport;
+    var destination = this.routeCreationState.destinationAirport;
+    
+    // Crea la rotta usando il RouteManager
+    if (typeof RouteManager !== 'undefined') {
+        var success = RouteManager.createRoute(origin, destination);
+        
+        if (success) {
+            console.log('✅ Rotta creata con successo!');
+            
+            // Chiudi pannelli
+            this.closeRouteCreationPanel();
+            
+            // Reset stato
+            this.resetRouteCreationState();
+            
+            // Aggiorna visualizzazione mappa
+            this.updateRouteDisplay();
+            
+            return true;
+        } else {
+            console.error('❌ Errore nella creazione della rotta');
+            return false;
+        }
+    }
+    
+    console.warn('⚠️ RouteManager non disponibile');
+    return false;
 };
 
 // Export per uso globale
