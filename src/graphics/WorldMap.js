@@ -147,7 +147,7 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     
     var marker = L.marker([airport.latitude, airport.longitude], {
         icon: airportIcon,
-        title: airport.name + ' (' + airport.code + ')',
+        title: (airport.name || 'Aeroporto sconosciuto') + ' (' + (airport.code || 'N/A') + ')',
         zIndexOffset: zIndex
     });
     
@@ -157,10 +157,8 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     
     // Event handler per click
     marker.on('click', function(e) {
-        // Aggiorna il popup con il testo corretto del bottone
-        var popupContent = self.createAirportPopup(airport, isPlayerHub);
-        marker.setPopupContent(popupContent);
-        
+        // Non aggiorniamo il popup qui per evitare conflitti con Leaflet
+        // Il popup si aprirà automaticamente con il contenuto bindato
         self.onAirportClick(airport, e);
     });
     
@@ -412,6 +410,8 @@ WorldMap.prototype.calculateDistance = function(lat1, lon1, lat2, lon2) {
 
 WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
     try {
+        console.log('🏢 Creazione popup per aeroporto:', airport.code, airport.name, airport);
+        
         var hubInfo = '';
         var actions = '';
         
@@ -902,6 +902,9 @@ WorldMap.prototype.openRouteCreationPanel = function() {
         // Auto-popolamento slot origine
         this.autoPopulateOriginSlot();
         
+        // Aggiorna popup per mostrare "Aggiungi a Rotta"
+        this.updateAllAirportPopups();
+        
         console.log('✅ Pannello rotte aperto');
     }
 };
@@ -919,6 +922,9 @@ WorldMap.prototype.closeRouteCreationPanel = function() {
         
         // Reset stato
         this.resetRouteCreationState();
+        
+        // Aggiorna popup per mostrare "Crea Rotta"
+        this.updateAllAirportPopups();
         
         console.log('✅ Pannello rotte chiuso');
     }
@@ -1582,6 +1588,25 @@ WorldMap.prototype.createRouteFromConfig = function() {
     } else {
         console.error('❌ RouteManager non disponibile');
     }
+};
+
+// Nuovo metodo per aggiornare tutti i popup degli aeroporti
+WorldMap.prototype.updateAllAirportPopups = function() {
+    console.log('🔄 Aggiornamento popup aeroporti...');
+    
+    var self = this;
+    
+    // Aggiorna tutti i marker degli aeroporti
+    this.airportMarkers.forEach(function(marker) {
+        if (marker.airportData) {
+            var airport = marker.airportData;
+            var isPlayerHub = self.game.hubManager && self.game.hubManager.isPlayerHub(airport.code);
+            var newContent = self.createAirportPopup(airport, isPlayerHub);
+            
+            // Aggiorna il contenuto del popup bindato
+            marker.setPopupContent(newContent);
+        }
+    });
 };
 
 window.WorldMap = WorldMap;
