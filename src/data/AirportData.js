@@ -1,6 +1,15 @@
 // Database degli aeroporti mondiali
+console.log('📂 Caricamento AirportData.js...');
+
 class AirportData {
-    static airports = [
+    // Metodo statico per ottenere la lista degli aeroporti
+    static getAirports() {
+        return AirportData.airports;
+    }
+}
+
+// Definisci la proprietà statica dopo la classe
+AirportData.airports = [
         // Italia
         {
             code: 'MXP',

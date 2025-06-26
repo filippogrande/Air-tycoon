@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Dati Semplificati</title>
+</head>
+<body>
+    <h1>Test Dati Semplificati</h1>
+    <div id="results"></div>
+    
+    <script src="src/data/SimpleData.js"></script>
+    <script>
+        setTimeout(() => {
+            const results = document.getElementById('results');
+            let html = '';
+            
+            if (window.AircraftData) {
+                html += '<p style="color: green;">✅ AircraftData: ' + AircraftData.aircraft.length + ' aeromobili</p>';
+            } else {
+                html += '<p style="color: red;">❌ AircraftData non disponibile</p>';
+            }
+            
+            if (window.AirportData) {
+                html += '<p style="color: green;">✅ AirportData: ' + AirportData.airports.length + ' aeroporti</p>';
+            } else {
+                html += '<p style="color: red;">❌ AirportData non disponibile</p>';
+            }
+            
+            results.innerHTML = html;
+        }, 1000);
+    </script>
+</body>
+</html>
