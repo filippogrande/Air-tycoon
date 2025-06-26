@@ -6,19 +6,78 @@ function RouteManager(gameState) {
 }
 
 RouteManager.prototype.createRoute = function(originCode, destinationCode, aircraftId) {
+    console.log('🛠️ RouteManager: Creazione rotta', originCode, '→', destinationCode);
+    
+    // Validazioni base
     if (originCode === destinationCode) {
-        console.error('Origine e destinazione devono essere diverse');
-        return null;
+        return {
+            success: false,
+            message: 'Origine e destinazione devono essere diverse'
+        };
+    }
+    
+    // Verifica che gli aeroporti esistano
+    var origin = AirportData.getAirportByCode(originCode);
+    var destination = AirportData.getAirportByCode(destinationCode);
+    
+    if (!origin) {
+        return {
+            success: false,
+            message: 'Aeroporto di origine non trovato: ' + originCode
+        };
+    }
+    
+    if (!destination) {
+        return {
+            success: false,
+            message: 'Aeroporto di destinazione non trovato: ' + destinationCode
+        };
+    }
+    
+    // Verifica che non esista già una rotta identica
+    for (var i = 0; i < this.gameState.routes.length; i++) {
+        var existingRoute = this.gameState.routes[i];
+        if ((existingRoute.origin === originCode && existingRoute.destination === destinationCode) ||
+            (existingRoute.origin === destinationCode && existingRoute.destination === originCode)) {
+            return {
+                success: false,
+                message: 'Esiste già una rotta tra questi aeroporti'
+            };
+        }
+    }
+    
+    // Verifica che il giocatore abbia almeno un hub tra origine e destinazione
+    var hasHub = false;
+    if (this.gameState.game && this.gameState.game.hubManager) {
+        hasHub = this.gameState.game.hubManager.hasHub(originCode) || 
+                this.gameState.game.hubManager.hasHub(destinationCode);
+    }
+    
+    if (!hasHub) {
+        return {
+            success: false,
+            message: 'Devi avere un hub in uno dei due aeroporti per creare una rotta'
+        };
     }
     
     try {
         var route = new Route(originCode, destinationCode, aircraftId);
         this.gameState.routes.push(route);
-        console.log('🛣️ Rotta creata: ' + route.toString());
-        return route;
+        
+        console.log('✅ Rotta creata con successo:', route.toString());
+        
+        return {
+            success: true,
+            route: route,
+            message: 'Rotta creata con successo'
+        };
+        
     } catch (error) {
-        console.error('Errore creazione rotta:', error);
-        return null;
+        console.error('❌ Errore creazione rotta:', error);
+        return {
+            success: false,
+            message: 'Errore tecnico nella creazione della rotta'
+        };
     }
 };
 

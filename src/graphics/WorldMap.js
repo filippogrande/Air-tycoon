@@ -530,11 +530,72 @@ WorldMap.prototype.setupMapEvents = function() {
     this.map.on('click', function(e) {
         self.onMapClick(e);
     });
+    
+    // Setup eventi pannello creazione rotte
+    this.setupRouteCreationEvents();
+};
+
+WorldMap.prototype.setupRouteCreationEvents = function() {
+    var self = this;
+    
+    // Stato del pannello di creazione rotte
+    this.routeCreationState = {
+        isOpen: false,
+        activeSlot: null, // 'origin' o 'destination'
+        originAirport: null,
+        destinationAirport: null
+    };
+    
+    // Bottone per aprire pannello
+    var openRouteBtn = document.getElementById('open-route-panel');
+    if (openRouteBtn) {
+        openRouteBtn.addEventListener('click', function() {
+            self.openRouteCreationPanel();
+        });
+    }
+    
+    // Bottone annulla
+    var cancelBtn = document.getElementById('cancel-route-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            self.closeRouteCreationPanel();
+        });
+    }
+    
+    // Bottone crea rotta
+    var createBtn = document.getElementById('create-route-btn');
+    if (createBtn) {
+        createBtn.addEventListener('click', function() {
+            self.createRouteFromPanel();
+        });
+    }
+    
+    // Slot aeroporti
+    var originSlot = document.getElementById('origin-airport');
+    var destinationSlot = document.getElementById('destination-airport');
+    
+    if (originSlot) {
+        originSlot.addEventListener('click', function() {
+            self.selectSlot('origin');
+        });
+    }
+    
+    if (destinationSlot) {
+        destinationSlot.addEventListener('click', function() {
+            self.selectSlot('destination');
+        });
+    }
 };
 
 WorldMap.prototype.onAirportClick = function(airport, e) {
     console.log('🏢 Click su aeroporto:', airport.code);
     this.selectedAirport = airport;
+    
+    // Se il pannello di creazione rotte è aperto e c'è uno slot attivo
+    if (this.routeCreationState && this.routeCreationState.isOpen && this.routeCreationState.activeSlot) {
+        this.selectAirportForSlot(airport);
+        return;
+    }
     
     // Notifica al game manager
     if (this.game.uiManager) {
@@ -554,8 +615,20 @@ WorldMap.prototype.onMapClick = function(e) {
 WorldMap.prototype.createRouteFromAirport = function(airportCode) {
     console.log('🛣️ Creazione rotta da:', airportCode);
     
-    if (this.game.uiManager) {
-        this.game.uiManager.startRouteCreation(airportCode);
+    // Apri pannello e pre-popola origine
+    this.openRouteCreationPanel();
+    
+    // Imposta aeroporto come origine
+    var airport = AirportData.getAirportByCode(airportCode);
+    if (airport) {
+        this.routeCreationState.originAirport = airport;
+        this.updateSlotDisplay('origin', airport);
+        this.updateCreateButton();
+        
+        // Attiva slot destinazione per la selezione
+        this.selectSlot('destination');
+        
+        console.log('✅ Rotta pre-configurata con origine:', airportCode);
     }
 };
 
@@ -647,6 +720,273 @@ WorldMap.prototype.render = function() {
     // Refresh della mappa se necessario
     if (this.map) {
         this.map.invalidateSize();
+    }
+};
+
+// METODI PER CREAZIONE ROTTE
+
+WorldMap.prototype.openRouteCreationPanel = function() {
+    console.log('🛣️ Apertura pannello creazione rotte...');
+    
+    var panel = document.getElementById('route-creation-panel');
+    var triggerBtn = document.getElementById('open-route-panel');
+    
+    if (panel && triggerBtn) {
+        // Mostra pannello e nascondi bottone
+        panel.classList.add('active');
+        triggerBtn.classList.add('hidden');
+        
+        // Aggiorna stato
+        this.routeCreationState.isOpen = true;
+        
+        // Auto-popolamento slot origine
+        this.autoPopulateOriginSlot();
+        
+        console.log('✅ Pannello rotte aperto');
+    }
+};
+
+WorldMap.prototype.closeRouteCreationPanel = function() {
+    console.log('🛣️ Chiusura pannello creazione rotte...');
+    
+    var panel = document.getElementById('route-creation-panel');
+    var triggerBtn = document.getElementById('open-route-panel');
+    
+    if (panel && triggerBtn) {
+        // Nascondi pannello e mostra bottone
+        panel.classList.remove('active');
+        triggerBtn.classList.remove('hidden');
+        
+        // Reset stato
+        this.resetRouteCreationState();
+        
+        console.log('✅ Pannello rotte chiuso');
+    }
+};
+
+WorldMap.prototype.resetRouteCreationState = function() {
+    this.routeCreationState = {
+        isOpen: false,
+        activeSlot: null,
+        originAirport: null,
+        destinationAirport: null
+    };
+    
+    // Reset UI
+    this.clearSlot('origin');
+    this.clearSlot('destination');
+    this.clearActiveSlots();
+    this.updateCreateButton();
+    this.hideRouteInfo();
+};
+
+WorldMap.prototype.autoPopulateOriginSlot = function() {
+    console.log('🤖 Auto-popolamento slot origine...');
+    
+    var originAirport = null;
+    
+    // Priorità 1: Ultimo aeroporto selezionato
+    if (this.selectedAirport) {
+        originAirport = this.selectedAirport;
+        console.log('📍 Usando aeroporto selezionato:', originAirport.code);
+    }
+    // Priorità 2: Hub principale del giocatore
+    else if (this.game.hubManager) {
+        var hubs = this.game.hubManager.getPlayerHubCodes();
+        if (hubs.length > 0) {
+            // Prendi il primo hub (potremmo ordinare per dimensione/importanza)
+            var hubCode = hubs[0];
+            originAirport = AirportData.getAirportByCode(hubCode);
+            console.log('🏢 Usando hub principale:', hubCode);
+        }
+    }
+    
+    // Popolamento automatico
+    if (originAirport) {
+        this.routeCreationState.originAirport = originAirport;
+        this.updateSlotDisplay('origin', originAirport);
+        console.log('✅ Slot origine auto-popolato:', originAirport.code);
+    } else {
+        console.log('ℹ️ Nessun aeroporto per auto-popolamento origine');
+    }
+};
+
+WorldMap.prototype.selectSlot = function(slotType) {
+    console.log('🎯 Selezione slot:', slotType);
+    
+    // Pulisci selezioni precedenti
+    this.clearActiveSlots();
+    
+    // Imposta slot attivo
+    this.routeCreationState.activeSlot = slotType;
+    
+    // Evidenzia visivamente lo slot
+    var slotElement = document.getElementById(slotType + '-airport');
+    if (slotElement) {
+        slotElement.classList.add('active');
+    }
+    
+    console.log('✅ Slot attivo:', slotType);
+};
+
+WorldMap.prototype.selectAirportForSlot = function(airport) {
+    var slotType = this.routeCreationState.activeSlot;
+    console.log('✈️ Selezione aeroporto', airport.code, 'per slot', slotType);
+    
+    // Verifica che non sia lo stesso aeroporto dell'altro slot
+    if (slotType === 'origin' && this.routeCreationState.destinationAirport && 
+        this.routeCreationState.destinationAirport.code === airport.code) {
+        console.warn('⚠️ Non è possibile selezionare lo stesso aeroporto per origine e destinazione');
+        return;
+    }
+    
+    if (slotType === 'destination' && this.routeCreationState.originAirport && 
+        this.routeCreationState.originAirport.code === airport.code) {
+        console.warn('⚠️ Non è possibile selezionare lo stesso aeroporto per origine e destinazione');
+        return;
+    }
+    
+    // Imposta aeroporto nel slot
+    this.routeCreationState[slotType + 'Airport'] = airport;
+    
+    // Aggiorna visualizzazione
+    this.updateSlotDisplay(slotType, airport);
+    
+    // Pulisci selezione attiva
+    this.clearActiveSlots();
+    this.routeCreationState.activeSlot = null;
+    
+    // Aggiorna UI
+    this.updateCreateButton();
+    this.updateRouteInfo();
+    
+    console.log('✅ Aeroporto selezionato per', slotType + ':', airport.code);
+};
+
+WorldMap.prototype.updateSlotDisplay = function(slotType, airport) {
+    var slotElement = document.getElementById(slotType + '-airport');
+    if (!slotElement || !airport) return;
+    
+    // Crea contenuto slot
+    var content = '<div class="airport-info">' + airport.name + ' (' + airport.code + ')</div>' +
+                 '<div class="airport-details">' + airport.city + ', ' + airport.country + '</div>';
+    
+    slotElement.innerHTML = content;
+    slotElement.classList.add('selected');
+    slotElement.classList.remove('active');
+};
+
+WorldMap.prototype.clearSlot = function(slotType) {
+    var slotElement = document.getElementById(slotType + '-airport');
+    if (!slotElement) return;
+    
+    var placeholder = slotType === 'origin' ? 'Seleziona aeroporto di partenza' : 'Seleziona aeroporto di arrivo';
+    
+    slotElement.innerHTML = '<span class="placeholder">' + placeholder + '</span>';
+    slotElement.classList.remove('selected', 'active');
+};
+
+WorldMap.prototype.clearActiveSlots = function() {
+    var originSlot = document.getElementById('origin-airport');
+    var destinationSlot = document.getElementById('destination-airport');
+    
+    if (originSlot) originSlot.classList.remove('active');
+    if (destinationSlot) destinationSlot.classList.remove('active');
+};
+
+WorldMap.prototype.updateCreateButton = function() {
+    var createBtn = document.getElementById('create-route-btn');
+    if (!createBtn) return;
+    
+    var canCreate = this.routeCreationState.originAirport && this.routeCreationState.destinationAirport;
+    
+    createBtn.disabled = !canCreate;
+    createBtn.textContent = canCreate ? 'Crea Rotta' : 'Seleziona Aeroporti';
+};
+
+WorldMap.prototype.updateRouteInfo = function() {
+    var routeInfoPanel = document.getElementById('route-info');
+    if (!routeInfoPanel) return;
+    
+    var origin = this.routeCreationState.originAirport;
+    var destination = this.routeCreationState.destinationAirport;
+    
+    if (!origin || !destination) {
+        routeInfoPanel.style.display = 'none';
+        return;
+    }
+    
+    // Calcola distanza
+    var distance = this.calculateDistance(
+        origin.latitude, origin.longitude,
+        destination.latitude, destination.longitude
+    );
+    
+    // Calcola tempo di volo stimato (assumendo velocità media di 800 km/h)
+    var flightHours = distance / 800;
+    var hours = Math.floor(flightHours);
+    var minutes = Math.round((flightHours - hours) * 60);
+    var flightTime = hours + 'h ' + minutes + 'm';
+    
+    // Calcola costo stimato (formula semplificata)
+    var baseCostPerKm = 0.5; // €0.50 per km
+    var estimatedCost = Math.round(distance * baseCostPerKm);
+    
+    // Aggiorna display
+    document.getElementById('route-distance').textContent = Math.round(distance);
+    document.getElementById('flight-time').textContent = flightTime;
+    document.getElementById('route-cost').textContent = estimatedCost.toLocaleString();
+    
+    routeInfoPanel.style.display = 'block';
+};
+
+WorldMap.prototype.hideRouteInfo = function() {
+    var routeInfoPanel = document.getElementById('route-info');
+    if (routeInfoPanel) {
+        routeInfoPanel.style.display = 'none';
+    }
+};
+
+WorldMap.prototype.createRouteFromPanel = function() {
+    console.log('🛠️ Creazione rotta dal pannello...');
+    
+    var origin = this.routeCreationState.originAirport;
+    var destination = this.routeCreationState.destinationAirport;
+    
+    if (!origin || !destination) {
+        console.error('❌ Aeroporti origine/destinazione mancanti');
+        return;
+    }
+    
+    console.log('📋 Creazione rotta:', origin.code, '→', destination.code);
+    
+    // Delega al route manager
+    if (this.game.routeManager) {
+        var result = this.game.routeManager.createRoute(origin.code, destination.code);
+        
+        if (result.success) {
+            console.log('✅ Rotta creata con successo');
+            
+            // Aggiungi rotta alla mappa
+            this.addRouteToMap(result.route);
+            
+            // Chiudi pannello
+            this.closeRouteCreationPanel();
+            
+            // Notifica successo
+            if (this.game.uiManager) {
+                this.game.uiManager.showNotification('Rotta creata: ' + origin.code + ' → ' + destination.code, 'success');
+            }
+        } else {
+            console.warn('❌ Errore creazione rotta:', result.message);
+            
+            // Mostra errore
+            if (this.game.uiManager) {
+                this.game.uiManager.showNotification(result.message, 'error');
+            }
+        }
+    } else {
+        console.error('❌ RouteManager non disponibile');
     }
 };
 
