@@ -125,14 +125,15 @@ WorldMap.prototype.createAirportMarker = function(airport) {
         
         // Dimensione dell'icona basata sulla dimensione dell'aeroporto
         // Map-pin ha proporzioni 4:5 (larghezza:altezza)
+        // Differenze più marcate per distinguerli chiaramente
         if (airport.size === 'large') {
-            iconSize = [16, 20];
+            iconSize = [20, 25];  // Aeroporti grandi ben visibili
             zIndex = 800;
         } else if (airport.size === 'medium') {
-            iconSize = [12, 15];
+            iconSize = [14, 18];  // Aeroporti medi di dimensione media
             zIndex = 700;
         } else {
-            iconSize = [8, 10];
+            iconSize = [10, 12];  // Aeroporti piccoli più discreti
             zIndex = 600;
         }
     }
