@@ -125,9 +125,6 @@ CREATE TABLE routes (
     
     CONSTRAINT different_airports CHECK (origin_airport_id != destination_airport_id)
 );
-    
-    CONSTRAINT different_airports CHECK (origin_airport != destination_airport)
-);
 
 -- Tabella voli eseguiti (storico)
 CREATE TABLE flights (
