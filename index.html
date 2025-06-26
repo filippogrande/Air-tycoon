@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Air Tycoon 2 Clone</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/ui.css">
 </head>
@@ -34,7 +40,7 @@
         <main id="game-main">
             <!-- Mappa del mondo -->
             <div id="world-tab" class="tab-content active">
-                <canvas id="world-map" width="1200" height="600"></canvas>
+                <div id="world-map"></div>
                 <div id="airport-info" class="info-panel hidden">
                     <h3 id="airport-name"></h3>
                     <p id="airport-details"></p>
@@ -126,6 +132,11 @@
     </div>
 
     <!-- Scripts -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    
     <!-- Dati e utilities prima -->
     <script src="src/data/SimpleData.js"></script>
     <script src="src/utils/APIClient.js"></script>
