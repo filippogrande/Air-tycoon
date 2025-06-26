@@ -46,13 +46,23 @@ UIManager.prototype.showAirportInfo = function(airport) {
         
         if (nameEl) nameEl.textContent = airport.name + ' (' + airport.code + ')';
         if (detailsEl) {
+            var businessLevel = airport.businessLevel || 'N/A';
+            var touristLevel = airport.touristLevel || 'N/A';
+            var size = airport.size || 'unknown';
+            var runwayLength = airport.runwayLength || 'N/A';
+            
             detailsEl.innerHTML = 
                 '<p><strong>Città:</strong> ' + airport.city + '</p>' +
                 '<p><strong>Paese:</strong> ' + airport.country + '</p>' +
-                '<p><strong>Traffico:</strong> ' + airport.passengerTraffic.toLocaleString() + ' pax/anno</p>';
+                '<p><strong>Dimensione:</strong> ' + size + '</p>' +
+                '<p><strong>Pista:</strong> ' + runwayLength + 'm</p>' +
+                '<p><strong>Traffico Business:</strong> ' + businessLevel + '/100</p>' +
+                '<p><strong>Traffico Turistico:</strong> ' + touristLevel + '/100</p>';
         }
         
         infoPanel.classList.remove('hidden');
+    } else {
+        console.warn('⚠️ Elemento airport-info non trovato nel DOM');
     }
 };
 
