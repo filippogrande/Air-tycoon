@@ -124,14 +124,15 @@ WorldMap.prototype.createAirportMarker = function(airport) {
         iconHtml = '<div class="airport-icon standard-airport"></div>';
         
         // Dimensione dell'icona basata sulla dimensione dell'aeroporto
+        // Map-pin ha proporzioni 4:5 (larghezza:altezza)
         if (airport.size === 'large') {
-            iconSize = [14, 14];
+            iconSize = [16, 20];
             zIndex = 800;
         } else if (airport.size === 'medium') {
-            iconSize = [10, 10];
+            iconSize = [12, 15];
             zIndex = 700;
         } else {
-            iconSize = [8, 8];
+            iconSize = [8, 10];
             zIndex = 600;
         }
     }
