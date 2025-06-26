@@ -73,7 +73,8 @@ function createAirportData() {
             size: 'hub',
             runwayLength: 3920,
             maxAircraftSize: 'large',
-            demandLevel: 85
+            businessLevel: 85,
+            touristLevel: 75
         },
         {
             code: 'FCO',
@@ -86,7 +87,8 @@ function createAirportData() {
             size: 'hub',
             runwayLength: 3900,
             maxAircraftSize: 'large',
-            demandLevel: 90
+            businessLevel: 80,
+            touristLevel: 90
         },
         {
             code: 'LHR',
@@ -99,7 +101,8 @@ function createAirportData() {
             size: 'hub',
             runwayLength: 3900,
             maxAircraftSize: 'large',
-            demandLevel: 95
+            businessLevel: 95,
+            touristLevel: 70
         },
         {
             code: 'CDG',
@@ -112,7 +115,8 @@ function createAirportData() {
             size: 'hub',
             runwayLength: 4200,
             maxAircraftSize: 'large',
-            demandLevel: 92
+            businessLevel: 90,
+            touristLevel: 80
         },
         {
             code: 'JFK',
@@ -125,7 +129,8 @@ function createAirportData() {
             size: 'hub',
             runwayLength: 4400,
             maxAircraftSize: 'large',
-            demandLevel: 98
+            businessLevel: 98,
+            touristLevel: 85
         }
     ];
 }

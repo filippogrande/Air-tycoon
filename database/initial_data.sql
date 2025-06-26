@@ -1,38 +1,38 @@
 -- Dati iniziali per Air Tycoon 2 Clone Database
 
--- Inserimento aeroporti principali
-INSERT INTO airports (name, iata_code, icao_code, city, country, latitude, longitude, elevation, timezone) VALUES
+-- Inserimento aeroporti principali con business_level e tourist_level
+INSERT INTO airports (name, iata_code, icao_code, city, country, latitude, longitude, elevation, timezone, business_level, tourist_level) VALUES
 -- Italia
-('Leonardo da Vinci International Airport', 'FCO', 'LIRF', 'Rome', 'Italy', 41.8003, 12.2389, 13, 'Europe/Rome'),
-('Milano Malpensa Airport', 'MXP', 'LIMC', 'Milan', 'Italy', 45.6306, 8.7281, 234, 'Europe/Rome'),
-('Venice Marco Polo Airport', 'VCE', 'LIPZ', 'Venice', 'Italy', 45.5053, 12.3519, 2, 'Europe/Rome'),
-('Naples International Airport', 'NAP', 'LIRN', 'Naples', 'Italy', 40.8860, 14.2908, 90, 'Europe/Rome'),
+('Leonardo da Vinci International Airport', 'FCO', 'LIRF', 'Rome', 'Italy', 41.8003, 12.2389, 13, 'Europe/Rome', 80, 90),
+('Milano Malpensa Airport', 'MXP', 'LIMC', 'Milan', 'Italy', 45.6306, 8.7281, 234, 'Europe/Rome', 85, 75),
+('Venice Marco Polo Airport', 'VCE', 'LIPZ', 'Venice', 'Italy', 45.5053, 12.3519, 2, 'Europe/Rome', 70, 95),
+('Naples International Airport', 'NAP', 'LIRN', 'Naples', 'Italy', 40.8860, 14.2908, 90, 'Europe/Rome', 60, 85),
 
 -- Europa
-('London Heathrow Airport', 'LHR', 'EGLL', 'London', 'United Kingdom', 51.4706, -0.4619, 25, 'Europe/London'),
-('Charles de Gaulle Airport', 'CDG', 'LFPG', 'Paris', 'France', 49.0097, 2.5479, 119, 'Europe/Paris'),
-('Frankfurt Airport', 'FRA', 'EDDF', 'Frankfurt', 'Germany', 50.0264, 8.5431, 111, 'Europe/Berlin'),
-('Amsterdam Airport Schiphol', 'AMS', 'EHAM', 'Amsterdam', 'Netherlands', 52.3086, 4.7639, -3, 'Europe/Amsterdam'),
-('Madrid-Barajas Airport', 'MAD', 'LEMD', 'Madrid', 'Spain', 40.4719, -3.5626, 610, 'Europe/Madrid'),
-('Barcelona-El Prat Airport', 'BCN', 'LEBL', 'Barcelona', 'Spain', 41.2971, 2.0785, 4, 'Europe/Madrid'),
+('London Heathrow Airport', 'LHR', 'EGLL', 'London', 'United Kingdom', 51.4706, -0.4619, 25, 'Europe/London', 95, 70),
+('Charles de Gaulle Airport', 'CDG', 'LFPG', 'Paris', 'France', 49.0097, 2.5479, 119, 'Europe/Paris', 90, 80),
+('Frankfurt Airport', 'FRA', 'EDDF', 'Frankfurt', 'Germany', 50.0264, 8.5431, 111, 'Europe/Berlin', 93, 65),
+('Amsterdam Airport Schiphol', 'AMS', 'EHAM', 'Amsterdam', 'Netherlands', 52.3086, 4.7639, -3, 'Europe/Amsterdam', 85, 78),
+('Madrid-Barajas Airport', 'MAD', 'LEMD', 'Madrid', 'Spain', 40.4719, -3.5626, 610, 'Europe/Madrid', 75, 85),
+('Barcelona-El Prat Airport', 'BCN', 'LEBL', 'Barcelona', 'Spain', 41.2971, 2.0785, 4, 'Europe/Madrid', 70, 90),
 
 -- Nord America
-('John F. Kennedy International Airport', 'JFK', 'KJFK', 'New York', 'United States', 40.6413, -73.7781, 4, 'America/New_York'),
-('Los Angeles International Airport', 'LAX', 'KLAX', 'Los Angeles', 'United States', 33.9425, -118.4081, 38, 'America/Los_Angeles'),
-('O''Hare International Airport', 'ORD', 'KORD', 'Chicago', 'United States', 41.9742, -87.9073, 201, 'America/Chicago'),
-('Miami International Airport', 'MIA', 'KMIA', 'Miami', 'United States', 25.7959, -80.2870, 3, 'America/New_York'),
-('Toronto Pearson International Airport', 'YYZ', 'CYYZ', 'Toronto', 'Canada', 43.6777, -79.6248, 173, 'America/Toronto'),
+('John F. Kennedy International Airport', 'JFK', 'KJFK', 'New York', 'United States', 40.6413, -73.7781, 4, 'America/New_York', 98, 85),
+('Los Angeles International Airport', 'LAX', 'KLAX', 'Los Angeles', 'United States', 33.9425, -118.4081, 38, 'America/Los_Angeles', 92, 88),
+('O''Hare International Airport', 'ORD', 'KORD', 'Chicago', 'United States', 41.9742, -87.9073, 201, 'America/Chicago', 90, 75),
+('Miami International Airport', 'MIA', 'KMIA', 'Miami', 'United States', 25.7959, -80.2870, 3, 'America/New_York', 80, 92),
+('Toronto Pearson International Airport', 'YYZ', 'CYYZ', 'Toronto', 'Canada', 43.6777, -79.6248, 173, 'America/Toronto', 85, 70),
 
 -- Asia
-('Tokyo Haneda Airport', 'HND', 'RJTT', 'Tokyo', 'Japan', 35.5494, 139.7798, 6, 'Asia/Tokyo'),
-('Singapore Changi Airport', 'SIN', 'WSSS', 'Singapore', 'Singapore', 1.3644, 103.9915, 7, 'Asia/Singapore'),
-('Hong Kong International Airport', 'HKG', 'VHHH', 'Hong Kong', 'Hong Kong', 22.3080, 113.9185, 9, 'Asia/Hong_Kong'),
-('Beijing Capital International Airport', 'PEK', 'ZBAA', 'Beijing', 'China', 40.0799, 116.6031, 35, 'Asia/Shanghai'),
-('Dubai International Airport', 'DXB', 'OMDB', 'Dubai', 'UAE', 25.2532, 55.3657, 19, 'Asia/Dubai'),
+('Tokyo Haneda Airport', 'HND', 'RJTT', 'Tokyo', 'Japan', 35.5494, 139.7798, 6, 'Asia/Tokyo', 87, 70),
+('Singapore Changi Airport', 'SIN', 'WSSS', 'Singapore', 'Singapore', 1.3644, 103.9915, 7, 'Asia/Singapore', 85, 75),
+('Hong Kong International Airport', 'HKG', 'VHHH', 'Hong Kong', 'Hong Kong', 22.3080, 113.9185, 9, 'Asia/Hong_Kong', 90, 80),
+('Beijing Capital International Airport', 'PEK', 'ZBAA', 'Beijing', 'China', 40.0799, 116.6031, 35, 'Asia/Shanghai', 85, 75),
+('Dubai International Airport', 'DXB', 'OMDB', 'Dubai', 'UAE', 25.2532, 55.3657, 19, 'Asia/Dubai', 88, 85),
 
 -- Oceania
-('Sydney Kingsford Smith Airport', 'SYD', 'YSSY', 'Sydney', 'Australia', -33.9399, 151.1753, 6, 'Australia/Sydney'),
-('Melbourne Airport', 'MEL', 'YMML', 'Melbourne', 'Australia', -37.6690, 144.8410, 132, 'Australia/Melbourne');
+('Sydney Kingsford Smith Airport', 'SYD', 'YSSY', 'Sydney', 'Australia', -33.9399, 151.1753, 6, 'Australia/Sydney', 80, 85),
+('Melbourne Airport', 'MEL', 'YMML', 'Melbourne', 'Australia', -37.6690, 144.8410, 132, 'Australia/Melbourne', 75, 80);
 
 -- Inserimento tipi di aeromobili
 INSERT INTO aircraft_types (name, manufacturer, category, capacity, range_km, fuel_consumption, cruise_speed, purchase_price, maintenance_cost_per_hour) VALUES

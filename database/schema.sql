@@ -30,6 +30,8 @@ CREATE TABLE airports (
     longitude DECIMAL(11,8) NOT NULL,
     elevation INTEGER DEFAULT 0, -- metri sul livello del mare
     timezone VARCHAR(50),
+    business_level INTEGER DEFAULT 50 CHECK (business_level >= 0 AND business_level <= 100), -- Traffico business 0-100
+    tourist_level INTEGER DEFAULT 50 CHECK (tourist_level >= 0 AND tourist_level <= 100), -- Traffico turistico 0-100
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -332,6 +334,8 @@ COMMENT ON TABLE financial_reports IS 'Report finanziari mensili';
 COMMENT ON TABLE game_saves IS 'Salvataggi completi del gioco in formato JSON';
 
 COMMENT ON COLUMN companies.money IS 'Denaro in centesimi (per evitare problemi di precisione con decimali)';
+COMMENT ON COLUMN airports.business_level IS 'Livello di traffico business da 0 a 100 - influenza passeggeri e merci di categoria business';
+COMMENT ON COLUMN airports.tourist_level IS 'Livello di traffico turistico da 0 a 100 - influenza passeggeri leisure e cargo generale';
 COMMENT ON COLUMN aircraft.condition IS 'Condizione dell''aeromobile da 0 (pessima) a 100 (perfetta)';
 COMMENT ON COLUMN routes.average_load_factor IS 'Percentuale media di riempimento dei voli';
 

@@ -59,18 +59,39 @@ WorldMap.prototype.init = function() {
 };
 
 WorldMap.prototype.loadAirports = function() {
-    if (!AirportData || !AirportData.airports) {
-        console.warn('⚠️ AirportData non disponibile');
+    console.log('✈️ Caricamento aeroporti sulla mappa...');
+    
+    if (!AirportData) {
+        console.error('❌ AirportData non definito');
         return;
     }
     
-    console.log('✈️ Caricamento aeroporti sulla mappa...');
+    if (!AirportData.airports) {
+        console.error('❌ AirportData.airports non definito');
+        return;
+    }
     
     var airports = AirportData.airports;
     console.log('📊 Aeroporti disponibili:', airports.length);
     
+    if (airports.length === 0) {
+        console.warn('⚠️ Nessun aeroporto nei dati');
+        return;
+    }
+    
+    // Debug: mostra primi 3 aeroporti
+    console.log('🔍 DEBUG: Primi 3 aeroporti:', airports.slice(0, 3).map(function(a) {
+        return a.code + ' (' + a.name + ') - ' + a.latitude + ',' + a.longitude + ' - size: ' + a.size;
+    }));
+    
     for (var i = 0; i < airports.length; i++) {
         var airport = airports[i];
+        
+        // Verifica che l'aeroporto abbia dati validi
+        if (!airport.latitude || !airport.longitude || !airport.code) {
+            console.warn('⚠️ Aeroporto con dati invalidi:', airport);
+            continue;
+        }
         
         // Crea marker con icona appropriata
         var marker = this.createAirportMarker(airport);
@@ -79,8 +100,21 @@ WorldMap.prototype.loadAirports = function() {
         this.airportMarkers[airport.code] = marker;
     }
     
+    console.log('📋 Marker creati:', Object.keys(this.airportMarkers).length);
+    
     // Setup zoom-based visibility
     this.setupZoomBasedVisibility();
+    
+    // DEBUG: Aggiungi alcuni marker di test per verificare che la mappa funzioni
+    if (airports.length > 0) {
+        console.log('🔧 DEBUG: Test aggiunta marker diretto...');
+        var testAirport = airports[0]; // Primo aeroporto
+        var testMarker = L.marker([testAirport.latitude, testAirport.longitude], {
+            title: 'TEST: ' + testAirport.name
+        });
+        testMarker.addTo(this.map);
+        console.log('🔧 DEBUG: Marker di test aggiunto:', testAirport.code, 'a', testAirport.latitude, testAirport.longitude);
+    }
     
     console.log('✅ Creati marker per', airports.length, 'aeroporti');
 };
@@ -198,6 +232,23 @@ WorldMap.prototype.updateAirportVisibility = function(zoom) {
     
     console.log('✅ Aeroporti visibili:', visibleCount, '/', Object.keys(this.airportMarkers).length, 
                 '(da', visibleAirports.length, 'nell\'area)');
+    
+    // DEBUG: Se non vediamo abbastanza aeroporti, mostra informazioni aggiuntive
+    if (visibleCount < 5 && zoom <= 4) {
+        console.log('⚠️ DEBUG: Pochi aeroporti visibili, dettagli:');
+        console.log('   - Bounds mappa:', bounds.toBBoxString());
+        console.log('   - Aeroporti nell\'area:', visibleAirports.length);
+        console.log('   - Max aeroporti per zoom', zoom + ':', this.getMaxAirportsForZoom(zoom));
+        console.log('   - Min distanza per zoom', zoom + ':', this.getMinDistanceForZoom(zoom), 'km');
+        
+        if (visibleAirports.length > 0) {
+            console.log('   - Primi 3 aeroporti nell\'area:', visibleAirports.slice(0, 3).map(function(a) {
+                var rating = self.calculateAirportRating(a);
+                return a.code + ' (' + a.size + ') B:' + (a.businessLevel || 'N/A') + 
+                       ' T:' + (a.touristLevel || 'N/A') + ' rating:' + Math.round(rating);
+            }));
+        }
+    }
 };
 
 // Ottieni aeroporti nell'area visibile della mappa
@@ -287,7 +338,16 @@ WorldMap.prototype.calculateVisibleAirports = function(airportsInView, zoom) {
 
 // Calcola rating di importanza per un aeroporto
 WorldMap.prototype.calculateAirportRating = function(airport) {
-    var baseRating = airport.passengerTraffic || 1000000; // Default se mancano dati
+    // Calcola rating basato su business e tourist level
+    var businessLevel = airport.businessLevel || 50;  // Default 50 se mancante
+    var touristLevel = airport.touristLevel || 50;    // Default 50 se mancante
+    
+    // Il traffico business vale di più del turistico per l'importanza dell'aeroporto
+    // Business: peso 1.5, Tourist: peso 1.0
+    var combinedTraffic = (businessLevel * 1.5) + (touristLevel * 1.0);
+    
+    // Converti in rating base (moltiplica per 10000 per ottenere valori ragionevoli)
+    var baseRating = combinedTraffic * 10000;
     
     // Bonus per tipo di aeroporto
     var typeMultiplier = 1;
@@ -301,33 +361,48 @@ WorldMap.prototype.calculateAirportRating = function(airport) {
         case 'medium':
             typeMultiplier = 1.2;
             break;
+        case 'regional':
+        case 'small':
+            typeMultiplier = 1.0;
+            break;
         default:
             typeMultiplier = 1.0;
     }
     
-    return baseRating * typeMultiplier;
+    var finalRating = baseRating * typeMultiplier;
+    
+    // Debug occasionale per verificare i calcoli
+    if (Math.random() < 0.1) { // 10% delle volte
+        console.log('🧮 Rating calcolato per', airport.code + ':', 
+                   'business=' + businessLevel, 
+                   'tourist=' + touristLevel, 
+                   'combined=' + Math.round(combinedTraffic),
+                   'final=' + Math.round(finalRating));
+    }
+    
+    return finalRating;
 };
 
-// Determina numero massimo di aeroporti da mostrare per livello di zoom
+// Determina numero massimo di aeroporti da mostrare per livello di zoom (WIP: aumentiamo i numeri)
 WorldMap.prototype.getMaxAirportsForZoom = function(zoom) {
-    if (zoom <= 2) return 20;   // Vista mondo: solo i più grandi
-    if (zoom <= 3) return 40;   // Continente: più aeroporti
-    if (zoom <= 4) return 80;   // Regione: ancora di più
-    if (zoom <= 5) return 150;  // Area: molti aeroporti
-    if (zoom <= 6) return 300;  // Zona: la maggior parte
-    if (zoom <= 7) return 500;  // Dettaglio: quasi tutti
-    return 1000;                // Massimo zoom: tutti
+    if (zoom <= 2) return 50;    // Vista mondo: più aeroporti importanti 
+    if (zoom <= 3) return 100;   // Continente: molti più aeroporti
+    if (zoom <= 4) return 200;   // Regione: ancora di più
+    if (zoom <= 5) return 400;   // Area: molti aeroporti
+    if (zoom <= 6) return 600;   // Zona: la maggior parte
+    if (zoom <= 7) return 800;   // Dettaglio: quasi tutti
+    return 1500;                 // Massimo zoom: tutti
 };
 
-// Determina distanza minima tra aeroporti per livello di zoom (in km)
+// Determina distanza minima tra aeroporti per livello di zoom (WIP: riduciamo le distanze)
 WorldMap.prototype.getMinDistanceForZoom = function(zoom) {
-    if (zoom <= 2) return 800;  // Vista mondo: molto distanziati
-    if (zoom <= 3) return 400;  // Continente: meno distanziati
-    if (zoom <= 4) return 200;  // Regione: ancora meno
-    if (zoom <= 5) return 100;  // Area: vicini
-    if (zoom <= 6) return 50;   // Zona: molto vicini
-    if (zoom <= 7) return 25;   // Dettaglio: qualsiasi distanza
-    return 0;                   // Massimo zoom: nessuna restrizione
+    if (zoom <= 2) return 400;   // Vista mondo: meno distanziati
+    if (zoom <= 3) return 200;   // Continente: meno distanziati
+    if (zoom <= 4) return 100;   // Regione: ancora meno
+    if (zoom <= 5) return 50;    // Area: vicini
+    if (zoom <= 6) return 25;    // Zona: molto vicini
+    if (zoom <= 7) return 10;    // Dettaglio: qualsiasi distanza
+    return 0;                    // Massimo zoom: nessuna restrizione
 };
 
 // Calcola distanza tra due punti in km (formula Haversine semplificata)
@@ -383,7 +458,13 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
     
     var hubStatus = isPlayerHub ? '🏢 Il tuo Hub' : 
                    (airport.size === 'hub' ? '⬡ Hub Mondiale' : 
-                   (airport.size === 'large' ? '⬢ Aeroporto Grande' : '● Aeroporto Regionale'));
+                   (airport.size === 'large' ? '⬢ Aeroporto Grande' : 
+                   (airport.size === 'medium' ? '◆ Aeroporto Medio' : '● Aeroporto Regionale')));
+    
+    // Mostra business e tourist level invece di traffico
+    var businessLevel = airport.businessLevel || 'N/A';
+    var touristLevel = airport.touristLevel || 'N/A';
+    var trafficInfo = 'Business: ' + businessLevel + ' | Turismo: ' + touristLevel;
     
     return '<div class="airport-popup">' +
            '<h3>' + airport.name + '</h3>' +
@@ -391,7 +472,7 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
            '<p><strong>Città:</strong> ' + airport.city + '</p>' +
            '<p><strong>Paese:</strong> ' + airport.country + '</p>' +
            '<p><strong>Tipo:</strong> ' + hubStatus + '</p>' +
-           '<p><strong>Traffico:</strong> ' + airport.passengerTraffic.toLocaleString() + ' pax/anno</p>' +
+           '<p><strong>Traffico:</strong> ' + trafficInfo + '</p>' +
            hubInfo +
            actions +
            '</div>';
@@ -581,175 +662,6 @@ WorldMap.prototype.render = function() {
         this.map.invalidateSize();
     }
 };
-
-// CSS per i marker personalizzati
-var style = document.createElement('style');
-style.textContent = `
-    .airport-marker {
-        background: none !important;
-        border: none !important;
-    }
-    
-    .airport-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        font-weight: bold;
-    }
-    
-    /* Hub del giocatore */
-    .player-hub {
-        background: linear-gradient(45deg, #2ecc71, #27ae60);
-        border: 3px solid #1e8449;
-        color: white;
-        font-size: 14px;
-        width: 24px;
-        height: 24px;
-        animation: pulse-hub 2s infinite;
-    }
-    
-    @keyframes pulse-hub {
-        0% { box-shadow: 0 2px 8px rgba(46,204,113,0.4); }
-        50% { box-shadow: 0 4px 16px rgba(46,204,113,0.8); }
-        100% { box-shadow: 0 2px 8px rgba(46,204,113,0.4); }
-    }
-    
-    /* Hub mondiale (esagono rosso) */
-    .world-hub {
-        background: #e74c3c;
-        border: 2px solid #c0392b;
-        color: white;
-        font-size: 16px;
-        width: 20px;
-        height: 20px;
-        border-radius: 20%;
-    }
-    
-    /* Aeroporto grande */
-    .large-airport {
-        background: #3498db;
-        border: 2px solid #2980b9;
-        color: white;
-        font-size: 12px;
-        width: 16px;
-        height: 16px;
-        border-radius: 15%;
-    }
-    
-    /* Aeroporto medio */
-    .medium-airport {
-        background: #f39c12;
-        border: 1px solid #e67e22;
-        color: white;
-        font-size: 10px;
-        width: 12px;
-        height: 12px;
-        border-radius: 10%;
-    }
-    
-    /* Aeroporto piccolo */
-    .small-airport {
-        background: #95a5a6;
-        border: 1px solid #7f8c8d;
-        color: white;
-        font-size: 8px;
-        width: 8px;
-        height: 8px;
-    }
-    
-    .airport-icon:hover {
-        transform: scale(1.3);
-        z-index: 1000;
-    }
-    
-    .player-hub:hover {
-        background: linear-gradient(45deg, #27ae60, #1e8449);
-        transform: scale(1.4);
-    }
-    
-    .world-hub:hover {
-        background: #c0392b;
-        transform: scale(1.3);
-    }
-    
-    .large-airport:hover {
-        background: #2980b9;
-        transform: scale(1.3);
-    }
-    
-    .airport-popup {
-        min-width: 280px;
-    }
-    
-    .airport-popup h3 {
-        margin: 0 0 10px 0;
-        color: #2c3e50;
-        font-size: 16px;
-    }
-    
-    .airport-popup p {
-        margin: 5px 0;
-        font-size: 14px;
-    }
-    
-    .hub-info {
-        background: rgba(46,204,113,0.1);
-        padding: 8px;
-        border-radius: 5px;
-        margin: 10px 0;
-        border-left: 3px solid #2ecc71;
-    }
-    
-    .hub-info p {
-        margin: 3px 0;
-        font-size: 13px;
-    }
-    
-    .airport-actions {
-        margin-top: 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-    
-    .airport-actions button {
-        background: #4a90e2;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-        transition: background 0.3s ease;
-    }
-    
-    .airport-actions button:hover {
-        background: #357abd;
-    }
-    
-    .small-text {
-        font-size: 11px;
-        color: #7f8c8d;
-        margin: 5px 0 0 0;
-        font-style: italic;
-    }
-    
-    .route-popup h4 {
-        margin: 0 0 8px 0;
-        color: #d32f2f;
-    }
-    
-    .route-popup p {
-        margin: 3px 0;
-        font-size: 13px;
-    }
-`;
-document.head.appendChild(style);
 
 window.WorldMap = WorldMap;
 console.log('✅ WorldMap con Leaflet caricato');
