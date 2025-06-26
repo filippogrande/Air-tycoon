@@ -36,11 +36,10 @@ WorldMap.prototype.init = function() {
             zoomControl: true
         });
         
-        // Aggiungi tile layer con stile pulito per aviazione
-        // Usiamo CartoDB Positron per uno stile pulito e minimale
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
+        // Aggiungi tile layer con mare blu per aviazione
+        // OpenStreetMap standard con bellissimo mare blu
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
         }).addTo(this.map);
         
