@@ -410,8 +410,6 @@ WorldMap.prototype.calculateDistance = function(lat1, lon1, lat2, lon2) {
 
 WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
     try {
-        console.log('🏢 Creazione popup per aeroporto:', airport.code, airport.name, airport);
-        
         var hubInfo = '';
         var actions = '';
         
@@ -1613,24 +1611,66 @@ WorldMap.prototype.updateLockButton = function() {
     var lockBtn = document.getElementById('lock-origin-btn');
     if (!lockBtn) return;
     
-    var hasOrigin = this.routeCreationState.originAirport !== null;
-    var isLocked = this.routeCreationState.originLocked;
-    
-    // Abilita/disabilita il bottone basandosi sulla presenza dell'origine
-    lockBtn.disabled = !hasOrigin;
-    
-    // Aggiorna icona e tooltip
-    if (isLocked) {
-        lockBtn.textContent = '🔒';
-        lockBtn.title = 'Origine bloccata - click per sbloccare';
+    if (this.routeCreationState.originLocked) {
         lockBtn.classList.add('locked');
+        lockBtn.textContent = '🔒';
+        lockBtn.title = 'Origine bloccata - clicca per sbloccare';
     } else {
-        lockBtn.textContent = '🔓';
-        lockBtn.title = hasOrigin ? 'Blocca origine per confrontare destinazioni' : 'Seleziona prima un aeroporto di origine';
         lockBtn.classList.remove('locked');
+        lockBtn.textContent = '🔓';
+        lockBtn.title = 'Blocca origine per confrontare destinazioni';
     }
 };
 
-window.WorldMap = WorldMap;
-console.log('✅ WorldMap con Leaflet caricato');
+WorldMap.prototype.updateOriginSlotAppearance = function() {
+    var originSlot = document.getElementById('origin-airport');
+    if (!originSlot) return;
+    
+    if (this.routeCreationState.originLocked) {
+        originSlot.classList.add('locked');
+    } else {
+        originSlot.classList.remove('locked');
+    }
+};
+
+WorldMap.prototype.toggleOriginLock = function() {
+    console.log('🔒 Toggle lock origine...');
+    
+    // Se non c'è un aeroporto di origine, non si può bloccare
+    if (!this.routeCreationState.originAirport) {
+        if (this.game.uiManager) {
+            this.game.uiManager.showNotification('Seleziona prima un aeroporto di origine', 'warning');
+        }
+        return;
+    }
+    
+    // Toggle stato lock
+    this.routeCreationState.originLocked = !this.routeCreationState.originLocked;
+    
+    // Aggiorna UI
+    this.updateLockButton();
+    this.updateOriginSlotAppearance();
+    
+    var status = this.routeCreationState.originLocked ? 'bloccata' : 'sbloccata';
+    console.log('🔒 Origine ' + status);
+    
+    if (this.game.uiManager) {
+        this.game.uiManager.showNotification('Origine ' + status, 'info');
+    }
+};
+
+WorldMap.prototype.clearDestination = function() {
+    console.log('🔄 Pulizia destinazione...');
+    
+    this.routeCreationState.destinationAirport = null;
+    this.clearSlot('destination');
+    this.updateCreateButton();
+    this.updateRouteInfo();
+    
+    // Seleziona lo slot destinazione per una nuova selezione
+    this.selectSlot('destination');
+    
+    console.log('✅ Destinazione pulita');
+};
+//# sourceMappingURL=WorldMap.js.map
 
