@@ -178,15 +178,23 @@ var RouteUIManager = {
         var lockBtn = document.getElementById('lock-origin-btn');
         if (!lockBtn) return;
         
-        if (this.routeCreationState.originLocked) {
+        var isLocked = this.routeCreationState.originLocked;
+        var hasOrigin = this.routeCreationState.originAirport !== null;
+        
+        // Aggiorna icona e stato
+        lockBtn.textContent = isLocked ? '🔒' : '🔓';
+        lockBtn.title = isLocked ? 'Sblocca origine' : 'Blocca origine per confrontare destinazioni';
+        
+        // Aggiorna classi CSS
+        if (isLocked) {
             lockBtn.classList.add('locked');
-            lockBtn.textContent = '🔒';
-            lockBtn.title = 'Origine bloccata - clicca per sbloccare';
         } else {
             lockBtn.classList.remove('locked');
-            lockBtn.textContent = '🔓';
-            lockBtn.title = 'Blocca origine per confrontare destinazioni';
         }
+        
+        // Disabilita se non c'è origine
+        lockBtn.disabled = !hasOrigin;
+        lockBtn.style.opacity = hasOrigin ? '1' : '0.5';
     },
     
     // Aggiorna aspetto slot origine
@@ -203,14 +211,15 @@ var RouteUIManager = {
     
     // Toggle lock origine
     toggleOriginLock: function() {
-        console.log('🔒 Toggle lock origine...');
+        console.log('� Toggle blocco origine...');
         
-        // Se non c'è un aeroporto di origine, non si può bloccare
+        // Se non c'è un aeroporto di origine, non può essere bloccato
         if (!this.routeCreationState.originAirport) {
+            console.log('⚠️ Nessun aeroporto di origine da bloccare');
             return { success: false, message: 'Seleziona prima un aeroporto di origine' };
         }
         
-        // Toggle stato lock
+        // Cambia stato blocco
         this.routeCreationState.originLocked = !this.routeCreationState.originLocked;
         
         // Aggiorna UI
@@ -218,25 +227,33 @@ var RouteUIManager = {
         this.updateOriginSlotAppearance();
         
         var status = this.routeCreationState.originLocked ? 'bloccata' : 'sbloccata';
-        console.log('🔒 Origine ' + status);
+        console.log('� Origine', status, ':', this.routeCreationState.originAirport.code);
+        
+        // Se bloccato, attiva automaticamente lo slot destinazione
+        if (this.routeCreationState.originLocked) {
+            this.selectSlot('destination');
+        }
         
         return { success: true, message: 'Origine ' + status };
     },
     
     // Pulisci destinazione
     clearDestination: function() {
-        console.log('🔄 Pulizia destinazione...');
+        console.log('🔄 Reset destinazione...');
         
+        // Pulisci destinazione
         this.routeCreationState.destinationAirport = null;
         this.clearSlot('destination');
+        
+        // Aggiorna UI
         this.updateCreateButton();
         this.hideRouteInfo();
         
-        // Seleziona lo slot destinazione per una nuova selezione
+        // Attiva automaticamente lo slot destinazione per nuova selezione
         this.selectSlot('destination');
         
-        console.log('✅ Destinazione pulita');
-        return { success: true, message: 'Destinazione pulita' };
+        console.log('✅ Destinazione resettata, pronto per nuova selezione');
+        return { success: true, message: 'Destinazione resettata' };
     },
     
     // Crea popup per un aeroporto

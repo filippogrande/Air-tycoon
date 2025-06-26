@@ -9,6 +9,30 @@ function WorldMap(game) {
     this.selectedAirport = null;
 }
 
+// Getter per accedere allo stato di creazione rotte dal RouteUIManager
+Object.defineProperty(WorldMap.prototype, 'routeCreationState', {
+    get: function() {
+        if (typeof RouteUIManager !== 'undefined') {
+            return RouteUIManager.routeCreationState;
+        }
+        // Fallback se RouteUIManager non è disponibile
+        return this._fallbackRouteState || {
+            isOpen: false,
+            activeSlot: null,
+            originAirport: null,
+            destinationAirport: null,
+            originLocked: false
+        };
+    },
+    set: function(value) {
+        if (typeof RouteUIManager !== 'undefined') {
+            RouteUIManager.routeCreationState = value;
+        } else {
+            this._fallbackRouteState = value;
+        }
+    }
+});
+
 WorldMap.prototype.init = function() {
     console.log('🗺️ Inizializzazione WorldMap con Leaflet...');
     
@@ -1303,69 +1327,38 @@ WorldMap.prototype.updateAllAirportPopups = function() {
 };
 
 WorldMap.prototype.updateLockButton = function() {
-    var lockBtn = document.getElementById('lock-origin-btn');
-    if (!lockBtn) return;
-    
-    if (this.routeCreationState.originLocked) {
-        lockBtn.classList.add('locked');
-        lockBtn.textContent = '🔒';
-        lockBtn.title = 'Origine bloccata - clicca per sbloccare';
-    } else {
-        lockBtn.classList.remove('locked');
-        lockBtn.textContent = '🔓';
-        lockBtn.title = 'Blocca origine per confrontare destinazioni';
+    if (typeof RouteUIManager !== 'undefined') {
+        return RouteUIManager.updateLockButton();
     }
+    console.warn('⚠️ RouteUIManager non disponibile');
 };
 
 WorldMap.prototype.updateOriginSlotAppearance = function() {
-    var originSlot = document.getElementById('origin-airport');
-    if (!originSlot) return;
-    
-    if (this.routeCreationState.originLocked) {
-        originSlot.classList.add('locked');
-    } else {
-        originSlot.classList.remove('locked');
+    if (typeof RouteUIManager !== 'undefined') {
+        return RouteUIManager.updateOriginSlotAppearance();
     }
+    console.warn('⚠️ RouteUIManager non disponibile');
 };
 
 WorldMap.prototype.toggleOriginLock = function() {
-    console.log('🔒 Toggle lock origine...');
-    
-    // Se non c'è un aeroporto di origine, non si può bloccare
-    if (!this.routeCreationState.originAirport) {
-        if (this.game.uiManager) {
-            this.game.uiManager.showNotification('Seleziona prima un aeroporto di origine', 'warning');
+    if (typeof RouteUIManager !== 'undefined') {
+        var result = RouteUIManager.toggleOriginLock();
+        if (!result.success && this.game.uiManager) {
+            this.game.uiManager.showNotification(result.message, 'warning');
         }
-        return;
+        return result;
     }
-    
-    // Toggle stato lock
-    this.routeCreationState.originLocked = !this.routeCreationState.originLocked;
-    
-    // Aggiorna UI
-    this.updateLockButton();
-    this.updateOriginSlotAppearance();
-    
-    var status = this.routeCreationState.originLocked ? 'bloccata' : 'sbloccata';
-    console.log('🔒 Origine ' + status);
-    
-    if (this.game.uiManager) {
-        this.game.uiManager.showNotification('Origine ' + status, 'info');
-    }
+    console.warn('⚠️ RouteUIManager non disponibile');
+    return { success: false, message: 'RouteUIManager non disponibile' };
 };
 
 WorldMap.prototype.clearDestination = function() {
-    console.log('🔄 Pulizia destinazione...');
-    
-    this.routeCreationState.destinationAirport = null;
-    this.clearSlot('destination');
-    this.updateCreateButton();
-    this.updateRouteInfo();
-    
-    // Seleziona lo slot destinazione per una nuova selezione
-    this.selectSlot('destination');
-    
-    console.log('✅ Destinazione pulita');
+    if (typeof RouteUIManager !== 'undefined') {
+        var result = RouteUIManager.clearDestination();
+        return result;
+    }
+    console.warn('⚠️ RouteUIManager non disponibile');
+    return { success: false, message: 'RouteUIManager non disponibile' };
 };
 
 // Calcola stime di traffico passeggeri e cargo con errore casuale
