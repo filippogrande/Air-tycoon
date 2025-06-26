@@ -68,109 +68,114 @@
 
 <!-- Schermata configurazione rotta dettagliata -->
 <div id="route-config-panel" class="route-config-panel">
-  <h3>⚙️ Configurazione Rotta</h3>
+  <div class="route-config-content">
+    <h3>⚙️ Configurazione Rotta</h3>
 
-  <div class="route-summary">
-    <div class="route-path">
-      <span id="config-origin">--</span> →
-      <span id="config-destination">--</span>
-    </div>
-    <div class="route-basic-info">
-      <span>📏 <span id="config-distance">--</span> km</span>
-      <span>⏱️ <span id="config-flight-time">--</span></span>
-    </div>
-  </div>
-
-  <div class="route-type-selection">
-    <h4>Tipo di Rotta</h4>
-    <div class="route-type-buttons">
-      <button
-        id="route-type-passenger"
-        class="route-type-btn active"
-        data-type="passenger"
-      >
-        👥 Passeggeri
-      </button>
-      <button id="route-type-cargo" class="route-type-btn" data-type="cargo">
-        📦 Cargo
-      </button>
-      <button id="route-type-mixed" class="route-type-btn" data-type="mixed">
-        🔄 Misto
-      </button>
-    </div>
-  </div>
-
-  <div class="demand-analysis">
-    <h4>Analisi Domanda</h4>
-    <div class="demand-estimates" id="demand-estimates">
-      <div class="estimate-row">
-        <span class="estimate-label">👥 Passeggeri/giorno:</span>
-        <span class="estimate-value" id="config-passengers">--</span>
-        <span class="estimate-accuracy">(±30%)</span>
+    <div class="route-summary">
+      <div class="route-path">
+        <span id="config-origin">--</span> →
+        <span id="config-destination">--</span>
       </div>
-      <div class="estimate-row">
-        <span class="estimate-label">📦 Cargo/giorno:</span>
-        <span class="estimate-value" id="config-cargo">--</span>
-        <span class="estimate-accuracy">(±25%)</span>
+      <div class="route-basic-info">
+        <span>📏 <span id="config-distance">--</span> km</span>
+        <span>⏱️ <span id="config-flight-time">--</span></span>
       </div>
     </div>
-    <button id="improve-analysis-btn" class="improve-btn">
-      🔍 Migliora Stima Domanda (€5,000)
-    </button>
-  </div>
 
-  <div class="market-analysis">
-    <h4>Analisi di Mercato</h4>
-    <div class="market-locked" id="market-locked">
-      <p class="locked-message">🔒 Richiede analisi di mercato professionale</p>
-      <button id="market-analysis-btn" class="market-btn">
-        📊 Analisi di Mercato (€15,000)
+    <div class="route-type-selection">
+      <h4>Tipo di Rotta</h4>
+      <div class="route-type-buttons">
+        <button
+          id="route-type-passenger"
+          class="route-type-btn active"
+          data-type="passenger"
+        >
+          👥 Passeggeri
+        </button>
+        <button id="route-type-cargo" class="route-type-btn" data-type="cargo">
+          📦 Cargo
+        </button>
+        <button id="route-type-mixed" class="route-type-btn" data-type="mixed">
+          🔄 Misto
+        </button>
+      </div>
+    </div>
+
+    <div class="demand-analysis">
+      <h4>Analisi Domanda</h4>
+      <div class="demand-estimates" id="demand-estimates">
+        <div class="estimate-row">
+          <span class="estimate-label">👥 Passeggeri/giorno:</span>
+          <span class="estimate-value" id="config-passengers">--</span>
+          <span class="estimate-accuracy">(±30%)</span>
+        </div>
+        <div class="estimate-row">
+          <span class="estimate-label">📦 Cargo/giorno:</span>
+          <span class="estimate-value" id="config-cargo">--</span>
+          <span class="estimate-accuracy">(±25%)</span>
+        </div>
+      </div>
+      <button id="improve-analysis-btn" class="improve-btn">
+        🔍 Migliora Stima Domanda (€5,000)
       </button>
     </div>
-    <div class="market-unlocked" id="market-unlocked" style="display: none">
-      <div class="estimate-row">
-        <span class="estimate-label">✈️ Costo per volo:</span>
-        <span class="cost-value">€<span id="cost-per-flight">--</span></span>
+
+    <div class="market-analysis">
+      <h4>Analisi di Mercato</h4>
+      <div class="market-locked" id="market-locked">
+        <p class="locked-message">
+          🔒 Richiede analisi di mercato professionale
+        </p>
+        <button id="market-analysis-btn" class="market-btn">
+          📊 Analisi di Mercato (€15,000)
+        </button>
       </div>
-      <div class="estimate-row">
-        <span class="estimate-label">📈 Ricavi stimati/mese:</span>
-        <span class="revenue-value"
-          >€<span id="config-monthly-revenue">--</span></span
-        >
-      </div>
-      <div class="estimate-row profit-row">
-        <span class="estimate-label"
-          ><strong>💎 Profitto stimato/mese:</strong></span
-        >
-        <span class="profit-value"
-          ><strong>€<span id="estimated-profit">--</span></strong></span
-        >
+      <div class="market-unlocked" id="market-unlocked" style="display: none">
+        <div class="estimate-row">
+          <span class="estimate-label">✈️ Costo per volo:</span>
+          <span class="cost-value">€<span id="cost-per-flight">--</span></span>
+        </div>
+        <div class="estimate-row">
+          <span class="estimate-label">📈 Ricavi stimati/mese:</span>
+          <span class="revenue-value"
+            >€<span id="config-monthly-revenue">--</span></span
+          >
+        </div>
+        <div class="estimate-row profit-row">
+          <span class="estimate-label"
+            ><strong>💎 Profitto stimato/mese:</strong></span
+          >
+          <span class="profit-value"
+            ><strong>€<span id="estimated-profit">--</span></strong></span
+          >
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="cost-analysis">
-    <h4>Costi Operativi</h4>
-    <div class="cost-breakdown">
-      <div class="cost-row">
-        <span>💰 Costo creazione rotta:</span>
-        <span class="cost-value"
-          >€<span id="route-creation-cost">--</span></span
-        >
-      </div>
-      <div class="cost-row">
-        <span>🌍 Nazioni sorvolate:</span>
-        <span class="info-value"><span id="countries-count">--</span></span>
+    <div class="cost-analysis">
+      <h4>Costi Operativi</h4>
+      <div class="cost-breakdown">
+        <div class="cost-row">
+          <span>💰 Costo creazione rotta:</span>
+          <span class="cost-value"
+            >€<span id="route-creation-cost">--</span></span
+          >
+        </div>
+        <div class="cost-row">
+          <span>🌍 Nazioni sorvolate:</span>
+          <span class="info-value"><span id="countries-count">--</span></span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="config-actions">
-    <button id="confirm-create-route" class="btn-primary" disabled>
-      Crea Rotta
-    </button>
-    <button id="back-to-selection" class="btn-secondary">← Indietro</button>
+    <div class="config-actions">
+      <button id="confirm-create-route" class="btn-primary" disabled>
+        Crea Rotta
+      </button>
+      <button id="back-to-selection" class="btn-secondary">← Indietro</button>
+    </div>
   </div>
+  <!-- Chiusura route-config-content -->
 </div>
 
 <div id="airport-info" class="info-panel hidden">
