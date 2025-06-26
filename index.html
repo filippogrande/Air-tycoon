@@ -25,6 +25,8 @@
                     <span id="date">📅 Gen 2024</span>
                 </div>
             </div>
+            <!-- Tasto impostazioni -->
+            <button id="settings-button" title="Impostazioni"></button>
             <div class="game-controls">
                 <button id="game-menu-btn" class="control-btn">⚙️ Menu</button>
                 <button id="save-game-btn" class="control-btn">💾 Salva</button>
@@ -169,6 +171,19 @@
                         <p><strong>Tempo di gioco:</strong> <span id="play-time">--</span></p>
                         <p><strong>Ultimo salvataggio:</strong> <span id="last-save-time">--</span></p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay Impostazioni -->
+        <div id="settings-overlay">
+            <div id="settings-panel">
+                <h2>⚙️ Impostazioni</h2>
+                <div class="settings-buttons">
+                    <button class="settings-btn save" id="save-game-settings">Salva Partita</button>
+                    <button class="settings-btn menu" id="back-to-menu">Torna al Menu</button>
+                    <button class="settings-btn danger logout" id="logout-btn">Log Out</button>
+                    <button class="settings-btn secondary back" id="back-to-game">Ritorna alla Partita</button>
                 </div>
             </div>
         </div>

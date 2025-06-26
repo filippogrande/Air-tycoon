@@ -640,13 +640,109 @@ function setupGameMenuEvents() {
         menuButton.addEventListener('click', toggleGameMenu);
     }
     
-    // Altri eventi del menu (se il menu esiste)
-    // TODO: Aggiungere eventi specifici quando il menu sarà implementato
+    // Tasto impostazioni
+    var settingsButton = document.getElementById('settings-button');
+    if (settingsButton) {
+        settingsButton.addEventListener('click', showSettingsOverlay);
+    }
+    
+    // Eventi overlay impostazioni
+    setupSettingsEvents();
     
     console.log('✅ Eventi menu di gioco configurati');
 }
 
-function toggleGameMenu() {
-    // TODO: Implementare il toggle del menu di gioco
-    console.log('🍔 Toggle menu di gioco (da implementare)');
+function setupSettingsEvents() {
+    console.log('🔧 Setup eventi impostazioni...');
+    
+    var overlay = document.getElementById('settings-overlay');
+    var saveBtn = document.getElementById('save-game-settings');
+    var menuBtn = document.getElementById('back-to-menu');
+    var logoutBtn = document.getElementById('logout-btn');
+    var backBtn = document.getElementById('back-to-game');
+    
+    // Salva partita
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            if (game) {
+                game.saveGame();
+                showNotification('Partita salvata!', 'success');
+                hideSettingsOverlay();
+            }
+        });
+    }
+    
+    // Torna al menu di selezione
+    if (menuBtn) {
+        menuBtn.addEventListener('click', function() {
+            if (confirm('Tornare al menu? Il progresso non salvato andrà perso.')) {
+                window.location.href = 'game-select.html';
+            }
+        });
+    }
+    
+    // Log out
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+            if (confirm('Fare il logout? Il progresso non salvato andrà perso.')) {
+                // Chiama AuthManager per logout
+                if (window.AuthManager) {
+                    AuthManager.logout();
+                }
+                window.location.href = 'auth.html';
+            }
+        });
+    }
+    
+    // Ritorna alla partita
+    if (backBtn) {
+        backBtn.addEventListener('click', hideSettingsOverlay);
+    }
+    
+    // Chiudi overlay cliccando fuori
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                hideSettingsOverlay();
+            }
+        });
+    }
+    
+    // Chiudi overlay con ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            var overlay = document.getElementById('settings-overlay');
+            if (overlay && overlay.classList.contains('active')) {
+                hideSettingsOverlay();
+            }
+        }
+    });
+    
+    console.log('✅ Eventi impostazioni configurati');
+}
+
+function showSettingsOverlay() {
+    console.log('⚙️ Mostra overlay impostazioni');
+    var overlay = document.getElementById('settings-overlay');
+    if (overlay) {
+        overlay.classList.add('active');
+        
+        // Pausa il gioco se è in esecuzione
+        if (game && game.isRunning) {
+            game.pause();
+        }
+    }
+}
+
+function hideSettingsOverlay() {
+    console.log('⚙️ Nascondi overlay impostazioni');
+    var overlay = document.getElementById('settings-overlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        
+        // Riprendi il gioco se era in pausa
+        if (game && !game.isRunning) {
+            game.start();
+        }
+    }
 }
