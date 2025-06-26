@@ -10,6 +10,14 @@ const path = require('path');
 const { Client } = require('pg');
 require('dotenv').config();
 
+// Debug: mostra le variabili caricate
+console.log('🔧 Debug configurazione:');
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('DB_PORT:', process.env.DB_PORT);
+console.log('DB_USER:', process.env.DB_USER);
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***' : 'NOT SET');
+
 const config = {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
@@ -17,6 +25,11 @@ const config = {
     password: process.env.DB_PASSWORD || 'password',
     database: 'postgres' // Connessione temporanea per creare il database
 };
+
+console.log('🔧 Config utilizzato:', {
+    ...config,
+    password: config.password ? '***' : 'NOT SET'
+});
 
 const targetDatabase = process.env.DB_NAME || 'air_tycoon';
 
