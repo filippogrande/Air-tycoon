@@ -1,0 +1,183 @@
+<!-- Template per pannelli creazione rotte -->
+
+<!-- Pannello creazione rotte -->
+<div id="route-creation-panel" class="route-panel">
+  <h3>✈️ Crea Rotta</h3>
+  <div class="route-slots">
+    <div class="route-slot" id="origin-slot">
+      <div class="slot-header">
+        <label>Da:</label>
+        <button
+          id="lock-origin-btn"
+          class="lock-btn"
+          title="Blocca origine per confrontare destinazioni"
+        >
+          🔓
+        </button>
+      </div>
+      <div class="airport-slot" id="origin-airport" data-slot="origin">
+        <span class="placeholder">Seleziona aeroporto di partenza</span>
+      </div>
+    </div>
+    <div class="route-divider">↓</div>
+    <div class="route-slot" id="destination-slot">
+      <div class="slot-header">
+        <label>A:</label>
+        <button
+          id="clear-destination-btn"
+          class="clear-btn"
+          title="Cambia destinazione rapidamente"
+        >
+          🔄
+        </button>
+      </div>
+      <div
+        class="airport-slot"
+        id="destination-airport"
+        data-slot="destination"
+      >
+        <span class="placeholder">Seleziona aeroporto di arrivo</span>
+      </div>
+    </div>
+  </div>
+  <div class="route-info" id="route-info" style="display: none">
+    <div class="route-details">
+      <p>
+        <strong>📏 Distanza:</strong> <span id="route-distance">--</span> km
+      </p>
+      <p><strong>⏱️ Tempo volo:</strong> <span id="flight-time">--</span></p>
+      <p>
+        <strong>👥 Passeggeri stimati/giorno:</strong>
+        <span id="estimated-passengers">--</span>
+        <span class="estimate-accuracy">(±30%)</span>
+      </p>
+      <p>
+        <strong>📦 Cargo stimato/giorno:</strong>
+        <span id="estimated-cargo">--</span> t
+        <span class="estimate-accuracy">(±25%)</span>
+      </p>
+    </div>
+  </div>
+  <div class="route-actions">
+    <button id="create-route-btn" class="btn-primary" disabled>
+      Configura Rotta
+    </button>
+    <button id="cancel-route-btn" class="btn-secondary">Annulla</button>
+  </div>
+</div>
+
+<!-- Schermata configurazione rotta dettagliata -->
+<div id="route-config-panel" class="route-config-panel">
+  <h3>⚙️ Configurazione Rotta</h3>
+
+  <div class="route-summary">
+    <div class="route-path">
+      <span id="config-origin">--</span> →
+      <span id="config-destination">--</span>
+    </div>
+    <div class="route-basic-info">
+      <span>📏 <span id="config-distance">--</span> km</span>
+      <span>⏱️ <span id="config-flight-time">--</span></span>
+    </div>
+  </div>
+
+  <div class="route-type-selection">
+    <h4>Tipo di Rotta</h4>
+    <div class="route-type-buttons">
+      <button
+        id="route-type-passenger"
+        class="route-type-btn active"
+        data-type="passenger"
+      >
+        👥 Passeggeri
+      </button>
+      <button id="route-type-cargo" class="route-type-btn" data-type="cargo">
+        📦 Cargo
+      </button>
+      <button id="route-type-mixed" class="route-type-btn" data-type="mixed">
+        🔄 Misto
+      </button>
+    </div>
+  </div>
+
+  <div class="demand-analysis">
+    <h4>Analisi Domanda</h4>
+    <div class="demand-estimates" id="demand-estimates">
+      <div class="estimate-row">
+        <span class="estimate-label">👥 Passeggeri/giorno:</span>
+        <span class="estimate-value" id="config-passengers">--</span>
+        <span class="estimate-accuracy">(±30%)</span>
+      </div>
+      <div class="estimate-row">
+        <span class="estimate-label">📦 Cargo/giorno:</span>
+        <span class="estimate-value" id="config-cargo">--</span>
+        <span class="estimate-accuracy">(±25%)</span>
+      </div>
+    </div>
+    <button id="improve-analysis-btn" class="improve-btn">
+      🔍 Migliora Stima Domanda (€5,000)
+    </button>
+  </div>
+
+  <div class="market-analysis">
+    <h4>Analisi di Mercato</h4>
+    <div class="market-locked" id="market-locked">
+      <p class="locked-message">🔒 Richiede analisi di mercato professionale</p>
+      <button id="market-analysis-btn" class="market-btn">
+        📊 Analisi di Mercato (€15,000)
+      </button>
+    </div>
+    <div class="market-unlocked" id="market-unlocked" style="display: none">
+      <div class="estimate-row">
+        <span class="estimate-label">✈️ Costo per volo:</span>
+        <span class="cost-value">€<span id="cost-per-flight">--</span></span>
+      </div>
+      <div class="estimate-row">
+        <span class="estimate-label">📈 Ricavi stimati/mese:</span>
+        <span class="revenue-value"
+          >€<span id="config-monthly-revenue">--</span></span
+        >
+      </div>
+      <div class="estimate-row profit-row">
+        <span class="estimate-label"
+          ><strong>💎 Profitto stimato/mese:</strong></span
+        >
+        <span class="profit-value"
+          ><strong>€<span id="estimated-profit">--</span></strong></span
+        >
+      </div>
+    </div>
+  </div>
+
+  <div class="cost-analysis">
+    <h4>Costi Operativi</h4>
+    <div class="cost-breakdown">
+      <div class="cost-row">
+        <span>💰 Costo creazione rotta:</span>
+        <span class="cost-value"
+          >€<span id="route-creation-cost">--</span></span
+        >
+      </div>
+      <div class="cost-row">
+        <span>🌍 Nazioni sorvolate:</span>
+        <span class="info-value"><span id="countries-count">--</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-actions">
+    <button id="confirm-create-route" class="btn-primary" disabled>
+      Crea Rotta
+    </button>
+    <button id="back-to-selection" class="btn-secondary">← Indietro</button>
+  </div>
+</div>
+
+<div id="airport-info" class="info-panel hidden">
+  <h3 id="airport-name"></h3>
+  <p id="airport-details"></p>
+  <div class="airport-actions">
+    <button id="create-route">Crea Rotta</button>
+    <button id="view-routes">Vedi Rotte</button>
+  </div>
+</div>

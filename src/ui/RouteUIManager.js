@@ -295,6 +295,42 @@ var RouteUIManager = {
                    '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
                    '</div>';
         }
+    },
+    
+    // Inizializza i pannelli UI delle rotte caricando il template
+    initializeRoutePanels: function() {
+        console.log('🔧 Inizializzazione pannelli UI rotte...');
+        
+        return fetch('templates/route-panels.html')
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Errore caricamento template: ' + response.status);
+                }
+                return response.text();
+            })
+            .then(function(html) {
+                // Trova il container per i pannelli rotte (dentro world-tab)
+                var worldTab = document.getElementById('world-tab');
+                if (!worldTab) {
+                    throw new Error('Container world-tab non trovato');
+                }
+                
+                // Crea un container temporaneo per parsare l'HTML
+                var tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                // Aggiungi tutti gli elementi del template al world-tab
+                while (tempDiv.firstChild) {
+                    worldTab.appendChild(tempDiv.firstChild);
+                }
+                
+                console.log('✅ Pannelli UI rotte caricati dinamicamente');
+                return true;
+            })
+            .catch(function(error) {
+                console.error('❌ Errore caricamento pannelli UI rotte:', error);
+                return false;
+            });
     }
 };
 
