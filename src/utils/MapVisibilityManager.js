@@ -32,7 +32,7 @@ var MapVisibilityManager = {
         var visibleAirports = this.getAirportsInView(bounds, airportMarkers);
         
         // Calcola aeroporti da mostrare con sistema anti-clutter
-        var airportsToShow = this.calculateVisibleAirports(visibleAirports, zoom);
+        var airportsToShow = this.calculateVisibleAirports(map, visibleAirports, zoom);
         
         var visibleCount = 0;
         for (var code in airportMarkers) {
@@ -71,41 +71,37 @@ var MapVisibilityManager = {
         return airportsInView;
     },
     
-    // Sistema intelligente anti-clutter
-    calculateVisibleAirports: function(airportsInView, zoom) {
+    // Sistema intelligente anti-clutter basato su traffico e distanza in pixel
+    calculateVisibleAirports: function(map, airportsInView, zoom) {
         if (airportsInView.length === 0) return [];
         
         // Parametri per zoom
         var maxAirports = this.getMaxAirportsForZoom(zoom);
-        var minDistance = this.getMinDistanceForZoom(zoom);
+        var minPixelDistance = this.getMinPixelDistanceForZoom(zoom);
         
         // Se ci sono pochi aeroporti, mostra tutti
         if (airportsInView.length <= maxAirports) {
             return airportsInView.map(function(item) { return item.code; });
         }
         
-        // Ordina per rating (importanza)
+        // Ordina per rating (importanza basata su traffico)
         var sortedAirports = airportsInView.slice().sort(function(a, b) {
             return this.calculateAirportRating(b.airport) - this.calculateAirportRating(a.airport);
         }.bind(this));
         
-        // Seleziona aeroporti evitando sovrapposizioni
+        // Seleziona aeroporti evitando sovrapposizioni in pixel
         var selectedAirports = [];
-        var selectedPositions = [];
+        var selectedAirportData = [];
         
         for (var i = 0; i < sortedAirports.length && selectedAirports.length < maxAirports; i++) {
-            var airport = sortedAirports[i].airport;
-            var position = { lat: airport.latitude, lng: airport.longitude };
+            var currentAirport = sortedAirports[i].airport;
             
-            // Controlla distanza minima da aeroporti già selezionati
+            // Controlla distanza minima IN PIXEL da aeroporti già selezionati
             var tooClose = false;
-            for (var j = 0; j < selectedPositions.length; j++) {
-                var distance = RouteCalculator.calculateDistance(
-                    position.lat, position.lng,
-                    selectedPositions[j].lat, selectedPositions[j].lng
-                );
+            for (var j = 0; j < selectedAirportData.length; j++) {
+                var pixelDistance = this.calculatePixelDistance(map, currentAirport, selectedAirportData[j]);
                 
-                if (distance < minDistance) {
+                if (pixelDistance < minPixelDistance) {
                     tooClose = true;
                     break;
                 }
@@ -113,62 +109,57 @@ var MapVisibilityManager = {
             
             if (!tooClose) {
                 selectedAirports.push(sortedAirports[i].code);
-                selectedPositions.push(position);
+                selectedAirportData.push(currentAirport);
             }
         }
+        
+        console.log('🎯 Anti-clutter: selezionati', selectedAirports.length, 'aeroporti da', airportsInView.length, 
+                   'zoom:', zoom, 'minPixels:', minPixelDistance);
         
         return selectedAirports;
     },
     
-    // Calcola rating importanza aeroporto
+    // Calcola rating importanza aeroporto basato SOLO sui livelli di traffico
     calculateAirportRating: function(airport) {
-        var rating = 0;
+        // Rating basato sulla somma dei livelli di traffico
+        var businessLevel = airport.businessLevel || 0;
+        var touristLevel = airport.touristLevel || 0;
         
-        // Rating base per dimensione
-        switch (airport.size) {
-            case 'large':
-                rating += 100; // Aeroporti grandi sono i più importanti
-                break;
-            case 'medium':
-                rating += 50;
-                break;
-            case 'small':
-            default:
-                rating += 20;
-                break;
-        }
+        // Somma diretta dei livelli di traffico (0-200 range)
+        var trafficRating = businessLevel + touristLevel;
         
-        // Bonus per traffico business e turistico
-        var businessLevel = airport.businessLevel || 50;
-        var touristLevel = airport.touristLevel || 50;
-        rating += (businessLevel + touristLevel) / 4; // Max +25
+        return trafficRating;
+    },
+    
+    // Calcola distanza in pixel tra due aeroporti sulla mappa
+    calculatePixelDistance: function(map, airport1, airport2) {
+        var point1 = map.latLngToContainerPoint([airport1.latitude, airport1.longitude]);
+        var point2 = map.latLngToContainerPoint([airport2.latitude, airport2.longitude]);
         
-        // Bonus per capitali e città importanti
-        var cityName = airport.city.toLowerCase();
-        var importantCities = ['roma', 'milano', 'paris', 'london', 'berlin', 'madrid', 'amsterdam', 'munich'];
-        if (importantCities.indexOf(cityName) !== -1) {
-            rating += 30;
-        }
+        var dx = point1.x - point2.x;
+        var dy = point1.y - point2.y;
         
-        return rating;
+        return Math.sqrt(dx * dx + dy * dy);
     },
     
     // Configurazione massimo aeroporti per zoom
     getMaxAirportsForZoom: function(zoom) {
-        if (zoom >= 10) return 50;    // Zoom alto: molti aeroporti
-        if (zoom >= 8) return 30;     // Zoom medio-alto
-        if (zoom >= 6) return 20;     // Zoom medio
-        if (zoom >= 4) return 15;     // Zoom basso
-        return 10;                    // Zoom molto basso
+        if (zoom >= 10) return 100;   // Zoom alto: molti aeroporti
+        if (zoom >= 8) return 60;     // Zoom medio-alto
+        if (zoom >= 6) return 40;     // Zoom medio
+        if (zoom >= 4) return 25;     // Zoom basso
+        if (zoom >= 3) return 15;     // Zoom molto basso
+        return 10;                    // Zoom minimo
     },
     
-    // Configurazione distanza minima per zoom
-    getMinDistanceForZoom: function(zoom) {
-        if (zoom >= 10) return 20;    // 20km
-        if (zoom >= 8) return 50;     // 50km
-        if (zoom >= 6) return 100;    // 100km
-        if (zoom >= 4) return 200;    // 200km
-        return 500;                   // 500km
+    // Configurazione distanza minima IN PIXEL per zoom
+    getMinPixelDistanceForZoom: function(zoom) {
+        if (zoom >= 10) return 20;    // 20 pixel
+        if (zoom >= 8) return 30;     // 30 pixel
+        if (zoom >= 6) return 40;     // 40 pixel
+        if (zoom >= 4) return 50;     // 50 pixel
+        if (zoom >= 3) return 60;     // 60 pixel
+        return 80;                    // 80 pixel per zoom molto bassi
     }
 };
 
