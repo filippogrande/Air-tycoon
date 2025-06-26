@@ -411,70 +411,84 @@ WorldMap.prototype.calculateDistance = function(lat1, lon1, lat2, lon2) {
 };
 
 WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
-    var hubInfo = '';
-    var actions = '';
-    
-    if (isPlayerHub) {
-        var hub = this.game.hubManager.getHub(airport.code);
-        hubInfo = '<div class="hub-info">' +
-                 '<p><strong>🏢 Il tuo Hub</strong></p>' +
-                 '<p><strong>Gates:</strong> ' + hub.facilities.gates + '</p>' +
-                 '<p><strong>Piste:</strong> ' + hub.facilities.runways + '</p>' +
-                 '<p><strong>Manutenzione:</strong> €' + hub.monthlyMaintenanceCost.toLocaleString() + '/mese</p>' +
-                 '</div>';
+    try {
+        var hubInfo = '';
+        var actions = '';
         
-        // Cambia testo bottone se pannello rotte è aperto
-        var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
-                             'Aggiungi a Rotta' : 'Crea Rotta';
-        
-        actions = '<div class="airport-actions">' +
-                 '<button onclick="game.worldMap.manageHub(\'' + airport.code + '\')">Gestisci Hub</button>' +
-                 '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
-                 '</div>';
-    } else {
-        var canBuildHub = airport.size === 'hub' || airport.size === 'large';
-        
-        // Cambia testo bottone se pannello rotte è aperto
-        var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
-                             'Aggiungi a Rotta' : 'Crea Rotta';
-        
-        if (canBuildHub) {
-            var buildCost = this.game.hubManager ? 
-                           this.game.hubManager.calculateHubBuildCost(airport) : 
-                           'N/A';
+        if (isPlayerHub) {
+            var hub = this.game.hubManager.getHub(airport.code);
+            var maintenanceCost = hub && typeof hub.monthlyMaintenanceCost === 'number' ? 
+                                 hub.monthlyMaintenanceCost.toLocaleString() : 'N/A';
+            
+            hubInfo = '<div class="hub-info">' +
+                     '<p><strong>🏢 Il tuo Hub</strong></p>' +
+                     '<p><strong>Gates:</strong> ' + (hub ? hub.facilities.gates : 'N/A') + '</p>' +
+                     '<p><strong>Piste:</strong> ' + (hub ? hub.facilities.runways : 'N/A') + '</p>' +
+                     '<p><strong>Manutenzione:</strong> €' + maintenanceCost + '/mese</p>' +
+                     '</div>';
+            
+            // Cambia testo bottone se pannello rotte è aperto
+            var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
+                                 'Aggiungi a Rotta' : 'Crea Rotta';
             
             actions = '<div class="airport-actions">' +
-                     '<button onclick="game.worldMap.buildHubAt(\'' + airport.code + '\')">Costruisci Hub (€' + buildCost.toLocaleString() + ')</button>' +
+                     '<button onclick="game.worldMap.manageHub(\'' + airport.code + '\')">Gestisci Hub</button>' +
                      '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
                      '</div>';
         } else {
-            actions = '<div class="airport-actions">' +
-                     '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
-                     '<p class="small-text">💡 Solo aeroporti grandi possono diventare hub</p>' +
-                     '</div>';
+            var canBuildHub = airport.size === 'hub' || airport.size === 'large';
+            
+            // Cambia testo bottone se pannello rotte è aperto
+            var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
+                                 'Aggiungi a Rotta' : 'Crea Rotta';
+            
+            if (canBuildHub) {
+                var buildCost = this.game.hubManager ? 
+                               this.game.hubManager.calculateHubBuildCost(airport) : 
+                               'N/A';
+                
+                var buildCostText = typeof buildCost === 'number' ? buildCost.toLocaleString() : buildCost;
+                
+                actions = '<div class="airport-actions">' +
+                         '<button onclick="game.worldMap.buildHubAt(\'' + airport.code + '\')">Costruisci Hub (€' + buildCostText + ')</button>' +
+                         '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
+                         '</div>';
+            } else {
+                actions = '<div class="airport-actions">' +
+                         '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
+                         '<p class="small-text">💡 Solo aeroporti grandi possono diventare hub</p>' +
+                         '</div>';
+            }
         }
+        
+        var hubStatus = isPlayerHub ? '🏢 Il tuo Hub' : 
+                       (airport.size === 'hub' ? '⬡ Hub Mondiale' : 
+                       (airport.size === 'large' ? '⬢ Aeroporto Grande' : 
+                       (airport.size === 'medium' ? '◆ Aeroporto Medio' : '● Aeroporto Regionale')));
+        
+        // Mostra business e tourist level invece di traffico
+        var businessLevel = airport.businessLevel || 'N/A';
+        var touristLevel = airport.touristLevel || 'N/A';
+        var trafficInfo = 'Business: ' + businessLevel + ' | Turismo: ' + touristLevel;
+        
+        return '<div class="airport-popup">' +
+               '<h3>' + (airport.name || 'Nome non disponibile') + '</h3>' +
+               '<p><strong>Codice:</strong> ' + (airport.code || 'N/A') + '</p>' +
+               '<p><strong>Città:</strong> ' + (airport.city || 'N/A') + '</p>' +
+               '<p><strong>Paese:</strong> ' + (airport.country || 'N/A') + '</p>' +
+               '<p><strong>Tipo:</strong> ' + hubStatus + '</p>' +
+               '<p><strong>Traffico:</strong> ' + trafficInfo + '</p>' +
+               hubInfo +
+               actions +
+               '</div>';
+    } catch (error) {
+        console.error('❌ Errore nella creazione del popup aeroporto:', error);
+        return '<div class="airport-popup">' +
+               '<h3>' + (airport.name || 'Errore') + '</h3>' +
+               '<p>Si è verificato un errore nel caricamento dei dati dell\'aeroporto.</p>' +
+               '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
+               '</div>';
     }
-    
-    var hubStatus = isPlayerHub ? '🏢 Il tuo Hub' : 
-                   (airport.size === 'hub' ? '⬡ Hub Mondiale' : 
-                   (airport.size === 'large' ? '⬢ Aeroporto Grande' : 
-                   (airport.size === 'medium' ? '◆ Aeroporto Medio' : '● Aeroporto Regionale')));
-    
-    // Mostra business e tourist level invece di traffico
-    var businessLevel = airport.businessLevel || 'N/A';
-    var touristLevel = airport.touristLevel || 'N/A';
-    var trafficInfo = 'Business: ' + businessLevel + ' | Turismo: ' + touristLevel;
-    
-    return '<div class="airport-popup">' +
-           '<h3>' + airport.name + '</h3>' +
-           '<p><strong>Codice:</strong> ' + airport.code + '</p>' +
-           '<p><strong>Città:</strong> ' + airport.city + '</p>' +
-           '<p><strong>Paese:</strong> ' + airport.country + '</p>' +
-           '<p><strong>Tipo:</strong> ' + hubStatus + '</p>' +
-           '<p><strong>Traffico:</strong> ' + trafficInfo + '</p>' +
-           hubInfo +
-           actions +
-           '</div>';
 };
 
 
@@ -1166,208 +1180,6 @@ WorldMap.prototype.createRouteFromPanel = function() {
     }
 };
 
-// NUOVI METODI PER SISTEMA DI BLOCCO
-
-WorldMap.prototype.toggleOriginLock = function() {
-    console.log('🔐 Toggle blocco origine...');
-    
-    // Se non c'è un aeroporto di origine, non può essere bloccato
-    if (!this.routeCreationState.originAirport) {
-        console.log('⚠️ Nessun aeroporto di origine da bloccare');
-        return;
-    }
-    
-    // Cambia stato blocco
-    this.routeCreationState.originLocked = !this.routeCreationState.originLocked;
-    
-    // Aggiorna UI
-    this.updateLockButton();
-    this.updateOriginSlotAppearance();
-    
-    var status = this.routeCreationState.originLocked ? 'bloccata' : 'sbloccata';
-    console.log('🔐 Origine', status, ':', this.routeCreationState.originAirport.code);
-    
-    // Se bloccato, attiva automaticamente lo slot destinazione
-    if (this.routeCreationState.originLocked) {
-        this.selectSlot('destination');
-    }
-};
-
-WorldMap.prototype.clearDestination = function() {
-    console.log('🔄 Reset destinazione...');
-    
-    // Pulisci destinazione
-    this.routeCreationState.destinationAirport = null;
-    this.clearSlot('destination');
-    
-    // Aggiorna UI
-    this.updateCreateButton();
-    this.hideRouteInfo();
-    
-    // Attiva automaticamente lo slot destinazione per nuova selezione
-    this.selectSlot('destination');
-    
-    console.log('✅ Destinazione resettata, pronto per nuova selezione');
-};
-
-WorldMap.prototype.updateLockButton = function() {
-    var lockBtn = document.getElementById('lock-origin-btn');
-    if (!lockBtn) return;
-    
-    var isLocked = this.routeCreationState.originLocked;
-    var hasOrigin = this.routeCreationState.originAirport !== null;
-    
-    // Aggiorna icona e stato
-    lockBtn.textContent = isLocked ? '🔒' : '🔓';
-    lockBtn.title = isLocked ? 'Sblocca origine' : 'Blocca origine per confrontare destinazioni';
-    
-    // Aggiorna classi CSS
-    if (isLocked) {
-        lockBtn.classList.add('locked');
-    } else {
-        lockBtn.classList.remove('locked');
-    }
-    
-    // Disabilita se non c'è origine
-    lockBtn.disabled = !hasOrigin;
-    lockBtn.style.opacity = hasOrigin ? '1' : '0.5';
-};
-
-WorldMap.prototype.updateOriginSlotAppearance = function() {
-    var originSlot = document.getElementById('origin-airport');
-    if (!originSlot) return;
-    
-    if (this.routeCreationState.originLocked) {
-        originSlot.classList.add('locked');
-    } else {
-        originSlot.classList.remove('locked');
-    }
-};
-
-// METODI PER CALCOLO STIME TRAFFICO CON ERRORE REALISTICO
-
-WorldMap.prototype.calculateTrafficEstimatesWithError = function(origin, destination, distance, analysisLevel) {
-    // Prima calcola i valori "reali" (quello che succederà davvero)
-    var realData = this.calculateRealTrafficData(origin, destination, distance);
-    
-    // Poi aggiungi errore basato sul livello di analisi
-    var errorRange = analysisLevel === 'improved' ? 0.1 : 0.3; // ±10% vs ±30%
-    var cargoErrorRange = analysisLevel === 'improved' ? 0.08 : 0.25; // ±8% vs ±25%
-    
-    // Genera errore casuale (distribuzione normale approssimata)
-    var passengerError = (Math.random() - 0.5) * 2 * errorRange; // -30% a +30%
-    var cargoError = (Math.random() - 0.5) * 2 * cargoErrorRange;
-    
-    // Applica errore ai valori reali
-    var displayPassengers = Math.max(0, Math.round(realData.dailyPassengers * (1 + passengerError)));
-    var displayCargo = Math.max(0, Math.round(realData.dailyCargo * (1 + cargoError)));
-    
-    return {
-        displayPassengers: displayPassengers,
-        displayCargo: displayCargo,
-        realPassengers: realData.dailyPassengers,
-        realCargo: realData.dailyCargo,
-        realRevenue: realData.monthlyRevenue,
-        businessPassengers: realData.businessPassengers,
-        touristPassengers: realData.touristPassengers
-    };
-};
-
-WorldMap.prototype.calculateRealTrafficData = function(origin, destination, distance) {
-    // Calcolo valori reali (senza errore) che verranno poi usati nella simulazione
-    
-    // Fattori base per il calcolo
-    var originBusiness = origin.businessLevel || 50;
-    var originTourist = origin.touristLevel || 50;
-    var destBusiness = destination.businessLevel || 50;
-    var destTourist = destination.touristLevel || 50;
-    
-    // Media dei livelli di traffico
-    var avgBusiness = (originBusiness + destBusiness) / 2;
-    var avgTourist = (originTourist + destTourist) / 2;
-    
-    // Fattore distanza (più lungo = meno passeggeri locali, più business)
-    var distanceFactor = 1;
-    if (distance > 3000) distanceFactor = 1.2; // Voli intercontinentali
-    else if (distance > 1500) distanceFactor = 1.1; // Voli continentali
-    else if (distance < 500) distanceFactor = 0.8; // Voli regionali
-    
-    // Calcolo passeggeri giornalieri (base: 1 passeggero ogni 2 punti di traffico)
-    var businessPassengers = Math.round((avgBusiness * distanceFactor) / 2);
-    var touristPassengers = Math.round((avgTourist * distanceFactor * 0.8) / 2);
-    var totalDailyPassengers = businessPassengers + touristPassengers;
-    
-    // Calcolo cargo giornaliero (tonnellate, base: 1t ogni 10 punti business)
-    var dailyCargo = Math.round((avgBusiness * distanceFactor) / 10);
-    
-    // Calcolo ricavi mensili reali
-    var avgTicketPrice = this.calculateAverageTicketPrice(distance);
-    var cargoRatePerTon = 2000; // €2000 per tonnellata
-    
-    var monthlyPassengerRevenue = totalDailyPassengers * avgTicketPrice * 30;
-    var monthlyCargoRevenue = dailyCargo * cargoRatePerTon * 30;
-    var totalMonthlyRevenue = monthlyPassengerRevenue + monthlyCargoRevenue;
-    
-    return {
-        dailyPassengers: totalDailyPassengers,
-        dailyCargo: dailyCargo,
-        monthlyRevenue: Math.round(totalMonthlyRevenue),
-        businessPassengers: businessPassengers,
-        touristPassengers: touristPassengers
-    };
-};
-
-// METODO PER CALCOLARE NAZIONI SORVOLATE
-WorldMap.prototype.calculateCountriesOverflown = function(origin, destination) {
-    // Stima semplificata basata su distanza e posizione geografica
-    var distance = this.calculateDistance(
-        origin.latitude, origin.longitude,
-        destination.latitude, destination.longitude
-    );
-    
-    // Logica semplificata per stimare nazioni sorvolate
-    var countries = 2; // Almeno paese origine e destinazione
-    
-    // Aggiungi nazioni basandosi su distanza
-    if (distance > 1000) countries += 1; // Volo continentale
-    if (distance > 2000) countries += 1; // Volo intercontinentale
-    if (distance > 4000) countries += 2; // Volo transpacifico/transatlantico
-    if (distance > 8000) countries += 3; // Volo molto lungo (es. Sydney-Londra)
-    
-    // Aggiusta per differenza di continenti (semplificato)
-    var originContinent = this.getContinent(origin.latitude, origin.longitude);
-    var destContinent = this.getContinent(destination.latitude, destination.longitude);
-    
-    if (originContinent !== destContinent) {
-        countries += 1; // Attraversamento continentale
-    }
-    
-    return Math.min(countries, 12); // Max 12 nazioni realisticamente
-};
-
-WorldMap.prototype.getContinent = function(lat, lng) {
-    // Determinazione continente semplificata basata su coordinate
-    if (lat > 60) return 'Arctic';
-    if (lat < -60) return 'Antarctica';
-    if (lng >= -30 && lng <= 70 && lat >= -35 && lat <= 70) return 'Europe/Africa';
-    if (lng >= 70 && lng <= 180 && lat >= -50 && lat <= 80) return 'Asia';
-    if (lng >= -180 && lng <= -30 && lat >= -60 && lat <= 80) return 'Americas';
-    if (lng >= 110 && lng <= 180 && lat >= -50 && lat <= -10) return 'Oceania';
-    return 'Other';
-};
-
-WorldMap.prototype.calculateAverageTicketPrice = function(distance) {
-    // Prezzo base per km + costi fissi
-    var basePrice = 50; // €50 fisso
-    var pricePerKm = 0.15; // €0.15 per km
-    
-    // Fattore economia di scala per voli lunghi
-    var scaleFactor = 1;
-    if (distance > 2000) scaleFactor = 0.9; // Sconto per voli lunghi
-    
-    return Math.round((basePrice + (distance * pricePerKm)) * scaleFactor);
-};
-
 // METODI PER PANNELLO CONFIGURAZIONE ROTTA
 
 WorldMap.prototype.openRouteConfigPanel = function() {
@@ -1382,10 +1194,10 @@ WorldMap.prototype.openRouteConfigPanel = function() {
     creationPanel.classList.remove('active');
     configPanel.classList.add('active');
     
-    // Reset stato configurazione
+    // Imposta stato configurazione
     this.routeConfigState.isOpen = true;
     this.routeConfigState.routeType = 'passenger';
-    this.routeConfigState.analysisLevel = 'basic';
+    this.routeConfigState.analysisLevel = 'basic';  
     this.routeConfigState.marketAnalysis = false;
     
     // Reset bottoni analisi
@@ -1416,14 +1228,82 @@ WorldMap.prototype.closeRouteConfigPanel = function() {
     // Reset stato configurazione
     this.routeConfigState.isOpen = false;
     
-    console.log('✅ Pannello configurazione chiuso');
+    // Reset analisi di mercato
+    this.routeConfigState.marketAnalysis = false;
+    this.updateMarketAnalysisDisplay();
+    
+    // Reset tipo rotta a passeggeri
+    this.selectRouteType('passenger');
+};
+
+WorldMap.prototype.updateConfigEstimates = function() {
+    var analysisAccuracy = this.routeConfigState.analysisLevel === 'improved' ? '±10%' : '±30%';
+    var cargoAccuracy = this.routeConfigState.analysisLevel === 'improved' ? '±8%' : '±25%';
+    
+    var passengers = this.routeConfigState.estimatedPassengers;
+    var cargo = this.routeConfigState.estimatedCargo;
+    
+    // Aggiorna display stime
+    document.getElementById('config-passengers').textContent = passengers;
+    document.getElementById('config-cargo').textContent = cargo;
+    
+    // Aggiorna accuratezza
+    var accuracySpans = document.querySelectorAll('.config-accuracy');
+    if (accuracySpans[0]) accuracySpans[0].textContent = '(' + analysisAccuracy + ')';
+    if (accuracySpans[1]) accuracySpans[1].textContent = '(' + cargoAccuracy + ')';
+    
+    // Aggiorna anche i costi se l'analisi di mercato è disponibile
+    if (this.routeConfigState.marketAnalysis) {
+        this.updateConfigCosts();
+    }
+};
+
+WorldMap.prototype.updateConfigCosts = function() {
+    var routeType = this.routeConfigState.routeType;
+    var distance = this.routeConfigState.distance;
+    
+    // Calcola ricavi stimati
+    var dailyRevenue = 0;
+    if (routeType === 'passenger') {
+        dailyRevenue = this.routeConfigState.estimatedPassengers * 120; // €120 per passeggero medio
+    } else if (routeType === 'cargo') {
+        dailyRevenue = this.routeConfigState.estimatedCargo * 800; // €800 per tonnellata
+    } else {
+        dailyRevenue = (this.routeConfigState.estimatedPassengers * 120) + 
+                      (this.routeConfigState.estimatedCargo * 800);
+    }
+    
+    var monthlyRevenue = dailyRevenue * 30;
+    
+    // Calcola costi operativi (più alti per distanze maggiori)
+    var costPerFlight = 5000 + (distance * 2);
+    var flightsPerMonth = 30; // 1 volo al giorno
+    var monthlyCost = costPerFlight * flightsPerMonth;
+    
+    var estimatedProfit = monthlyRevenue - monthlyCost;
+    
+    // Aggiorna display
+    document.getElementById('cost-per-flight').textContent = costPerFlight.toLocaleString();
+    document.getElementById('config-monthly-revenue').textContent = monthlyRevenue.toLocaleString();
+    document.getElementById('monthly-operating-cost').textContent = monthlyCost.toLocaleString();
+    document.getElementById('estimated-profit').textContent = estimatedProfit.toLocaleString();
+    
+    // Colora il profitto
+    var profitElement = document.getElementById('estimated-profit');
+    if (profitElement) {
+        profitElement.style.color = estimatedProfit > 0 ? '#27ae60' : '#e74c3c';
+    }
+    
+    // Salva i valori per uso futuro
+    this.routeConfigState.costPerFlight = costPerFlight;
+    this.routeConfigState.monthlyRevenue = monthlyRevenue;
+    this.routeConfigState.monthlyCost = monthlyCost;
+    this.routeConfigState.estimatedProfit = estimatedProfit;
 };
 
 WorldMap.prototype.updateRouteConfigDisplay = function() {
     var origin = this.routeCreationState.originAirport;
     var destination = this.routeCreationState.destinationAirport;
-    
-    if (!origin || !destination) return;
     
     // Calcola distanza
     var distance = this.calculateDistance(
@@ -1439,8 +1319,8 @@ WorldMap.prototype.updateRouteConfigDisplay = function() {
     document.getElementById('config-destination').textContent = destination.code;
     document.getElementById('config-distance').textContent = Math.round(distance);
     document.getElementById('countries-count').textContent = countriesCount;
-    
-    var flightHours = distance / 800;
+        
+    var flightHours = distance / 800; // Velocità approssimativa di crociera
     var hours = Math.floor(flightHours);
     var minutes = Math.round((flightHours - hours) * 60);
     document.getElementById('config-flight-time').textContent = hours + 'h ' + minutes + 'm';
@@ -1454,6 +1334,7 @@ WorldMap.prototype.updateRouteConfigDisplay = function() {
     this.routeConfigState.realPassengers = estimates.realPassengers;
     this.routeConfigState.realCargo = estimates.realCargo;
     this.routeConfigState.realRevenue = estimates.realRevenue;
+    this.routeConfigState.distance = distance;
     this.routeConfigState.countriesOverflown = countriesCount;
     
     // Calcola costi
@@ -1461,6 +1342,7 @@ WorldMap.prototype.updateRouteConfigDisplay = function() {
     this.routeConfigState.costPerFlight = this.calculateFlightCost(distance);
     
     // Aggiorna display
+    document.getElementById('route-creation-cost').textContent = this.routeConfigState.creationCost.toLocaleString();
     this.updateConfigEstimates();
     this.updateConfigCosts();
     
@@ -1472,107 +1354,19 @@ WorldMap.prototype.updateRouteConfigDisplay = function() {
     this.selectRouteType('passenger');
 };
 
-WorldMap.prototype.updateConfigEstimates = function() {
-    var analysisAccuracy = this.routeConfigState.analysisLevel === 'improved' ? '±10%' : '±30%';
-    var cargoAccuracy = this.routeConfigState.analysisLevel === 'improved' ? '±8%' : '±25%';
-    
-    document.getElementById('config-passengers').textContent = this.routeConfigState.estimatedPassengers;
-    document.getElementById('config-cargo').textContent = this.routeConfigState.estimatedCargo;
-    
-    // Aggiorna accuratezza
-    var accuracySpans = document.querySelectorAll('.estimate-accuracy');
-    if (accuracySpans[0]) accuracySpans[0].textContent = '(' + analysisAccuracy + ')';
-    if (accuracySpans[1]) accuracySpans[1].textContent = '(' + cargoAccuracy + ')';
-};
-
-WorldMap.prototype.updateConfigCosts = function() {
-    document.getElementById('route-creation-cost').textContent = this.routeConfigState.creationCost.toLocaleString();
-    
-    // Solo se l'analisi di mercato è stata acquistata
-    if (this.routeConfigState.marketAnalysis) {
-        document.getElementById('cost-per-flight').textContent = this.routeConfigState.costPerFlight.toLocaleString();
-        
-        // Usa ricavi reali per calcolo profitto
-        var monthlyRevenue = this.calculateRevenueForRouteType(this.routeConfigState.routeType);
-        document.getElementById('config-monthly-revenue').textContent = monthlyRevenue.toLocaleString();
-        
-        // Calcola profitto stimato (ricavi - costi mensili)
-        var flightsPerMonth = 60; // 2 voli al giorno * 30 giorni
-        var monthlyCosts = this.routeConfigState.costPerFlight * flightsPerMonth;
-        var estimatedProfit = monthlyRevenue - monthlyCosts;
-        
-        document.getElementById('estimated-profit').textContent = estimatedProfit.toLocaleString();
-        
-        // Colore profitto
-        var profitElement = document.querySelector('.profit-value');
-        if (profitElement) {
-            profitElement.style.color = estimatedProfit >= 0 ? '#27ae60' : '#e74c3c';
-        }
-    }
-};
-
-WorldMap.prototype.calculateRevenueForRouteType = function(routeType) {
-    var baseRevenue = this.routeConfigState.realRevenue;
-    
-    if (routeType === 'cargo') {
-        return Math.round(baseRevenue * 0.9); // Focus cargo, meno passeggeri
-    } else if (routeType === 'mixed') {
-        return Math.round(baseRevenue * 1.1); // Bilanciato, più efficiente
-    }
-    // 'passenger' usa revenue base
-    return baseRevenue;
-};
-
-WorldMap.prototype.updateMarketAnalysisDisplay = function() {
-    var lockedDiv = document.getElementById('market-locked');
-    var unlockedDiv = document.getElementById('market-unlocked');
-    
-    if (this.routeConfigState.marketAnalysis) {
-        lockedDiv.style.display = 'none';
-        unlockedDiv.style.display = 'block';
-        this.updateConfigCosts(); // Aggiorna i costi ora visibili
-    } else {
-        lockedDiv.style.display = 'block';
-        unlockedDiv.style.display = 'none';
-    }
-};
-
-WorldMap.prototype.calculateRouteCreationCost = function(distance, countriesOverflown) {
-    // Costo base + costo per distanza + costo per nazioni sorvolate
-    var baseCost = 25000; // €25,000 base (ridotto)
-    var costPerKm = 15; // €15 per km (ridotto)
-    var costPerCountry = 8000; // €8,000 per nazione sorvolata (diritti sorvolo, paperwork, etc.)
-    
-    var distanceCost = distance * costPerKm;
-    var countryCost = (countriesOverflown - 1) * costPerCountry; // -1 perché origine non conta
-    
-    return baseCost + distanceCost + countryCost;
-};
-
-WorldMap.prototype.calculateFlightCost = function(distance) {
-    // Costo carburante + equipaggio + manutenzione
-    var fuelCostPerKm = 1.2; // €1.20 per km
-    var crewCost = 800; // €800 fisso per equipaggio
-    var maintenanceCostPerKm = 0.8; // €0.80 per km
-    
-    return Math.round((distance * fuelCostPerKm) + crewCost + (distance * maintenanceCostPerKm));
-};
-
 WorldMap.prototype.selectRouteType = function(type) {
-    console.log('📋 Selezione tipo rotta:', type);
+    console.log('✈️ Selezione tipo rotta:', type);
     
     this.routeConfigState.routeType = type;
     
-    // Aggiorna bottoni attivi
+    // Aggiorna bottoni UI
     var buttons = document.querySelectorAll('.route-type-btn');
-    for (var i = 0; i < buttons.length; i++) {
-        buttons[i].classList.remove('active');
-    }
-    
-    var activeButton = document.getElementById('route-type-' + type);
-    if (activeButton) {
-        activeButton.classList.add('active');
-    }
+    buttons.forEach(function(btn) {
+        btn.classList.remove('active');
+        if (btn.dataset.type === type) {
+            btn.classList.add('active');
+        }
+    });
     
     // Aggiorna stime basate sul tipo
     this.updateEstimatesForRouteType(type);
@@ -1586,14 +1380,14 @@ WorldMap.prototype.updateEstimatesForRouteType = function(type) {
     var passengers = basePassengers;
     var cargo = baseCargo;
     
-    if (type === 'cargo') {
-        // Focus su cargo, meno passeggeri
-        passengers = Math.round(basePassengers * 0.3);
+    if (type === 'passenger') {
+        // Priorità passeggeri: +20% passeggeri, -30% cargo
+        passengers = Math.round(basePassengers * 1.2);
+        cargo = Math.round(baseCargo * 0.7);
+    } else if (type === 'cargo') {
+        // Priorità cargo: -40% passeggeri, +50% cargo
+        passengers = Math.round(basePassengers * 0.6);
         cargo = Math.round(baseCargo * 1.5);
-    } else if (type === 'mixed') {
-        // Bilanciato
-        passengers = Math.round(basePassengers * 0.8);
-        cargo = Math.round(baseCargo * 1.2);
     }
     // type === 'passenger' usa i valori originali
     
@@ -1604,6 +1398,56 @@ WorldMap.prototype.updateEstimatesForRouteType = function(type) {
     // Aggiorna anche i costi se l'analisi di mercato è disponibile
     if (this.routeConfigState.marketAnalysis) {
         this.updateConfigCosts();
+    }
+};
+
+WorldMap.prototype.calculateRouteCreationCost = function(distance, countriesOverflown) {
+    // Costo base + costo per distanza + costo per nazioni sorvolate
+    var baseCost = 25000; // €25,000 base (ridotto)
+    var costPerKm = 15; // €15 per km (ridotto)
+    var costPerCountry = 8000; // €8,000 per nazione sorvolata (diritti sorvolo, paperwork, etc.)
+    
+    var distanceCost = distance * costPerKm;
+    var countryCost = (countriesOverflown - 1) * costPerCountry; // -1 perché origine non conta
+    
+    return Math.round(baseCost + distanceCost + countryCost);
+};
+
+WorldMap.prototype.calculateFlightCost = function(distance) {
+    // Calcola costo per volo basato su distanza
+    var baseCost = 5000; // €5,000 base per volo
+    var costPerKm = 2; // €2 per km (carburante, equipaggio, etc.)
+    
+    return Math.round(baseCost + (distance * costPerKm));
+};
+
+WorldMap.prototype.calculateCountriesOverflown = function(origin, destination) {
+    // Semplificazione: calcola in base alla distanza geografica
+    // In un'implementazione reale, useresti un servizio di routing aereo
+    
+    var distance = this.calculateDistance(
+        origin.latitude, origin.longitude,
+        destination.latitude, destination.longitude
+    );
+    
+    // Logica semplificata basata su distanza
+    if (distance < 500) return 1; // Volo nazionale o molto vicino
+    if (distance < 1500) return 2; // Europa/regionale
+    if (distance < 3000) return 3; // Intercontinentale breve
+    if (distance < 6000) return 4; // Intercontinentale medio
+    return 5; // Intercontinentale lungo
+};
+
+WorldMap.prototype.updateMarketAnalysisDisplay = function() {
+    var marketSection = document.getElementById('market-analysis-section');
+    var marketBtn = document.getElementById('market-analysis-btn');
+    
+    if (this.routeConfigState.marketAnalysis) {
+        marketSection.style.display = 'block';
+        marketBtn.style.display = 'none';
+    } else {
+        marketSection.style.display = 'none';
+        marketBtn.style.display = 'block';
     }
 };
 
@@ -1714,41 +1558,26 @@ WorldMap.prototype.createRouteFromConfig = function() {
         });
         
         if (result.success) {
-            console.log('✅ Rotta creata con successo');
-            
-            // Deduce costo creazione
-            this.game.state.company.money -= creationCost;
+            if (this.game.uiManager) {
+                this.game.uiManager.showNotification(
+                    'Rotta creata: ' + origin.code + ' → ' + destination.code + 
+                    ' (€' + creationCost.toLocaleString() + ')', 'success'
+                );
+            }
             
             // Aggiungi rotta alla mappa
             this.addRouteToMap(result.route);
             
             // Chiudi pannelli
+            this.closeRouteCreationPanel();
             this.closeRouteConfigPanel();
             
-            // Se l'origine è bloccata, mantieni il pannello aperto e pulisci solo destinazione
-            if (this.routeCreationState.originLocked) {
-                this.clearDestination();
-                this.selectSlot('destination');
-                console.log('🔒 Origine bloccata, pronto per nuova destinazione');
-            } else {
-                // Chiudi pannello completamente
-                this.closeRouteCreationPanel();
-            }
-            
-            // Notifica successo
-            if (this.game.uiManager) {
-                this.game.uiManager.showNotification(
-                    'Rotta ' + routeType + ' creata: ' + origin.code + ' → ' + destination.code + 
-                    ' (€' + creationCost.toLocaleString() + ')', 'success'
-                );
-            }
+            console.log('✅ Rotta creata con successo');
         } else {
-            console.warn('❌ Errore creazione rotta:', result.message);
-            
-            // Mostra errore
             if (this.game.uiManager) {
                 this.game.uiManager.showNotification(result.message, 'error');
             }
+            console.error('❌ Errore creazione rotta:', result.message);
         }
     } else {
         console.error('❌ RouteManager non disponibile');
@@ -1757,3 +1586,4 @@ WorldMap.prototype.createRouteFromConfig = function() {
 
 window.WorldMap = WorldMap;
 console.log('✅ WorldMap con Leaflet caricato');
+
