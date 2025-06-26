@@ -64,7 +64,7 @@ var MapVisibilityManager = {
     
     // Gestisce la visualizzazione delle etichette delle città
     updateCityLabels: function(map, airportMarkers, zoom) {
-        var shouldShowLabels = zoom >= 4; // Mostra etichette da zoom 4 in su (Europa intera e più)
+        var shouldShowLabels = zoom >= 6; // Aumentato a zoom 6 per evitare sovrapposizioni precoci
         
         for (var code in airportMarkers) {
             var marker = airportMarkers[code];
@@ -262,26 +262,40 @@ var MapVisibilityManager = {
         return Math.sqrt(dx * dx + dy * dy);
     },
     
-    // Configurazione massimo aeroporti per zoom - ORIGINALE FUNZIONANTE
+    // Configurazione massimo aeroporti per zoom - ORIGINALE FUNZIONANTE + RIDUZIONE PER ETICHETTE
     getMaxAirportsForZoom: function(zoom) {
+        // Quando le etichette sono attive (zoom >= 6), riduci il numero di aeroporti
+        if (zoom >= 6) {
+            if (zoom <= 6) return 40;    // Zoom 6: meno aeroporti per evitare clutter etichette
+            if (zoom <= 7) return 80;    // Zoom 7: incremento graduale
+            if (zoom <= 8) return 150;   // Zoom 8: più aeroporti ma controllato
+            return 300;                  // Zoom 9+: molti aeroporti
+        }
+        
+        // Comportamento normale quando non ci sono etichette
         if (zoom <= 2) return 50;    // Vista mondo: più aeroporti importanti 
         if (zoom <= 3) return 100;   // Continente: molti più aeroporti
         if (zoom <= 4) return 200;   // Regione: ancora di più
         if (zoom <= 5) return 400;   // Area: molti aeroporti
-        if (zoom <= 6) return 600;   // Zona: la maggior parte
-        if (zoom <= 7) return 800;   // Dettaglio: quasi tutti
-        return 1500;                 // Massimo zoom: tutti
+        return 600;                  // Default per zoom intermedi
     },
     
-    // Configurazione distanza minima per zoom - ORIGINALE FUNZIONANTE
+    // Configurazione distanza minima per zoom - ORIGINALE FUNZIONANTE + ANTI-CLUTTER SEVERO PER ETICHETTE
     getMinDistanceForZoom: function(zoom) {
+        // Quando le etichette sono attive (zoom >= 6), rendi l'anti-clutter più severo
+        if (zoom >= 6) {
+            if (zoom <= 6) return 80;    // Zoom 6: distanza maggiore per evitare sovrapposizioni etichette
+            if (zoom <= 7) return 50;    // Zoom 7: ancora distanza considerevole
+            if (zoom <= 8) return 30;    // Zoom 8: distanza media
+            return 15;                   // Zoom 9+: distanza minima
+        }
+        
+        // Comportamento normale quando non ci sono etichette
         if (zoom <= 2) return 400;   // Vista mondo: meno distanziati
         if (zoom <= 3) return 200;   // Continente: meno distanziati
         if (zoom <= 4) return 100;   // Regione: ancora meno
         if (zoom <= 5) return 50;    // Area: vicini
-        if (zoom <= 6) return 25;    // Zona: molto vicini
-        if (zoom <= 7) return 10;    // Dettaglio: qualsiasi distanza
-        return 0;                    // Massimo zoom: nessuna restrizione
+        return 25;                   // Default per zoom intermedi
     }
 };
 
