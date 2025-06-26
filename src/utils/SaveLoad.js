@@ -1,10 +1,18 @@
 // Sistema di salvataggio e caricamento
+console.log('📂 Caricamento SaveLoad.js...');
+
 class SaveLoad {
-    static SAVE_KEY = 'air-tycoon-2-save';
-    static AUTO_SAVE_INTERVAL = 30000; // 30 secondi
-    
-    // Salva i dati di gioco nel localStorage
-    static saveGame(gameData) {
+    constructor() {
+        // Non usato, tutti i metodi sono statici
+    }
+}
+
+// Proprietà statiche compatibili
+SaveLoad.SAVE_KEY = 'air-tycoon-2-save';
+SaveLoad.AUTO_SAVE_INTERVAL = 30000; // 30 secondi
+
+// Salva i dati di gioco nel localStorage
+SaveLoad.saveGame = function(gameData) {
         try {
             const saveData = {
                 version: '1.0.0',
