@@ -64,6 +64,25 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Root endpoint - Welcome page
+app.get('/', (req, res) => {
+    res.json({
+        name: 'Air Tycoon 2 API Server',
+        version: '1.0.0',
+        status: 'Running',
+        endpoints: {
+            health: '/health',
+            game: '/api/game/*',
+            fleet: '/api/fleet/*',
+            routes: '/api/routes/*',
+            airports: '/api/airports/*',
+            finance: '/api/finance/*'
+        },
+        database: 'PostgreSQL Connected',
+        docs: 'See README.md for full API documentation'
+    });
+});
+
 // API Routes
 app.use('/api/game', gameRoutes);
 app.use('/api/fleet', fleetRoutes);
