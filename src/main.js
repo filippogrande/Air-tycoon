@@ -103,14 +103,10 @@ function initializeGame() {
         
         // Setup eventi UI
         setupUIEvents();
+        
+        // Setup eventi del menu di gioco dopo che il game è inizializzato
         setupGameMenuEvents();
         
-        try {
-            initializeGame();
-        } catch (error) {
-            console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
-            showError('Errore durante l\'avvio del gioco. Ricarica la pagina per riprovare.');
-        }
     } catch (error) {
         console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
         showError('Errore durante l\'avvio del gioco. Ricarica la pagina per riprovare.');

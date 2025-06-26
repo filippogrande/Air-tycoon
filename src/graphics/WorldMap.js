@@ -259,7 +259,7 @@ WorldMap.prototype.calculateVisibleAirports = function(airportsInView, zoom) {
         var tooClose = false;
         for (var j = 0; j < selectedAirports.length; j++) {
             var selectedCode = selectedAirports[j];
-            var selectedAirport = this.getAirportByCode(selectedCode);
+            var selectedAirport = AirportData.getAirportByCode(selectedCode);
             
             if (selectedAirport) {
                 var distance = this.calculateDistance(
@@ -343,18 +343,6 @@ WorldMap.prototype.calculateDistance = function(lat1, lon1, lat2, lon2) {
     
     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
-};
-
-// Helper per ottenere aeroporto per codice
-WorldMap.prototype.getAirportByCode = function(code) {
-    if (AirportData && AirportData.airports) {
-        for (var i = 0; i < AirportData.airports.length; i++) {
-            if (AirportData.airports[i].code === code) {
-                return AirportData.airports[i];
-            }
-        }
-    }
-    return null;
 };
 
 WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
