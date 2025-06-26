@@ -6,9 +6,11 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
-    "setup": "node database/setup.js",
-    "db:setup": "node database/setup.js",
-    "db:reset": "node database/setup.js --reset",
+    "setup": "node database/migrations.js",
+    "db:setup": "node database/migrations.js",
+    "db:reset": "node database/migrations.js --reset",
+    "db:migrate": "node database/migrations.js",
+    "db:inspect": "node database/inspect.js",
     "test": "jest",
     "lint": "eslint server/"
   },
