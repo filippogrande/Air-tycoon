@@ -157,6 +157,10 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     
     // Event handler per click
     marker.on('click', function(e) {
+        // Aggiorna il popup con il testo corretto del bottone
+        var popupContent = self.createAirportPopup(airport, isPlayerHub);
+        marker.setPopupContent(popupContent);
+        
         self.onAirportClick(airport, e);
     });
     
@@ -419,12 +423,20 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
                  '<p><strong>Manutenzione:</strong> €' + hub.monthlyMaintenanceCost.toLocaleString() + '/mese</p>' +
                  '</div>';
         
+        // Cambia testo bottone se pannello rotte è aperto
+        var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
+                             'Aggiungi a Rotta' : 'Crea Rotta';
+        
         actions = '<div class="airport-actions">' +
                  '<button onclick="game.worldMap.manageHub(\'' + airport.code + '\')">Gestisci Hub</button>' +
-                 '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
+                 '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
                  '</div>';
     } else {
         var canBuildHub = airport.size === 'hub' || airport.size === 'large';
+        
+        // Cambia testo bottone se pannello rotte è aperto
+        var routeButtonText = this.routeCreationState && this.routeCreationState.isOpen ? 
+                             'Aggiungi a Rotta' : 'Crea Rotta';
         
         if (canBuildHub) {
             var buildCost = this.game.hubManager ? 
@@ -433,11 +445,11 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
             
             actions = '<div class="airport-actions">' +
                      '<button onclick="game.worldMap.buildHubAt(\'' + airport.code + '\')">Costruisci Hub (€' + buildCost.toLocaleString() + ')</button>' +
-                     '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
+                     '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
                      '</div>';
         } else {
             actions = '<div class="airport-actions">' +
-                     '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
+                     '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">' + routeButtonText + '</button>' +
                      '<p class="small-text">💡 Solo aeroporti grandi possono diventare hub</p>' +
                      '</div>';
         }
@@ -649,9 +661,14 @@ WorldMap.prototype.setupRouteCreationEvents = function() {
     if (originSlot) {
         originSlot.addEventListener('click', function() {
             // Se l'origine è bloccata, non permettere la selezione
-            if (!self.routeCreationState.originLocked) {
-                self.selectSlot('origin');
+            if (self.routeCreationState.originLocked) {
+                console.log('🔒 Origine bloccata, click ignorato');
+                if (self.game.uiManager) {
+                    self.game.uiManager.showNotification('Origine bloccata. Sblocca per modificare.', 'warning');
+                }
+                return;
             }
+            self.selectSlot('origin');
         });
     }
     
@@ -666,9 +683,27 @@ WorldMap.prototype.onAirportClick = function(airport, e) {
     console.log('🏢 Click su aeroporto:', airport.code);
     this.selectedAirport = airport;
     
-    // Se il pannello di creazione rotte è aperto e c'è uno slot attivo
-    if (this.routeCreationState && this.routeCreationState.isOpen && this.routeCreationState.activeSlot) {
-        this.selectAirportForSlot(airport);
+    // Se il pannello di creazione rotte è aperto
+    if (this.routeCreationState && this.routeCreationState.isOpen) {
+        // Se l'origine è bloccata, qualsiasi aeroporto selezionato va sempre in destinazione
+        if (this.routeCreationState.originLocked) {
+            console.log('🔒 Origine bloccata, aeroporto va in destinazione:', airport.code);
+            this.selectAirportForSlot(airport, 'destination');
+            return;
+        }
+        
+        // Se l'origine non è bloccata e c'è uno slot attivo, usa quello
+        if (this.routeCreationState.activeSlot) {
+            this.selectAirportForSlot(airport, this.routeCreationState.activeSlot);
+            return;
+        }
+        
+        // Se non c'è slot attivo, auto-seleziona il primo slot libero
+        if (!this.routeCreationState.originAirport) {
+            this.selectAirportForSlot(airport, 'origin');
+        } else if (!this.routeCreationState.destinationAirport) {
+            this.selectAirportForSlot(airport, 'destination');
+        }
         return;
     }
     
@@ -688,23 +723,59 @@ WorldMap.prototype.onMapClick = function(e) {
 };
 
 WorldMap.prototype.createRouteFromAirport = function(airportCode) {
-    console.log('🛣️ Creazione rotta da:', airportCode);
+    console.log('🛣️ Azione aeroporto:', airportCode);
     
-    // Apri pannello e pre-popola origine
-    this.openRouteCreationPanel();
-    
-    // Imposta aeroporto come origine
     var airport = AirportData.getAirportByCode(airportCode);
-    if (airport) {
+    if (!airport) return;
+    
+    // Se il pannello NON è aperto, comportamento normale: apri e imposta origine
+    if (!this.routeCreationState.isOpen) {
+        console.log('📋 Apertura pannello e impostazione origine:', airportCode);
+        this.openRouteCreationPanel();
+        
         this.routeCreationState.originAirport = airport;
         this.updateSlotDisplay('origin', airport);
         this.updateCreateButton();
-        
-        // Attiva slot destinazione per la selezione
         this.selectSlot('destination');
         
-        console.log('✅ Rotta pre-configurata con origine:', airportCode);
+        return;
     }
+    
+    // Se il pannello È APERTO, logica "Aggiungi a Rotta"
+    console.log('➕ Aggiunta aeroporto a rotta esistente:', airportCode);
+    
+    // Verifica che non sia già utilizzato
+    if ((this.routeCreationState.originAirport && this.routeCreationState.originAirport.code === airportCode) ||
+        (this.routeCreationState.destinationAirport && this.routeCreationState.destinationAirport.code === airportCode)) {
+        if (this.game.uiManager) {
+            this.game.uiManager.showNotification('Aeroporto già presente nella rotta', 'warning');
+        }
+        return;
+    }
+    
+    // Determina dove mettere l'aeroporto basandosi sul blocco origine
+    if (this.routeCreationState.originLocked && this.routeCreationState.originAirport) {
+        // Origine bloccata: sostituisci sempre destinazione
+        console.log('🔒 Origine bloccata, sostituisco destinazione con:', airportCode);
+        this.routeCreationState.destinationAirport = airport;
+        this.updateSlotDisplay('destination', airport);
+    } else {
+        // Origine non bloccata: sostituisci primo slot (origine prioritaria)
+        console.log('� Origine non bloccata, sostituisco origine con:', airportCode);
+        this.routeCreationState.originAirport = airport;
+        this.updateSlotDisplay('origin', airport);
+        
+        // Se non c'è destinazione, attiva il suo slot
+        if (!this.routeCreationState.destinationAirport) {
+            this.selectSlot('destination');
+        }
+    }
+    
+    // Aggiorna UI
+    this.updateCreateButton();
+    this.updateRouteInfo();
+    
+    console.log('✅ Aeroporto aggiunto alla rotta');
 };
 
 WorldMap.prototype.buildHubAt = function(airportCode) {
@@ -906,20 +977,30 @@ WorldMap.prototype.selectSlot = function(slotType) {
     console.log('✅ Slot attivo:', slotType);
 };
 
-WorldMap.prototype.selectAirportForSlot = function(airport) {
-    var slotType = this.routeCreationState.activeSlot;
+WorldMap.prototype.selectAirportForSlot = function(airport, slotType) {
+    // Se slotType non è fornito, usa activeSlot
+    if (!slotType) {
+        slotType = this.routeCreationState.activeSlot;
+    }
+    
     console.log('✈️ Selezione aeroporto', airport.code, 'per slot', slotType);
     
     // Verifica che non sia lo stesso aeroporto dell'altro slot
     if (slotType === 'origin' && this.routeCreationState.destinationAirport && 
         this.routeCreationState.destinationAirport.code === airport.code) {
         console.warn('⚠️ Non è possibile selezionare lo stesso aeroporto per origine e destinazione');
+        if (this.game.uiManager) {
+            this.game.uiManager.showNotification('Non puoi usare lo stesso aeroporto per origine e destinazione', 'error');
+        }
         return;
     }
     
     if (slotType === 'destination' && this.routeCreationState.originAirport && 
         this.routeCreationState.originAirport.code === airport.code) {
         console.warn('⚠️ Non è possibile selezionare lo stesso aeroporto per origine e destinazione');
+        if (this.game.uiManager) {
+            this.game.uiManager.showNotification('Non puoi usare lo stesso aeroporto per origine e destinazione', 'error');
+        }
         return;
     }
     

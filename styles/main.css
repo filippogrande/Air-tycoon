@@ -505,6 +505,7 @@ body {
     background: #e3f2fd;
     border-color: #4a90e2;
     position: relative;
+    cursor: not-allowed !important;
 }
 
 .airport-slot.locked::after {
@@ -514,6 +515,12 @@ body {
     right: 5px;
     font-size: 12px;
     opacity: 0.7;
+}
+
+.airport-slot.locked:hover {
+    border-color: #4a90e2 !important;
+    background: #e3f2fd !important;
+    box-shadow: none !important;
 }
 
 .airport-slot.selected {
