@@ -108,7 +108,7 @@ WorldMap.prototype.loadAirports = function() {
         var self = this;
         MapVisibilityManager.setupZoomBasedVisibility(this.map, function(zoom) {
             console.log('🔍 Callback visibilità chiamato, zoom:', zoom);
-            MapVisibilityManager.updateAirportVisibility(self.map, self.airportMarkers, zoom);
+            MapVisibilityManager.updateAirportVisibility(self.game, self.map, self.airportMarkers, zoom);
         });
     } else {
         console.warn('⚠️ MapVisibilityManager non caricato, usando logica semplificata');
@@ -208,7 +208,7 @@ WorldMap.prototype.setupZoomBasedVisibility = function() {
 };
 
 WorldMap.prototype.updateAirportVisibilitySimple = function() {
-    // Logica semplificata per compatibilità
+    // Logica fallback semplice se MapVisibilityManager non è disponibile
     var zoom = this.map.getZoom();
     var visibleCount = 0;
     
@@ -224,7 +224,7 @@ WorldMap.prototype.updateAirportVisibilitySimple = function() {
         }
     }
     
-    console.log('✅ Visibilità semplificata: aeroporti visibili:', visibleCount);
+    console.log('✅ Visibilità fallback: aeroporti visibili:', visibleCount);
 };
 
 // Calcola distanza tra due punti in km (formula Haversine semplificata)
