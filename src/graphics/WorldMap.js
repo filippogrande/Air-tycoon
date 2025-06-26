@@ -1609,6 +1609,28 @@ WorldMap.prototype.updateAllAirportPopups = function() {
     });
 };
 
+WorldMap.prototype.updateLockButton = function() {
+    var lockBtn = document.getElementById('lock-origin-btn');
+    if (!lockBtn) return;
+    
+    var hasOrigin = this.routeCreationState.originAirport !== null;
+    var isLocked = this.routeCreationState.originLocked;
+    
+    // Abilita/disabilita il bottone basandosi sulla presenza dell'origine
+    lockBtn.disabled = !hasOrigin;
+    
+    // Aggiorna icona e tooltip
+    if (isLocked) {
+        lockBtn.textContent = '🔒';
+        lockBtn.title = 'Origine bloccata - click per sbloccare';
+        lockBtn.classList.add('locked');
+    } else {
+        lockBtn.textContent = '🔓';
+        lockBtn.title = hasOrigin ? 'Blocca origine per confrontare destinazioni' : 'Seleziona prima un aeroporto di origine';
+        lockBtn.classList.remove('locked');
+    }
+};
+
 window.WorldMap = WorldMap;
 console.log('✅ WorldMap con Leaflet caricato');
 
