@@ -40,7 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const requiredClasses = [
         'GameState', 'Aircraft', 'Airport', 'Route', 
         'FleetManager', 'RouteManager', 'FinanceManager',
-        'UIManager', 'WorldMap', 'AircraftData', 'AirportData'
+        'UIManager', 'WorldMap', 'AircraftData', 'AirportData',
+        'SaveLoad', 'Game'
     ];
     
     const missingClasses = requiredClasses.filter(className => !window[className]);
