@@ -432,25 +432,9 @@ WorldMap.prototype.onAirportClick = function(airport, e) {
     
     // Se il pannello di creazione rotte è aperto
     if (this.routeCreationState && this.routeCreationState.isOpen) {
-        // Se l'origine è bloccata, qualsiasi aeroporto selezionato va sempre in destinazione
-        if (this.routeCreationState.originLocked) {
-            console.log('🔒 Origine bloccata, aeroporto va in destinazione:', airport.code);
-            this.selectAirportForSlot(airport, 'destination');
-            return;
-        }
-        
-        // Se l'origine non è bloccata e c'è uno slot attivo, usa quello
-        if (this.routeCreationState.activeSlot) {
-            this.selectAirportForSlot(airport, this.routeCreationState.activeSlot);
-            return;
-        }
-        
-        // Se non c'è slot attivo, auto-seleziona il primo slot libero
-        if (!this.routeCreationState.originAirport) {
-            this.selectAirportForSlot(airport, 'origin');
-        } else if (!this.routeCreationState.destinationAirport) {
-            this.selectAirportForSlot(airport, 'destination');
-        }
+        // Usa sempre la logica intelligente del RouteUIManager
+        console.log('� Pannello rotte aperto, delegando al RouteUIManager...');
+        this.selectAirportForSlot(airport, 'auto');
         return;
     }
     
@@ -640,10 +624,14 @@ WorldMap.prototype.selectSlot = function(slotType) {
 };
 
 WorldMap.prototype.selectAirportForSlot = function(airport, slotType) {
-    if (typeof RouteUIManager !== 'undefined') {
+    if (typeof RouteUIManager !== 'undefined' && RouteUIManager.selectAirportForSlot) {
         return RouteUIManager.selectAirportForSlot(airport, slotType);
     }
-    console.warn('⚠️ RouteUIManager non disponibile');
+    console.warn('⚠️ RouteUIManager.selectAirportForSlot non disponibile');
+    
+    // Fallback semplice per evitare errori
+    console.log('🛫 Fallback: selezione aeroporto', airport.code, 'per slot', slotType);
+    return false;
 };
 
 WorldMap.prototype.updateSlotDisplay = function(slotType, airport) {

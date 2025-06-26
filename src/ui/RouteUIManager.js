@@ -9,7 +9,7 @@ var RouteUIManager = {
         activeSlot: null,
         originAirport: null,
         destinationAirport: null,
-        originLocked: false
+        originLocked: true  // Lucchetto attivo di default
     },
     
     // Apri pannello creazione rotte
@@ -61,7 +61,7 @@ var RouteUIManager = {
             activeSlot: null,
             originAirport: null,
             destinationAirport: null,
-            originLocked: false
+            originLocked: true  // Lucchetto attivo di default
         };
         
         // Reset UI
@@ -331,6 +331,108 @@ var RouteUIManager = {
                 console.error('❌ Errore caricamento pannelli UI rotte:', error);
                 return false;
             });
+    },
+    
+    // Seleziona aeroporto per uno slot specifico
+    selectAirportForSlot: function(airport, slotType) {
+        console.log('🛫 Selezione aeroporto per slot:', airport.code, 'slot:', slotType);
+        
+        if (!airport) {
+            console.warn('⚠️ Parametri mancanti per selectAirportForSlot');
+            return false;
+        }
+        
+        // Verifica che il pannello sia aperto
+        if (!this.routeCreationState.isOpen) {
+            console.log('📋 Pannello rotte non aperto, apertura automatica...');
+            this.openRouteCreationPanel();
+        }
+        
+        // Se slotType è 'auto' o non specificato, usa la logica intelligente
+        if (!slotType || slotType === 'auto') {
+            return this.smartAirportSelection(airport);
+        }
+        
+        // Logica per slot specifici (per compatibilità con vecchio codice)
+        if (slotType === 'origin') {
+            this.routeCreationState.originAirport = airport;
+            this.updateSlotDisplay('origin', airport);
+        } else if (slotType === 'destination') {
+            this.routeCreationState.destinationAirport = airport;
+            this.updateSlotDisplay('destination', airport);
+        }
+        
+        // Clear active slot dopo la selezione
+        this.routeCreationState.activeSlot = null;
+        this.clearActiveSlots();
+        
+        // Aggiorna UI
+        this.updateCreateButton();
+        
+        // Se abbiamo entrambi gli aeroporti, mostra info rotta
+        if (this.routeCreationState.originAirport && this.routeCreationState.destinationAirport) {
+            this.updateRouteInfo(this.routeCreationState.originAirport, this.routeCreationState.destinationAirport);
+        }
+        
+        return true;
+    },
+    
+    // Logica di selezione intelligente degli aeroporti
+    smartAirportSelection: function(airport) {
+        var origin = this.routeCreationState.originAirport;
+        var destination = this.routeCreationState.destinationAirport;
+        var isLocked = this.routeCreationState.originLocked;
+        
+        // Se non c'è origine, questo aeroporto diventa origine
+        if (!origin) {
+            console.log('🔹 Primo aeroporto selezionato come origine:', airport.code);
+            this.routeCreationState.originAirport = airport;
+            this.updateSlotDisplay('origin', airport);
+            
+            // Seleziona automaticamente lo slot destinazione per il prossimo click
+            this.selectSlot('destination');
+            
+        } else if (!destination) {
+            // Se c'è origine ma non destinazione, questo diventa destinazione
+            console.log('🔹 Secondo aeroporto selezionato come destinazione:', airport.code);
+            this.routeCreationState.destinationAirport = airport;
+            this.updateSlotDisplay('destination', airport);
+            
+        } else {
+            // Entrambi gli slot sono occupati - comportamento dipende dal lucchetto
+            if (isLocked) {
+                // Con lucchetto: mantieni origine, cambia destinazione
+                console.log('🔒 Lucchetto attivo - mantengo origine, cambio destinazione:', airport.code);
+                this.routeCreationState.destinationAirport = airport;
+                this.updateSlotDisplay('destination', airport);
+            } else {
+                // Senza lucchetto: la destinazione attuale diventa origine, nuovo aeroporto diventa destinazione
+                console.log('🔄 Selezione sequenziale - la destinazione diventa origine:', airport.code);
+                this.routeCreationState.originAirport = this.routeCreationState.destinationAirport;
+                this.routeCreationState.destinationAirport = airport;
+                this.updateSlotDisplay('origin', this.routeCreationState.originAirport);
+                this.updateSlotDisplay('destination', airport);
+            }
+        }
+        
+        // Clear active slot dopo la selezione
+        this.routeCreationState.activeSlot = null;
+        this.clearActiveSlots();
+        
+        // Aggiorna UI
+        this.updateCreateButton();
+        
+        // Se abbiamo entrambi gli aeroporti, mostra info rotta
+        if (this.routeCreationState.originAirport && this.routeCreationState.destinationAirport) {
+            this.updateRouteInfo(this.routeCreationState.originAirport, this.routeCreationState.destinationAirport);
+        }
+        
+        console.log('✅ Aeroporto selezionato. Origine:', 
+            this.routeCreationState.originAirport?.code, 
+            'Destinazione:', 
+            this.routeCreationState.destinationAirport?.code,
+            'Locked:', this.routeCreationState.originLocked);
+        return true;
     }
 };
 
