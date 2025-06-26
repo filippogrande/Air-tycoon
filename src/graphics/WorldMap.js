@@ -1632,5 +1632,82 @@ WorldMap.prototype.clearDestination = function() {
     
     console.log('✅ Destinazione pulita');
 };
-//# sourceMappingURL=WorldMap.js.map
+
+// Calcola stime di traffico passeggeri e cargo con errore casuale
+WorldMap.prototype.calculateTrafficEstimatesWithError = function(origin, destination, distance, analysisLevel) {
+    // Calcola stime base di traffico per la rotta
+    
+    // Fattori base degli aeroporti
+    var originFactor = this.getAirportTrafficFactor(origin);
+    var destinationFactor = this.getAirportTrafficFactor(destination);
+    var routeFactor = (originFactor + destinationFactor) / 2;
+    
+    // Fattore distanza (rotte più lunghe hanno meno frequenza ma più capacità)
+    var distanceFactor = 1.0;
+    if (distance > 3000) {
+        distanceFactor = 1.2; // Rotte intercontinentali
+    } else if (distance > 1500) {
+        distanceFactor = 1.1; // Rotte continentali lunghe
+    } else if (distance < 500) {
+        distanceFactor = 0.8; // Rotte regionali brevi
+    }
+    
+    // Calcolo passeggeri base (per giorno)
+    var basePassengers = Math.round(routeFactor * distanceFactor * 150);
+    
+    // Calcolo cargo base (tonnellate per giorno)
+    var baseCargo = Math.round(routeFactor * distanceFactor * 12);
+    
+    // Applica errore casuale basato sul livello di analisi
+    var passengerError, cargoError;
+    if (analysisLevel === 'improved') {
+        passengerError = 0.10; // ±10%
+        cargoError = 0.08;     // ±8%
+    } else {
+        passengerError = 0.30; // ±30%
+        cargoError = 0.25;     // ±25%
+    }
+    
+    // Genera errore casuale
+    var passengerMultiplier = 1 + (Math.random() - 0.5) * 2 * passengerError;
+    var cargoMultiplier = 1 + (Math.random() - 0.5) * 2 * cargoError;
+    
+    var finalPassengers = Math.max(10, Math.round(basePassengers * passengerMultiplier));
+    var finalCargo = Math.max(1, Math.round(baseCargo * cargoMultiplier));
+    
+    return {
+        displayPassengers: finalPassengers,
+        displayCargo: finalCargo,
+        realPassengers: basePassengers,  // Valori reali senza errore (per calcoli interni)
+        realCargo: baseCargo,
+        realRevenue: (basePassengers * 120) + (baseCargo * 800) // €120/passeggero, €800/tonnellata
+    };
+};
+
+WorldMap.prototype.getAirportTrafficFactor = function(airport) {
+    // Calcola fattore di traffico basato su dimensione e livelli business/turistico
+    
+    var sizeFactor = 1.0;
+    switch (airport.size) {
+        case 'hub':
+            sizeFactor = 3.0;
+            break;
+        case 'large':
+            sizeFactor = 2.0;
+            break;
+        case 'medium':
+            sizeFactor = 1.2;
+            break;
+        default: // small/regional
+            sizeFactor = 0.6;
+            break;
+    }
+    
+    // Fattore business e turistico (0-100 scale)
+    var businessLevel = airport.businessLevel || 50;
+    var touristLevel = airport.touristLevel || 50;
+    var activityFactor = (businessLevel + touristLevel) / 100; // Media 0.5-1.0
+    
+    return sizeFactor * activityFactor;
+};
 
