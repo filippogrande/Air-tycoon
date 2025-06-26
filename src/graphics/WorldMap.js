@@ -1595,8 +1595,9 @@ WorldMap.prototype.updateAllAirportPopups = function() {
     var self = this;
     
     // Aggiorna tutti i marker degli aeroporti
-    this.airportMarkers.forEach(function(marker) {
-        if (marker.airportData) {
+    for (var code in this.airportMarkers) {
+        var marker = this.airportMarkers[code];
+        if (marker && marker.airportData) {
             var airport = marker.airportData;
             var isPlayerHub = self.game.hubManager && self.game.hubManager.isPlayerHub(airport.code);
             var newContent = self.createAirportPopup(airport, isPlayerHub);
@@ -1604,7 +1605,7 @@ WorldMap.prototype.updateAllAirportPopups = function() {
             // Aggiorna il contenuto del popup bindato
             marker.setPopupContent(newContent);
         }
-    });
+    }
 };
 
 WorldMap.prototype.updateLockButton = function() {
