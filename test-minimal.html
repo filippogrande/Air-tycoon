@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Tycoon 2 - Test Minimo</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .log { margin: 5px 0; font-family: monospace; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Test Caricamento Air Tycoon 2</h1>
+    <div id="log"></div>
+    
+    <script>
+        function log(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'log ' + (isError ? 'error' : 'success');
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            document.getElementById('log').appendChild(div);
+            console.log(message);
+        }
+        
+        log('🚀 Avvio test caricamento...');
+        
+        window.addEventListener('error', function(e) {
+            log('❌ Errore JavaScript: ' + e.message + ' in ' + e.filename + ':' + e.lineno, true);
+        });
+    </script>
+    
+    <!-- Test caricamento singolo file -->
+    <script src="src/data/AircraftData.js"></script>
+    
+    <script>
+        // Verifica se AircraftData è stato caricato
+        setTimeout(() => {
+            if (window.AircraftData) {
+                log('✅ AircraftData caricato correttamente');
+                log('📊 Numero aeromobili: ' + AircraftData.aircraft.length);
+            } else {
+                log('❌ AircraftData NON caricato', true);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
