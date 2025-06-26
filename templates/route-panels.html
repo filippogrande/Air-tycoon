@@ -82,88 +82,151 @@
       </div>
     </div>
 
-    <div class="route-type-selection">
-      <h4>Tipo di Rotta</h4>
-      <div class="route-type-buttons">
-        <button
-          id="route-type-passenger"
-          class="route-type-btn active"
-          data-type="passenger"
-        >
-          👥 Passeggeri
-        </button>
-        <button id="route-type-cargo" class="route-type-btn" data-type="cargo">
-          📦 Cargo
-        </button>
-        <button id="route-type-mixed" class="route-type-btn" data-type="mixed">
-          🔄 Misto
-        </button>
-      </div>
-    </div>
+    <div class="config-grid">
+      <!-- Colonna sinistra -->
+      <div class="config-left-column">
+        <div class="route-type-selection">
+          <h4>Tipo di Rotta</h4>
+          <div class="route-type-buttons">
+            <button
+              id="route-type-passenger"
+              class="route-type-btn active"
+              data-type="passenger"
+            >
+              👥 Passeggeri
+            </button>
+            <button
+              id="route-type-cargo"
+              class="route-type-btn"
+              data-type="cargo"
+            >
+              📦 Cargo
+            </button>
+            <button
+              id="route-type-mixed"
+              class="route-type-btn"
+              data-type="mixed"
+            >
+              🔄 Misto
+            </button>
+          </div>
+        </div>
 
-    <div class="demand-analysis">
-      <h4>Analisi Domanda</h4>
-      <div class="demand-estimates" id="demand-estimates">
-        <div class="estimate-row">
-          <span class="estimate-label">👥 Passeggeri/giorno:</span>
-          <span class="estimate-value" id="config-passengers">--</span>
-          <span class="estimate-accuracy">(±30%)</span>
+        <div class="demand-analysis">
+          <h4>Analisi Domanda</h4>
+          <div class="demand-estimates" id="demand-estimates">
+            <div class="estimate-row">
+              <span class="estimate-label">👥 Passeggeri/giorno:</span>
+              <span class="estimate-value" id="config-passengers">--</span>
+              <span class="estimate-accuracy">(±30%)</span>
+            </div>
+            <div class="estimate-row">
+              <span class="estimate-label">📦 Cargo/giorno:</span>
+              <span class="estimate-value" id="config-cargo">--</span>
+              <span class="estimate-accuracy">(±25%)</span>
+            </div>
+          </div>
+          <button
+            id="improve-analysis-btn"
+            class="analysis-action-btn improve-btn"
+          >
+            <div class="btn-icon">🔍</div>
+            <div class="btn-content">
+              <div class="btn-title">Migliora Stima Domanda</div>
+              <div class="btn-subtitle">Analisi dettagliata del traffico</div>
+              <div class="btn-price">€5,000</div>
+            </div>
+          </button>
         </div>
-        <div class="estimate-row">
-          <span class="estimate-label">📦 Cargo/giorno:</span>
-          <span class="estimate-value" id="config-cargo">--</span>
-          <span class="estimate-accuracy">(±25%)</span>
-        </div>
-      </div>
-      <button id="improve-analysis-btn" class="improve-btn">
-        🔍 Migliora Stima Domanda (€5,000)
-      </button>
-    </div>
 
-    <div class="market-analysis">
-      <h4>Analisi di Mercato</h4>
-      <div class="market-locked" id="market-locked">
-        <p class="locked-message">
-          🔒 Richiede analisi di mercato professionale
-        </p>
-        <button id="market-analysis-btn" class="market-btn">
-          📊 Analisi di Mercato (€15,000)
-        </button>
+        <div class="market-analysis">
+          <h4>Analisi di Mercato</h4>
+          <div class="market-locked" id="market-locked">
+            <p class="locked-message">
+              🔒 Richiede analisi di mercato professionale
+            </p>
+            <button
+              id="market-analysis-btn"
+              class="analysis-action-btn market-btn"
+            >
+              <div class="btn-icon">📊</div>
+              <div class="btn-content">
+                <div class="btn-title">Analisi di Mercato</div>
+                <div class="btn-subtitle">
+                  Studio competitivo e profittabilità
+                </div>
+                <div class="btn-price">€15,000</div>
+              </div>
+            </button>
+          </div>
+          <div
+            class="market-unlocked"
+            id="market-unlocked"
+            style="display: none"
+          >
+            <div class="estimate-row">
+              <span class="estimate-label">✈️ Costo per volo:</span>
+              <span class="cost-value"
+                >€<span id="cost-per-flight">--</span></span
+              >
+            </div>
+            <div class="estimate-row">
+              <span class="estimate-label">📈 Ricavi stimati/mese:</span>
+              <span class="revenue-value"
+                >€<span id="config-monthly-revenue">--</span></span
+              >
+            </div>
+            <div class="estimate-row profit-row">
+              <span class="estimate-label"
+                ><strong>💎 Profitto stimato/mese:</strong></span
+              >
+              <span class="profit-value"
+                ><strong>€<span id="estimated-profit">--</span></strong></span
+              >
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="market-unlocked" id="market-unlocked" style="display: none">
-        <div class="estimate-row">
-          <span class="estimate-label">✈️ Costo per volo:</span>
-          <span class="cost-value">€<span id="cost-per-flight">--</span></span>
-        </div>
-        <div class="estimate-row">
-          <span class="estimate-label">📈 Ricavi stimati/mese:</span>
-          <span class="revenue-value"
-            >€<span id="config-monthly-revenue">--</span></span
-          >
-        </div>
-        <div class="estimate-row profit-row">
-          <span class="estimate-label"
-            ><strong>💎 Profitto stimato/mese:</strong></span
-          >
-          <span class="profit-value"
-            ><strong>€<span id="estimated-profit">--</span></strong></span
-          >
-        </div>
-      </div>
-    </div>
 
-    <div class="cost-analysis">
-      <h4>Costi Operativi</h4>
-      <div class="cost-breakdown">
-        <div class="cost-row">
-          <span>💰 Costo creazione rotta:</span>
-          <span class="cost-value"
-            >€<span id="route-creation-cost">--</span></span
+      <!-- Colonna destra -->
+      <div class="config-right-column">
+        <div class="aircraft-compatibility">
+          <h4>Aeroplani Compatibili</h4>
+          <div id="compatible-aircraft" class="aircraft-list">
+            <!-- Lista aeroplani compatibili verrà popolata dinamicamente -->
+          </div>
+          <div
+            id="no-aircraft-warning"
+            class="aircraft-warning"
+            style="display: none"
           >
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-content">
+              <div class="warning-title">Nessun aereo compatibile</div>
+              <div class="warning-message">
+                Non possiedi nessun aereo che può fare questa rotta
+              </div>
+              <button class="buy-aircraft-btn">🛒 Acquista Aereo</button>
+            </div>
+          </div>
         </div>
-        <div class="cost-row">
-          <span>🌍 Nazioni sorvolate:</span>
-          <span class="info-value"><span id="countries-count">--</span></span>
+
+        <div class="cost-analysis">
+          <h4>Costi Operativi</h4>
+          <div class="cost-breakdown">
+            <div class="cost-row">
+              <span>💰 Costo creazione rotta:</span>
+              <span class="cost-value"
+                >€<span id="route-creation-cost">--</span></span
+              >
+            </div>
+            <div class="cost-row">
+              <span>🌍 Nazioni sorvolate:</span>
+              <span class="info-value"
+                ><span id="countries-count">--</span></span
+              >
+            </div>
+          </div>
         </div>
       </div>
     </div>

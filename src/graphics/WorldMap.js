@@ -21,7 +21,8 @@ Object.defineProperty(WorldMap.prototype, 'routeCreationState', {
             activeSlot: null,
             originAirport: null,
             destinationAirport: null,
-            originLocked: false
+            originLocked: true,  // Lucchetto attivo di default
+            selectedAircraftId: null
         };
     },
     set: function(value) {
@@ -440,6 +441,28 @@ WorldMap.prototype.setupRouteCreationEvents = function() {
             self.confirmCreateRoute();
         });
     }
+    
+    // Listener per bottone acquista aereo nel warning
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('buy-aircraft-btn')) {
+            console.log('🛒 Richiesta acquisto aereo dalla configurazione rotta');
+            
+            // Chiudi pannello configurazione
+            if (typeof RouteUIManager !== 'undefined' && RouteUIManager.closeRouteCreationPanel) {
+                RouteUIManager.closeRouteCreationPanel();
+            }
+            
+            // Vai al tab flotta
+            if (self.game.uiManager && self.game.uiManager.switchTab) {
+                self.game.uiManager.switchTab('fleet');
+            }
+            
+            // Mostra notifica
+            if (self.game.uiManager) {
+                self.game.uiManager.showNotification('Vai al tab Flotta per acquistare un aereo', 'info');
+            }
+        }
+    });
 };
 
 // Gestisce click su aeroporto

@@ -9,7 +9,8 @@ var RouteUIManager = {
         activeSlot: null,
         originAirport: null,
         destinationAirport: null,
-        originLocked: true  // Lucchetto attivo di default
+        originLocked: true,  // Lucchetto attivo di default come richiesto
+        selectedAircraftId: null
     },
     
     // Apri pannello creazione rotte
@@ -67,7 +68,8 @@ var RouteUIManager = {
             activeSlot: null,
             originAirport: null,
             destinationAirport: null,
-            originLocked: true  // Lucchetto attivo di default
+            originLocked: true,  // Lucchetto attivo di default come richiesto
+            selectedAircraftId: null
         };
         
         // Reset UI
@@ -501,6 +503,9 @@ var RouteUIManager = {
         
         // Calcola costi
         this.updateRouteConfigCosts();
+        
+        // Popola aeroplani compatibili
+        this.updateCompatibleAircraft();
     },
     
     // Aggiorna costi nel pannello configurazione
@@ -520,6 +525,107 @@ var RouteUIManager = {
         }
     },
     
+    // Aggiorna lista aeroplani compatibili
+    updateCompatibleAircraft: function() {
+        var origin = this.routeCreationState.originAirport;
+        var destination = this.routeCreationState.destinationAirport;
+        
+        if (!origin || !destination) return;
+        
+        var aircraftList = document.getElementById('compatible-aircraft');
+        var warningDiv = document.getElementById('no-aircraft-warning');
+        
+        if (!aircraftList || !warningDiv) return;
+        
+        // Calcola distanza rotta
+        var distance = 0;
+        if (typeof RouteCalculator !== 'undefined') {
+            var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+            distance = estimates.distance;
+        }
+        
+        // Ottieni lista aeroplani dal FleetManager
+        var compatibleAircraft = [];
+        if (typeof FleetManager !== 'undefined' && FleetManager.getOwnedAircraft) {
+            var ownedAircraft = FleetManager.getOwnedAircraft();
+            
+            compatibleAircraft = ownedAircraft.filter(function(aircraft) {
+                // Verifica se l'aereo può fare questa distanza
+                return aircraft.range >= distance;
+            });
+        }
+        
+        // Se non ci sono aeroplani compatibili, mostra warning
+        if (compatibleAircraft.length === 0) {
+            aircraftList.innerHTML = '';
+            warningDiv.style.display = 'flex';
+            
+            // Disabilita bottone creazione rotta
+            var confirmBtn = document.getElementById('confirm-create-route');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+            }
+        } else {
+            // Mostra lista aeroplani
+            warningDiv.style.display = 'none';
+            
+            var listHTML = '';
+            compatibleAircraft.forEach(function(aircraft, index) {
+                var statusClass = aircraft.isAvailable ? 'available' : 'busy';
+                var statusText = aircraft.isAvailable ? 'Disponibile' : 'In uso';
+                var selectedClass = index === 0 ? 'selected' : ''; // Seleziona il primo per default
+                
+                listHTML += '<div class="aircraft-item ' + selectedClass + '" data-aircraft-id="' + aircraft.id + '">' +
+                           '<div class="aircraft-icon">✈️</div>' +
+                           '<div class="aircraft-details">' +
+                           '<div class="aircraft-name">' + aircraft.name + '</div>' +
+                           '<div class="aircraft-specs">' + 
+                           'Autonomia: ' + aircraft.range + 'km | ' +
+                           'Passeggeri: ' + aircraft.passengers + ' | ' +
+                           'Cargo: ' + aircraft.cargo + 't' +
+                           '</div>' +
+                           '</div>' +
+                           '<div class="aircraft-status ' + statusClass + '">' + statusText + '</div>' +
+                           '</div>';
+            });
+            
+            aircraftList.innerHTML = listHTML;
+            
+            // Aggiungi listener per selezione aeroplano
+            this.setupAircraftSelection();
+            
+            // Abilita bottone creazione rotta
+            var confirmBtn = document.getElementById('confirm-create-route');
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+            }
+        }
+    },
+    
+    // Setup selezione aeroplani
+    setupAircraftSelection: function() {
+        var aircraftItems = document.querySelectorAll('.aircraft-item');
+        var self = this;
+        
+        aircraftItems.forEach(function(item) {
+            item.addEventListener('click', function() {
+                // Rimuovi selezione precedente
+                aircraftItems.forEach(function(otherItem) {
+                    otherItem.classList.remove('selected');
+                });
+                
+                // Aggiungi selezione a questo item
+                this.classList.add('selected');
+                
+                // Salva aeroplano selezionato
+                var aircraftId = this.getAttribute('data-aircraft-id');
+                self.routeCreationState.selectedAircraftId = aircraftId;
+                
+                console.log('✈️ Aeroplano selezionato:', aircraftId);
+            });
+        });
+    },
+
     // Chiudi pannello configurazione e torna alla selezione
     backToSelection: function() {
         console.log('⬅️ Ritorno alla selezione aeroporti...');
