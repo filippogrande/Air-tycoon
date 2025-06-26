@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Tycoon 2 Clone</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/ui.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Header con informazioni compagnia -->
+        <header id="game-header">
+            <div class="company-info">
+                <h1 id="company-name">Air Express</h1>
+                <div class="stats">
+                    <span id="money">💰 $1,000,000</span>
+                    <span id="reputation">⭐ 50</span>
+                    <span id="date">📅 Gen 2024</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Menu principale -->
+        <nav id="main-menu">
+            <button class="menu-btn active" data-tab="world">🌍 Mappa</button>
+            <button class="menu-btn" data-tab="fleet">✈️ Flotta</button>
+            <button class="menu-btn" data-tab="routes">🛣️ Rotte</button>
+            <button class="menu-btn" data-tab="finances">💼 Finanze</button>
+            <button class="menu-btn" data-tab="research">🔬 Ricerca</button>
+        </nav>
+
+        <!-- Area principale del gioco -->
+        <main id="game-main">
+            <!-- Mappa del mondo -->
+            <div id="world-tab" class="tab-content active">
+                <canvas id="world-map" width="1200" height="600"></canvas>
+                <div id="airport-info" class="info-panel hidden">
+                    <h3 id="airport-name"></h3>
+                    <p id="airport-details"></p>
+                    <div class="airport-actions">
+                        <button id="create-route">Crea Rotta</button>
+                        <button id="view-routes">Vedi Rotte</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gestione flotta -->
+            <div id="fleet-tab" class="tab-content">
+                <div class="fleet-header">
+                    <h2>La Tua Flotta</h2>
+                    <button id="buy-aircraft">Acquista Aeromobile</button>
+                </div>
+                <div id="aircraft-list" class="aircraft-grid"></div>
+            </div>
+
+            <!-- Gestione rotte -->
+            <div id="routes-tab" class="tab-content">
+                <div class="routes-header">
+                    <h2>Rotte Attive</h2>
+                    <button id="add-route">Aggiungi Rotta</button>
+                </div>
+                <div id="routes-list"></div>
+            </div>
+
+            <!-- Finanze -->
+            <div id="finances-tab" class="tab-content">
+                <div class="finance-overview">
+                    <h2>Situazione Finanziaria</h2>
+                    <div class="finance-stats">
+                        <div class="stat-card">
+                            <h3>Entrate Mensili</h3>
+                            <span id="monthly-income">$0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Costi Mensili</h3>
+                            <span id="monthly-costs">$0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Profitto</h3>
+                            <span id="monthly-profit">$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ricerca -->
+            <div id="research-tab" class="tab-content">
+                <h2>Centro Ricerca</h2>
+                <div id="research-projects"></div>
+            </div>
+        </main>
+
+        <!-- Modal per acquisto aeromobili -->
+        <div id="aircraft-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Acquista Aeromobile</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div id="aircraft-catalog"></div>
+            </div>
+        </div>
+
+        <!-- Modal per creazione rotte -->
+        <div id="route-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Crea Nuova Rotta</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="route-form">
+                    <select id="origin-airport">
+                        <option value="">Seleziona aeroporto di partenza</option>
+                    </select>
+                    <select id="destination-airport">
+                        <option value="">Seleziona destinazione</option>
+                    </select>
+                    <select id="route-aircraft">
+                        <option value="">Seleziona aeromobile</option>
+                    </select>
+                    <button id="confirm-route">Conferma Rotta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/core/Game.js"></script>
+    <script src="src/core/GameState.js"></script>
+    <script src="src/entities/Aircraft.js"></script>
+    <script src="src/entities/Airport.js"></script>
+    <script src="src/entities/Route.js"></script>
+    <script src="src/managers/FleetManager.js"></script>
+    <script src="src/managers/RouteManager.js"></script>
+    <script src="src/managers/FinanceManager.js"></script>
+    <script src="src/ui/UIManager.js"></script>
+    <script src="src/graphics/WorldMap.js"></script>
+    <script src="src/data/AircraftData.js"></script>
+    <script src="src/data/AirportData.js"></script>
+    <script src="src/utils/SaveLoad.js"></script>
+    <script src="src/utils/APIClient.js"></script>
+    <script src="src/main.js"></script>
+</body>
+</html>
