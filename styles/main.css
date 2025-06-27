@@ -1320,3 +1320,116 @@ body {
         font-size: 14px;
     }
 }
+
+/* Stili per la sezione selezione aeroplano */
+.aircraft-selection {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.aircraft-selection h4 {
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.aircraft-selection-info {
+    margin-bottom: 20px;
+}
+
+.selection-note {
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.4;
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border-left: 4px solid #17a2b8;
+    margin: 0;
+}
+
+.aircraft-selector {
+    margin-bottom: 20px;
+}
+
+.aircraft-dropdown {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.aircraft-dropdown:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.aircraft-dropdown:hover {
+    border-color: #4a90e2;
+}
+
+.selection-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+}
+
+.aircraft-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.aircraft-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.aircraft-model {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.aircraft-range {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.aircraft-capacity {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.capacity-passengers, .capacity-cargo {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.capacity-passengers {
+    color: #4a90e2;
+}
+
+.capacity-cargo {
+    color: #28a745;
+}

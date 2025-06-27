@@ -77,11 +77,20 @@ var RouteUIManager = {
         // Reset UI
         this.clearSlot('origin');
         this.clearSlot('destination');
-        this.clearAircraftSelection();
         this.clearActiveSlots();
         this.updateCreateButton();
         this.hideRouteInfo();
         this.updateLockButton();
+        
+        // Reset selezione aeroplano
+        var selector = document.getElementById('aircraft-selector');
+        var detailsDiv = document.getElementById('selected-aircraft-details');
+        if (selector) {
+            selector.value = '';
+        }
+        if (detailsDiv) {
+            detailsDiv.style.display = 'none';
+        }
     },
     
     // Aggiorna display slot
@@ -150,21 +159,8 @@ var RouteUIManager = {
         
         var hasOrigin = this.routeCreationState.originAirport !== null;
         var hasDestination = this.routeCreationState.destinationAirport !== null;
-        var hasAircraft = this.routeCreationState.selectedAircraftId !== null;
         
-        // Bottone abilitato solo se tutti e tre i requisiti sono soddisfatti
-        createBtn.disabled = !(hasOrigin && hasDestination && hasAircraft);
-        
-        // Aggiorna testo del bottone per dare feedback
-        if (!hasAircraft) {
-            createBtn.textContent = 'Seleziona Aeroplano';
-        } else if (!hasOrigin) {
-            createBtn.textContent = 'Seleziona Origine';
-        } else if (!hasDestination) {
-            createBtn.textContent = 'Seleziona Destinazione';
-        } else {
-            createBtn.textContent = 'Configura Rotta';
-        }
+        createBtn.disabled = !(hasOrigin && hasDestination);
     },
     
     // Mostra informazioni rotta
@@ -483,6 +479,9 @@ var RouteUIManager = {
             // Popola i dati della rotta
             this.populateRouteConfigData();
             
+            // Setup selezione aeroplano
+            this.setupAircraftSelector();
+            
             console.log('✅ Pannello configurazione rotta aperto');
             return true;
         }
@@ -642,6 +641,83 @@ var RouteUIManager = {
         });
     },
 
+    // Setup dropdown selezione aeroplano
+    setupAircraftSelector: function() {
+        var selector = document.getElementById('aircraft-selector');
+        var detailsDiv = document.getElementById('selected-aircraft-details');
+        var self = this;
+        
+        if (!selector) return;
+        
+        // Popola il dropdown con gli aeroplani disponibili
+        this.populateAircraftSelector();
+        
+        // Gestisci cambio selezione
+        selector.addEventListener('change', function() {
+            var aircraftId = this.value;
+            
+            if (aircraftId === '') {
+                // Gestione automatica
+                self.routeCreationState.selectedAircraftId = null;
+                detailsDiv.style.display = 'none';
+                console.log('🤖 Selezione aeroplano: Gestione automatica');
+            } else {
+                // Aeroplano specifico selezionato
+                self.routeCreationState.selectedAircraftId = aircraftId;
+                self.showAircraftDetails(aircraftId);
+                detailsDiv.style.display = 'block';
+                console.log('✈️ Aeroplano selezionato:', aircraftId);
+            }
+        });
+    },
+    
+    // Popola il dropdown con gli aeroplani disponibili
+    populateAircraftSelector: function() {
+        var selector = document.getElementById('aircraft-selector');
+        if (!selector || !game.fleetManager) return;
+        
+        // Svuota opzioni esistenti (tranne la prima - gestione automatica)
+        while (selector.children.length > 1) {
+            selector.removeChild(selector.lastChild);
+        }
+        
+        // Ottieni gli aeroplani dalla flotta
+        var fleet = game.fleetManager.getFleet();
+        
+        fleet.forEach(function(aircraft) {
+            var option = document.createElement('option');
+            option.value = aircraft.id;
+            option.textContent = aircraft.model + ' (' + aircraft.status + ')';
+            
+            // Disabilita se l'aereo è già assegnato
+            if (aircraft.status !== 'available') {
+                option.disabled = true;
+                option.textContent += ' - Non Disponibile';
+            }
+            
+            selector.appendChild(option);
+        });
+    },
+    
+    // Mostra dettagli dell'aeroplano selezionato
+    showAircraftDetails: function(aircraftId) {
+        if (!game.fleetManager) return;
+        
+        var aircraft = game.fleetManager.getAircraftById(aircraftId);
+        if (!aircraft) return;
+        
+        // Aggiorna i dettagli
+        var modelSpan = document.getElementById('selected-aircraft-model');
+        var rangeSpan = document.getElementById('selected-aircraft-range');
+        var passengersSpan = document.getElementById('selected-aircraft-passengers');
+        var cargoSpan = document.getElementById('selected-aircraft-cargo');
+        
+        if (modelSpan) modelSpan.textContent = aircraft.model;
+        if (rangeSpan) rangeSpan.textContent = aircraft.range || '--';
+        if (passengersSpan) passengersSpan.textContent = aircraft.passengerCapacity || '--';
+        if (cargoSpan) cargoSpan.textContent = aircraft.cargoCapacity || '--';
+    },
+
     // Chiudi pannello configurazione e torna alla selezione
     backToSelection: function() {
         console.log('⬅️ Ritorno alla selezione aeroporti...');
@@ -703,175 +779,6 @@ var RouteUIManager = {
                 if (cargoSpan) cargoSpan.textContent = estimates.displayCargo;
             }
         }
-    },
-    
-    // Popolamento lista aeroplani disponibili
-    populateAircraftList: function() {
-        console.log('✈️ Popolamento lista aeroplani...');
-        
-        var aircraftDropdown = document.getElementById('aircraft-dropdown');
-        var aircraftList = document.getElementById('available-aircraft-list');
-        
-        if (!aircraftList) {
-            console.warn('⚠️ Lista aeroplani non trovata');
-            return;
-        }
-        
-        // Ottieni aeroplani posseduti dal player
-        var ownedAircraft = [];
-        if (typeof FleetManager !== 'undefined' && FleetManager.getOwnedAircraft) {
-            ownedAircraft = FleetManager.getOwnedAircraft();
-        }
-        
-        // Pulisci lista
-        aircraftList.innerHTML = '';
-        
-        if (ownedAircraft.length === 0) {
-            aircraftList.innerHTML = '<div class="aircraft-item disabled">' +
-                '<div class="aircraft-name">Nessun aeroplano posseduto</div>' +
-                '<div class="aircraft-specs">Vai al negozio per acquistare aeroplani</div>' +
-                '</div>';
-            return;
-        }
-        
-        // Aggiungi ogni aeroplano alla lista
-        ownedAircraft.forEach(function(aircraft, index) {
-            var statusClass = aircraft.isAvailable ? 'available' : 'busy';
-            var statusText = aircraft.isAvailable ? 'Disponibile' : 'In uso';
-            var disabled = !aircraft.isAvailable ? 'disabled' : '';
-            
-            var aircraftItem = document.createElement('div');
-            aircraftItem.className = 'aircraft-item ' + disabled;
-            aircraftItem.dataset.aircraftId = aircraft.id;
-            
-            aircraftItem.innerHTML = 
-                '<div class="aircraft-info">' +
-                    '<div class="aircraft-name">' + aircraft.model + '</div>' +
-                    '<div class="aircraft-specs">' +
-                        'Raggio: ' + aircraft.range + 'km | ' +
-                        'Passeggeri: ' + aircraft.passengerCapacity + ' | ' +
-                        'Cargo: ' + aircraft.cargoCapacity + 't' +
-                    '</div>' +
-                '</div>' +
-                '<div class="aircraft-status ' + statusClass + '">' + statusText + '</div>';
-            
-            // Aggiungi listener solo se disponibile
-            if (aircraft.isAvailable) {
-                aircraftItem.addEventListener('click', function() {
-                    RouteUIManager.selectAircraft(aircraft);
-                });
-            }
-            
-            aircraftList.appendChild(aircraftItem);
-        });
-        
-        console.log('✅ Lista aeroplani popolata:', ownedAircraft.length, 'aeroplani trovati');
-    },
-    
-    // Seleziona aeroplano
-    selectAircraft: function(aircraft) {
-        console.log('✈️ Selezione aeroplano:', aircraft.model);
-        
-        var aircraftSlot = document.getElementById('selected-aircraft');
-        var aircraftDropdown = document.getElementById('aircraft-dropdown');
-        
-        if (!aircraftSlot) return;
-        
-        // Aggiorna stato
-        this.routeCreationState.selectedAircraftId = aircraft.id;
-        
-        // Aggiorna display slot
-        var statusClass = aircraft.isAvailable ? 'available' : 'busy';
-        var statusText = aircraft.isAvailable ? 'Disponibile' : 'In uso';
-        
-        aircraftSlot.innerHTML = 
-            '<div class="aircraft-info">' +
-                '<div class="aircraft-name">' + aircraft.model + '</div>' +
-                '<div class="aircraft-status ' + statusClass + '">' + statusText + '</div>' +
-            '</div>' +
-            '<div class="aircraft-details">' +
-                'Raggio: ' + aircraft.range + 'km | Passeggeri: ' + aircraft.passengerCapacity + ' | Cargo: ' + aircraft.cargoCapacity + 't' +
-            '</div>';
-        
-        aircraftSlot.classList.add('filled');
-        
-        // Chiudi dropdown
-        if (aircraftDropdown) {
-            aircraftDropdown.style.display = 'none';
-        }
-        
-        // Aggiorna aeroporti compatibili sulla mappa
-        this.updateMapForSelectedAircraft(aircraft);
-        
-        // Aggiorna bottone crea rotta
-        this.updateCreateButton();
-        
-        console.log('✅ Aeroplano selezionato:', aircraft.model);
-    },
-    
-    // Aggiorna mappa per aeroplano selezionato
-    updateMapForSelectedAircraft: function(aircraft) {
-        console.log('🗺️ Aggiornamento mappa per aeroplano:', aircraft.model);
-        
-        // TODO: Implementare filtro aeroporti compatibili sulla mappa
-        // Per ora mostra messaggio informativo
-        this.showAircraftInfoMessage(aircraft);
-        
-        // Se WorldMap è disponibile, notifica la selezione
-        if (typeof WorldMap !== 'undefined' && WorldMap.onAircraftSelected) {
-            WorldMap.onAircraftSelected(aircraft);
-        }
-    },
-    
-    // Mostra messaggio informativo aeroplano
-    showAircraftInfoMessage: function(aircraft) {
-        var existingMessage = document.querySelector('.aircraft-info-message');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
-        
-        var aircraftSelection = document.querySelector('.aircraft-selection');
-        if (!aircraftSelection) return;
-        
-        var messageDiv = document.createElement('div');
-        messageDiv.className = 'aircraft-info-message';
-        messageDiv.innerHTML = 
-            '✈️ <strong>' + aircraft.model + '</strong> selezionato. ' +
-            'Raggio operativo: <strong>' + aircraft.range + 'km</strong>. ' +
-            'Solo aeroporti raggiungibili saranno evidenziati sulla mappa.';
-        
-        aircraftSelection.appendChild(messageDiv);
-    },
-    
-    // Pulisci selezione aeroplano
-    clearAircraftSelection: function() {
-        console.log('✈️ Pulizia selezione aeroplano...');
-        
-        var aircraftSlot = document.getElementById('selected-aircraft');
-        var aircraftDropdown = document.getElementById('aircraft-dropdown');
-        
-        if (aircraftSlot) {
-            aircraftSlot.innerHTML = '<span class="placeholder">Seleziona un aeroplano disponibile</span>';
-            aircraftSlot.classList.remove('filled');
-        }
-        
-        if (aircraftDropdown) {
-            aircraftDropdown.style.display = 'none';
-        }
-        
-        // Rimuovi messaggio informativo
-        var existingMessage = document.querySelector('.aircraft-info-message');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
-        
-        // Reset stato
-        this.routeCreationState.selectedAircraftId = null;
-        
-        // Aggiorna bottone
-        this.updateCreateButton();
-        
-        console.log('✅ Selezione aeroplano pulita');
     },
 };
 

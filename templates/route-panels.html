@@ -202,6 +202,47 @@
 
       <!-- Colonna destra -->
       <div class="config-right-column">
+        <div class="aircraft-selection">
+          <h4>Selezione Aeroplano (Opzionale)</h4>
+          <div class="aircraft-selection-info">
+            <p class="selection-note">
+              💡 Puoi assegnare un aereo specifico a questa rotta o lasciare la
+              gestione automatica
+            </p>
+          </div>
+          <div class="aircraft-selector">
+            <select id="aircraft-selector" class="aircraft-dropdown">
+              <option value="">🤖 Gestione Automatica</option>
+              <!-- Opzioni aeroplani verranno popolate dinamicamente -->
+            </select>
+          </div>
+          <div
+            class="selection-details"
+            id="selected-aircraft-details"
+            style="display: none"
+          >
+            <div class="aircraft-preview">
+              <div class="aircraft-info">
+                <span class="aircraft-model" id="selected-aircraft-model"
+                  >--</span
+                >
+                <span class="aircraft-range"
+                  >Autonomia:
+                  <span id="selected-aircraft-range">--</span> km</span
+                >
+              </div>
+              <div class="aircraft-capacity">
+                <span class="capacity-passengers"
+                  >👥 <span id="selected-aircraft-passengers">--</span></span
+                >
+                <span class="capacity-cargo"
+                  >📦 <span id="selected-aircraft-cargo">--</span> t</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="aircraft-compatibility">
           <h4>Aeroplani Compatibili</h4>
           <div id="compatible-aircraft" class="aircraft-list">
