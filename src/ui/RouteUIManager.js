@@ -643,7 +643,15 @@ var RouteUIManager = {
         var selector = document.getElementById('aircraft-selector-main');
         var self = this;
         
-        if (!selector) return;
+        if (!selector) {
+            console.warn('⚠️ Dropdown selezione aeroplano non trovato');
+            return;
+        }
+        
+        if (!game.fleetManager) {
+            console.warn('⚠️ FleetManager non disponibile');
+            return;
+        }
         
         // Popola il dropdown con gli aeroplani disponibili
         this.populateAircraftSelector();
@@ -678,7 +686,18 @@ var RouteUIManager = {
         }
         
         // Ottieni gli aeroplani dalla flotta
-        var fleet = game.fleetManager.getFleet();
+        var fleet = game.fleetManager.getAllAircraft();
+        
+        if (!fleet || fleet.length === 0) {
+            // Nessun aeroplano nella flotta
+            var option = document.createElement('option');
+            option.value = '';
+            option.textContent = '🚫 Nessun aereo in flotta';
+            option.disabled = true;
+            selector.appendChild(option);
+            console.log('⚠️ Nessun aeroplano disponibile nella flotta');
+            return;
+        }
         
         fleet.forEach(function(aircraft) {
             var option = document.createElement('option');
@@ -693,6 +712,8 @@ var RouteUIManager = {
             
             selector.appendChild(option);
         });
+        
+        console.log('✈️ Caricati', fleet.length, 'aeroplani nel dropdown');
     },
     
     // Chiudi pannello configurazione e torna alla selezione
@@ -767,7 +788,7 @@ var RouteUIManager = {
         
         // Se è selezionato un aereo specifico, ottieni la sua autonomia
         if (selectedAircraftId && game.fleetManager) {
-            var aircraft = game.fleetManager.getAircraftById(selectedAircraftId);
+            var aircraft = game.fleetManager.getAircraft(selectedAircraftId);
             if (aircraft && aircraft.range) {
                 maxRange = aircraft.range;
                 console.log('🛩️ Filtro aeroporti per autonomia:', maxRange, 'km');
