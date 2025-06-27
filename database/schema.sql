@@ -12,7 +12,7 @@
 -- \c air_tycoon_2;
 
 -- Abilita l'estensione UUID per generare ID univoci
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTE NOT EXISTS "uuid-ossp";
 
 -- =====================================================
 -- TABELLE PRINCIPALI
@@ -68,8 +68,14 @@ CREATE TABLE companies (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
+    company_type VARCHAR(20) DEFAULT 'normal' CHECK (company_type IN ('low_cost', 'normal', 'luxury', 'cargo')),
     money BIGINT DEFAULT 1000000, -- Denaro in centesimi per evitare problemi di precisione
     reputation INTEGER DEFAULT 50 CHECK (reputation >= 0 AND reputation <= 100),
+    brand_power INTEGER DEFAULT 30 CHECK (brand_power >= 0 AND brand_power <= 100), -- Potenza del marchio
+    maintenance_quality INTEGER DEFAULT 50 CHECK (maintenance_quality >= 0 AND maintenance_quality <= 100), -- Qualità manutenzione
+    staff_satisfaction INTEGER DEFAULT 50 CHECK (staff_satisfaction >= 0 AND staff_satisfaction <= 100), -- Contentezza personale globale
+    safety_rating INTEGER DEFAULT 50 CHECK (safety_rating >= 0 AND safety_rating <= 100), -- Rating di sicurezza
+    service_quality INTEGER DEFAULT 50 CHECK (service_quality >= 0 AND service_quality <= 100), -- Qualità del servizio
     founded_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     headquarters_airport_id INTEGER REFERENCES airports(id), -- Foreign key alla tabella airports
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -94,10 +100,14 @@ CREATE TABLE fleet (
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
     aircraft_type_id INTEGER REFERENCES aircraft_types(id) NOT NULL,
     registration VARCHAR(20) UNIQUE NOT NULL, -- Codice registrazione aeromobile
+    custom_name VARCHAR(100), -- Nome personalizzato dell'aeromobile
     condition INTEGER DEFAULT 100 CHECK (condition >= 0 AND condition <= 100),
     total_flight_hours DECIMAL(10,2) DEFAULT 0,
-    status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'in_flight', 'maintenance', 'assigned')),
+    status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'in_flight', 'maintenance', 'assigned', 'grounded')),
     location_airport_id INTEGER REFERENCES airports(id),
+    assigned_route_id UUID REFERENCES routes(id), -- Rotta assegnata
+    maintenance_level INTEGER DEFAULT 100 CHECK (maintenance_level >= 0 AND maintenance_level <= 100),
+    next_maintenance_hours DECIMAL(10,2) DEFAULT 500, -- Ore al prossimo controllo
     total_passengers BIGINT DEFAULT 0,
     total_revenue BIGINT DEFAULT 0, -- In centesimi
     total_flights INTEGER DEFAULT 0,
@@ -115,7 +125,15 @@ CREATE TABLE routes (
     destination_airport_id INTEGER REFERENCES airports(id) NOT NULL,
     distance_km INTEGER,
     base_price INTEGER DEFAULT 0, -- Prezzo base biglietto in centesimi
+    business_price INTEGER DEFAULT 0, -- Prezzo business class in centesimi
+    economy_price INTEGER DEFAULT 0, -- Prezzo economy class in centesimi
     frequency_per_week INTEGER DEFAULT 7 CHECK (frequency_per_week >= 1 AND frequency_per_week <= 21),
+    flight_duration_minutes INTEGER, -- Durata volo in minuti
+    assigned_aircraft_id UUID REFERENCES fleet(id), -- Aeromobile assegnato alla rotta
+    marketing_investment BIGINT DEFAULT 0, -- Investimento marketing per questa rotta
+    service_level INTEGER DEFAULT 50 CHECK (service_level >= 0 AND service_level <= 100), -- Livello servizio
+    on_time_performance DECIMAL(5,2) DEFAULT 95.0, -- Percentuale puntualità
+    customer_satisfaction INTEGER DEFAULT 50 CHECK (customer_satisfaction >= 0 AND customer_satisfaction <= 100),
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'planning')),
     total_flights INTEGER DEFAULT 0,
     total_passengers BIGINT DEFAULT 0,
@@ -132,16 +150,29 @@ CREATE TABLE routes (
 CREATE TABLE flights (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     route_id UUID REFERENCES routes(id) ON DELETE CASCADE,
-    aircraft_id UUID REFERENCES aircraft(id) ON DELETE SET NULL,
+    aircraft_id UUID REFERENCES fleet(id) ON DELETE SET NULL,
     departure_time TIMESTAMP WITH TIME ZONE NOT NULL,
-    arrival_time TIMESTAMP WITH TIME ZONE,
-    passengers INTEGER DEFAULT 0,
+    actual_departure_time TIMESTAMP WITH TIME ZONE,
+    scheduled_arrival_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    actual_arrival_time TIMESTAMP WITH TIME ZONE,
+    passengers_economy INTEGER DEFAULT 0,
+    passengers_business INTEGER DEFAULT 0,
+    total_passengers INTEGER DEFAULT 0,
     load_factor DECIMAL(5,2) DEFAULT 0,
-    revenue BIGINT DEFAULT 0, -- In centesimi
-    costs BIGINT DEFAULT 0, -- In centesimi
+    revenue_economy BIGINT DEFAULT 0, -- In centesimi
+    revenue_business BIGINT DEFAULT 0, -- In centesimi
+    total_revenue BIGINT DEFAULT 0, -- In centesimi
+    fuel_costs BIGINT DEFAULT 0,
+    airport_fees BIGINT DEFAULT 0,
+    crew_costs BIGINT DEFAULT 0,
+    total_costs BIGINT DEFAULT 0, -- In centesimi
     fuel_consumed DECIMAL(10,2) DEFAULT 0, -- Litri
     delay_minutes INTEGER DEFAULT 0,
-    status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in-progress', 'completed', 'cancelled')),
+    delay_reason VARCHAR(100),
+    weather_conditions VARCHAR(50),
+    customer_satisfaction INTEGER DEFAULT 50 CHECK (customer_satisfaction >= 0 AND customer_satisfaction <= 100),
+    incidents JSONB DEFAULT '[]', -- Eventuali incidenti o problemi
+    status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'boarding', 'in-progress', 'completed', 'cancelled', 'diverted')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -211,24 +242,123 @@ CREATE TABLE game_saves (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabella personale aziendale (numeri aggregati)
+CREATE TABLE staff_totals (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    pilots_count INTEGER DEFAULT 0,
+    cabin_crew_count INTEGER DEFAULT 0,
+    maintenance_count INTEGER DEFAULT 0,
+    marketing_count INTEGER DEFAULT 0,
+    management_count INTEGER DEFAULT 0,
+    ground_count INTEGER DEFAULT 0,
+    total_monthly_salaries BIGINT DEFAULT 0, -- Totale salari mensili in centesimi
+    average_satisfaction INTEGER DEFAULT 50 CHECK (average_satisfaction >= 0 AND average_satisfaction <= 100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id)
+);
+
+
+-- Tabella dipartimenti aziendali
+CREATE TABLE company_departments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    department_type VARCHAR(30) NOT NULL CHECK (department_type IN ('marketing', 'maintenance', 'training', 'safety', 'customer_service', 'operations')),
+    investment_level INTEGER DEFAULT 1 CHECK (investment_level >= 1 AND investment_level <= 10), -- Livello investimento
+    efficiency_rating INTEGER DEFAULT 50 CHECK (efficiency_rating >= 0 AND efficiency_rating <= 100),
+    monthly_budget BIGINT DEFAULT 100000, -- Budget mensile in centesimi
+    staff_count INTEGER DEFAULT 5,
+    equipment_level INTEGER DEFAULT 1 CHECK (equipment_level >= 1 AND equipment_level <= 10),
+    research_points INTEGER DEFAULT 0, -- Punti ricerca accumulati
+    active_projects JSONB DEFAULT '[]', -- Progetti attivi del dipartimento
+    achievements JSONB DEFAULT '[]', -- Risultati raggiunti
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, department_type)
+);
+
+
+
+-- Tabella eventi mondo (crisi petrolifere, boom economici, pandemie, etc.)
+CREATE TABLE world_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_type VARCHAR(50) NOT NULL CHECK (event_type IN ('economic', 'political', 'natural_disaster', 'pandemic', 'oil_crisis', 'technology', 'regulation')),
+    severity INTEGER DEFAULT 3 CHECK (severity >= 1 AND severity <= 5), -- 1=minimo, 5=catastrofico
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE,
+    affected_regions JSONB DEFAULT '[]', -- Regioni/paesi colpiti
+    impact_data JSONB DEFAULT '{}', -- Impatti su domanda, costi, etc.
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabella eventi specifici della compagnia
+CREATE TABLE company_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    impact_data JSONB DEFAULT '{}', -- Dati dell'impatto specifico
+    event_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    duration_days INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    acknowledged BOOLEAN DEFAULT FALSE, -- Se il giocatore ha visto l'evento
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabella hub aziendali (basi operative)
+CREATE TABLE company_hubs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    airport_id INTEGER REFERENCES airports(id) NOT NULL,
+    hub_type VARCHAR(20) DEFAULT 'secondary' CHECK (hub_type IN ('headquarters', 'primary', 'secondary', 'maintenance')),
+    hub_level INTEGER DEFAULT 1 CHECK (hub_level >= 1 AND hub_level <= 5), -- Livello di sviluppo dell'hub
+    maintenance_capacity INTEGER DEFAULT 2, -- Numero aeromobili manutenibili simultaneamente
+    staff_capacity INTEGER DEFAULT 50, -- Numero massimo staff locale
+    monthly_cost BIGINT DEFAULT 100000, -- Costo mensile in centesimi
+    facilities JSONB DEFAULT '{}', -- Strutture disponibili (hangar, uffici, training center, etc.)
+    established_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(company_id, airport_id)
+);
+
+
 -- =====================================================
 -- INDICI PER PERFORMANCE
 -- =====================================================
 
 -- Indici per ricerche frequenti
 CREATE INDEX idx_companies_user_id ON companies(user_id);
-CREATE INDEX idx_aircraft_company_id ON aircraft(company_id);
-CREATE INDEX idx_aircraft_status ON aircraft(status);
+CREATE INDEX idx_companies_type ON companies(company_type);
+CREATE INDEX idx_fleet_company_id ON fleet(company_id);
+CREATE INDEX idx_fleet_status ON fleet(status);
+CREATE INDEX idx_fleet_location ON fleet(location_airport_id);
+CREATE INDEX idx_staff_totals_company_id ON staff_totals(company_id);
+CREATE INDEX idx_company_hubs_company_id ON company_hubs(company_id);
+CREATE INDEX idx_company_hubs_airport ON company_hubs(airport_id);
+CREATE INDEX idx_company_departments_company_id ON company_departments(company_id);
 CREATE INDEX idx_routes_company_id ON routes(company_id);
-CREATE INDEX idx_routes_active ON routes(is_active);
-CREATE INDEX idx_routes_aircraft ON routes(aircraft_id);
+CREATE INDEX idx_routes_status ON routes(status);
+CREATE INDEX idx_routes_aircraft ON routes(assigned_aircraft_id);
 CREATE INDEX idx_flights_route_id ON flights(route_id);
+CREATE INDEX idx_flights_aircraft_id ON flights(aircraft_id);
 CREATE INDEX idx_flights_departure_time ON flights(departure_time);
+CREATE INDEX idx_flights_status ON flights(status);
 CREATE INDEX idx_financial_reports_company_date ON financial_reports(company_id, report_date);
+CREATE INDEX idx_world_events_active ON world_events(is_active, start_date);
+CREATE INDEX idx_company_events_company ON company_events(company_id, is_active);
 CREATE INDEX idx_game_saves_company_type ON game_saves(company_id, save_type);
 
 -- Indici per join frequenti
-CREATE INDEX idx_aircraft_assigned_route ON aircraft(assigned_route_id);
+CREATE INDEX idx_fleet_assigned_route ON fleet(assigned_route_id);
 
 -- =====================================================
 -- TRIGGER E FUNZIONI
@@ -247,7 +377,16 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_aircraft_updated_at BEFORE UPDATE ON aircraft
+CREATE TRIGGER update_fleet_updated_at BEFORE UPDATE ON fleet
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_staff_totals_updated_at BEFORE UPDATE ON staff_totals
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_company_hubs_updated_at BEFORE UPDATE ON company_hubs
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_company_departments_updated_at BEFORE UPDATE ON company_departments
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_routes_updated_at BEFORE UPDATE ON routes
@@ -267,6 +406,48 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER calculate_financial_profit BEFORE INSERT OR UPDATE ON financial_reports
     FOR EACH ROW EXECUTE FUNCTION calculate_net_profit();
+
+-- Funzione per calcolare automaticamente i totali nei voli
+CREATE OR REPLACE FUNCTION calculate_flight_totals()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Calcola passeggeri totali
+    NEW.total_passengers = COALESCE(NEW.passengers_economy, 0) + COALESCE(NEW.passengers_business, 0);
+    
+    -- Calcola ricavi totali
+    NEW.total_revenue = COALESCE(NEW.revenue_economy, 0) + COALESCE(NEW.revenue_business, 0);
+    
+    -- Calcola costi totali
+    NEW.total_costs = COALESCE(NEW.fuel_costs, 0) + COALESCE(NEW.airport_fees, 0) + COALESCE(NEW.crew_costs, 0);
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER calculate_flight_totals_trigger BEFORE INSERT OR UPDATE ON flights
+    FOR EACH ROW EXECUTE FUNCTION calculate_flight_totals();
+
+-- Funzione per verificare che almeno un aeroporto della rotta sia un hub
+CREATE OR REPLACE FUNCTION check_route_has_hub()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Verifica che almeno origine o destinazione sia un hub della compagnia
+    IF NOT EXISTS (
+        SELECT 1 FROM company_hubs 
+        WHERE company_id = NEW.company_id 
+        AND (airport_id = NEW.origin_airport_id OR airport_id = NEW.destination_airport_id)
+    ) THEN
+        RAISE EXCEPTION 'Almeno un aeroporto della rotta deve essere un hub della compagnia';
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER check_route_hub_trigger BEFORE INSERT OR UPDATE ON routes
+    FOR EACH ROW EXECUTE FUNCTION check_route_has_hub();
+
+
 
 -- =====================================================
 -- DATI INIZIALI (OPZIONALE)
@@ -324,20 +505,27 @@ WHERE r.is_active = true;
 -- COMMENTI E DOCUMENTAZIONE
 -- =====================================================
 
-COMMENT ON DATABASE air_tycoon_2 IS 'Database per il gioco Air Tycoon 2 Clone';
+COMMENT ON DATABASE air_tycoon_2 IS 'Database per il gioco Air Tycoon 2 Clone - Sistema completo di gestione compagnia aerea';
 
-COMMENT ON TABLE companies IS 'Compagnie aeree dei giocatori';
-COMMENT ON TABLE aircraft IS 'Flotta di aeromobili di ogni compagnia';
-COMMENT ON TABLE routes IS 'Rotte aeree operative';
-COMMENT ON TABLE flights IS 'Storico dei voli eseguiti';
-COMMENT ON TABLE financial_reports IS 'Report finanziari mensili';
+COMMENT ON TABLE companies IS 'Compagnie aeree dei giocatori con tipologia (low_cost, normal, luxury, cargo)';
+COMMENT ON TABLE fleet IS 'Flotta di aeromobili semplificata';
+COMMENT ON TABLE staff_totals IS 'Totali del personale per tipologia (numeri aggregati)';
+COMMENT ON TABLE company_hubs IS 'Hub operativi della compagnia - ogni volo deve partire/arrivare da un hub';
+COMMENT ON TABLE company_departments IS 'Dipartimenti aziendali e relativi investimenti';
+COMMENT ON TABLE routes IS 'Rotte aeree operative con pricing e performance dettagliate';
+COMMENT ON TABLE flights IS 'Storico dettagliato dei voli eseguiti';
+COMMENT ON TABLE world_events IS 'Eventi del mondo di gioco (crisi, boom economici, etc.)';
+COMMENT ON TABLE company_events IS 'Eventi specifici delle compagnie';
+COMMENT ON TABLE financial_reports IS 'Report finanziari mensili dettagliati';
 COMMENT ON TABLE game_saves IS 'Salvataggi completi del gioco in formato JSON';
 
+COMMENT ON COLUMN companies.company_type IS 'Tipologia compagnia: low_cost, normal, luxury, cargo - influenza prezzi e servizi';
 COMMENT ON COLUMN companies.money IS 'Denaro in centesimi (per evitare problemi di precisione con decimali)';
-COMMENT ON COLUMN airports.business_level IS 'Livello di traffico business da 0 a 100 - influenza passeggeri e merci di categoria business';
-COMMENT ON COLUMN airports.tourist_level IS 'Livello di traffico turistico da 0 a 100 - influenza passeggeri leisure e cargo generale';
-COMMENT ON COLUMN aircraft.condition IS 'Condizione dell''aeromobile da 0 (pessima) a 100 (perfetta)';
-COMMENT ON COLUMN routes.average_load_factor IS 'Percentuale media di riempimento dei voli';
+COMMENT ON COLUMN companies.brand_power IS 'Potenza del marchio 0-100, influenza domanda e prezzi';
+COMMENT ON COLUMN companies.maintenance_quality IS 'Qualità manutenzione 0-100, influenza affidabilità e sicurezza';
+COMMENT ON COLUMN companies.staff_satisfaction IS 'Contentezza generale del personale 0-100';
+COMMENT ON COLUMN staff_totals.pilots_count IS 'Numero totale piloti - calcolato automaticamente in base al fabbisogno flotta';
+COMMENT ON COLUMN staff_totals.average_satisfaction IS 'Soddisfazione media del personale 0-100';
 
 -- =====================================================
 -- GRANT PERMISSIONS (Opzionale - per utente specifico)
