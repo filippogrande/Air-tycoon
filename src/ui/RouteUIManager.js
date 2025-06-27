@@ -29,6 +29,9 @@ var RouteUIManager = {
             // Aggiorna stato
             this.routeCreationState.isOpen = true;
             
+            // Setup e mostra la selezione aeroplano subito
+            this.setupAircraftSelector();
+            
             console.log('✅ Pannello rotte aperto');
             return true;
         }
@@ -167,7 +170,6 @@ var RouteUIManager = {
         }
         
         var routeInfoPanel = document.getElementById('route-info');
-        var aircraftSelectionPanel = document.getElementById('aircraft-selection-compact');
         if (!routeInfoPanel) return;
         
         // Calcola stime usando RouteCalculator
@@ -180,24 +182,14 @@ var RouteUIManager = {
         document.getElementById('estimated-cargo').textContent = estimates.displayCargo;
         
         routeInfoPanel.style.display = 'block';
-        
-        // Mostra e popola la selezione aeroplano
-        if (aircraftSelectionPanel) {
-            aircraftSelectionPanel.style.display = 'block';
-            this.setupAircraftSelector();
-        }
     },
     
     // Nascondi informazioni rotta
     hideRouteInfo: function() {
         var routeInfoPanel = document.getElementById('route-info');
-        var aircraftSelectionPanel = document.getElementById('aircraft-selection-compact');
         
         if (routeInfoPanel) {
             routeInfoPanel.style.display = 'none';
-        }
-        if (aircraftSelectionPanel) {
-            aircraftSelectionPanel.style.display = 'none';
         }
     },
     
@@ -669,6 +661,9 @@ var RouteUIManager = {
                 self.routeCreationState.selectedAircraftId = aircraftId;
                 console.log('✈️ Aeroplano selezionato:', aircraftId);
             }
+            
+            // Aggiorna i filtri degli aeroporti in base all'autonomia dell'aereo
+            self.updateAirportFilters();
         });
     },
     
@@ -760,6 +755,45 @@ var RouteUIManager = {
                 if (passengerSpan) passengerSpan.textContent = Math.round(estimates.passengers * 0.2); // Passeggeri ridotti
                 if (cargoSpan) cargoSpan.textContent = estimates.displayCargo;
             }
+        }
+    },
+    
+    // Aggiorna filtri aeroporti in base all'autonomia dell'aereo selezionato
+    updateAirportFilters: function() {
+        if (!game.worldMap) return;
+        
+        var selectedAircraftId = this.routeCreationState.selectedAircraftId;
+        var maxRange = null;
+        
+        // Se è selezionato un aereo specifico, ottieni la sua autonomia
+        if (selectedAircraftId && game.fleetManager) {
+            var aircraft = game.fleetManager.getAircraftById(selectedAircraftId);
+            if (aircraft && aircraft.range) {
+                maxRange = aircraft.range;
+                console.log('🛩️ Filtro aeroporti per autonomia:', maxRange, 'km');
+            }
+        }
+        
+        // Aggiorna la mappa con il filtro autonomia
+        if (game.worldMap.setRangeFilter) {
+            game.worldMap.setRangeFilter(maxRange);
+        }
+        
+        // Se abbiamo già un aeroporto di origine, aggiorna i filtri per la destinazione
+        if (this.routeCreationState.originAirport && maxRange) {
+            this.filterDestinationsByRange(this.routeCreationState.originAirport, maxRange);
+        }
+    },
+    
+    // Filtra le destinazioni raggiungibili in base all'autonomia
+    filterDestinationsByRange: function(originAirport, maxRange) {
+        if (!game.worldMap) return;
+        
+        console.log('🎯 Filtro destinazioni da', originAirport.code, 'con autonomia', maxRange, 'km');
+        
+        // Implementa il filtro nella WorldMap
+        if (game.worldMap.highlightReachableAirports) {
+            game.worldMap.highlightReachableAirports(originAirport, maxRange);
         }
     },
 };

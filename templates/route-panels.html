@@ -3,6 +3,22 @@
 <!-- Pannello creazione rotte -->
 <div id="route-creation-panel" class="route-panel">
   <h3>✈️ Crea Rotta</h3>
+
+  <!-- Sezione selezione aeroplano all'inizio -->
+  <div class="aircraft-selection-compact" id="aircraft-selection-compact">
+    <h4>✈️ Seleziona Aeroplano (Opzionale)</h4>
+    <div class="aircraft-selector">
+      <select id="aircraft-selector-main" class="aircraft-dropdown">
+        <option value="">🤖 Gestione Automatica</option>
+        <!-- Opzioni aeroplani verranno popolate dinamicamente -->
+      </select>
+    </div>
+    <div class="selection-note">
+      💡 Scegli un aereo per filtrare le destinazioni raggiungibili, o usa la
+      gestione automatica
+    </div>
+  </div>
+
   <div class="route-slots">
     <div class="route-slot" id="origin-slot">
       <div class="slot-header">
@@ -54,24 +70,6 @@
         <strong>📦 Cargo stimato/giorno:</strong>
         <span id="estimated-cargo">--</span> t
       </p>
-    </div>
-  </div>
-
-  <!-- Sezione selezione aeroplano nel pannello creazione -->
-  <div
-    class="aircraft-selection-compact"
-    id="aircraft-selection-compact"
-    style="display: none"
-  >
-    <h4>✈️ Seleziona Aeroplano (Opzionale)</h4>
-    <div class="aircraft-selector">
-      <select id="aircraft-selector-main" class="aircraft-dropdown">
-        <option value="">🤖 Gestione Automatica</option>
-        <!-- Opzioni aeroplani verranno popolate dinamicamente -->
-      </select>
-    </div>
-    <div class="selection-note">
-      💡 Puoi assegnare un aereo specifico o lasciare la gestione automatica
     </div>
   </div>
 
