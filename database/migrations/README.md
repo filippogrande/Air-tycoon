@@ -1,17 +1,26 @@
-# Database Migrations
+# Database Migrations - Air Tycoon 2
 
-Questa directory contiene le migrazioni per aggiornamenti futuri del database.
+## Sistema di Migrazione per Server in Produzione
 
-## Formato file migrazioni
+Le migrazioni permettono di aggiornare il database in produzione senza perdere dati esistenti.
 
-I file devono seguire il formato: `migration_VERSIONE_FROM_to_VERSIONE_TO.sql`
+## Struttura File
 
-Esempi:
+```
+migrations/
+├── README.md
+├── migration_tracker.sql        # Sistema di tracking migrazioni
+├── 001_initial_schema.sql       # Schema base originale
+├── 002_add_company_types.sql    # Aggiunge tipologie compagnia (low_cost, luxury, etc.)
+├── 003_simplify_staff.sql       # Semplifica gestione personale a numeri aggregati
+├── 004_reintroduce_hubs.sql     # Reintroduce sistema hub senza storage
+├── 005_add_hub_constraints.sql  # Aggiunge constraint rotte-hub
+└── run_migrations.js           # Script automatico per migrazioni
+```
 
-- `migration_1.0.0_to_1.1.0.sql` - Aggiornamento dalla 1.0.0 alla 1.1.0
-- `migration_1.1.0_to_1.2.0.sql` - Aggiornamento dalla 1.1.0 alla 1.2.0
+## Tracking System
 
-## Esempio migrazione futura
+Il sistema traccia automaticamente quali migrazioni sono state eseguite:
 
 ```sql
 -- Migration from 1.0.0 to 1.1.0
