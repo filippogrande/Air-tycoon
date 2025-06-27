@@ -3,29 +3,6 @@
 <!-- Pannello creazione rotte -->
 <div id="route-creation-panel" class="route-panel">
   <h3>✈️ Crea Rotta</h3>
-  
-  <!-- Selezione aeroplano -->
-  <div class="aircraft-selection">
-    <div class="slot-header">
-      <label>✈️ Aeroplano:</label>
-      <button
-        id="refresh-aircraft-btn"
-        class="refresh-btn"
-        title="Aggiorna lista aeroplani disponibili"
-      >
-        🔄
-      </button>
-    </div>
-    <div class="aircraft-slot" id="selected-aircraft">
-      <span class="placeholder">Seleziona un aeroplano disponibile</span>
-    </div>
-    <div class="aircraft-dropdown" id="aircraft-dropdown" style="display: none;">
-      <div class="aircraft-list" id="available-aircraft-list">
-        <!-- Lista aeroplani verrà popolata dinamicamente -->
-      </div>
-    </div>
-  </div>
-  
   <div class="route-slots">
     <div class="route-slot" id="origin-slot">
       <div class="slot-header">
@@ -72,12 +49,10 @@
       <p>
         <strong>👥 Passeggeri stimati/giorno:</strong>
         <span id="estimated-passengers">--</span>
-        <span class="estimate-accuracy">(±30%)</span>
       </p>
       <p>
         <strong>📦 Cargo stimato/giorno:</strong>
         <span id="estimated-cargo">--</span> t
-        <span class="estimate-accuracy">(±25%)</span>
       </p>
     </div>
   </div>
@@ -136,12 +111,10 @@
             <div class="estimate-row">
               <span class="estimate-label">👥 Passeggeri/giorno:</span>
               <span class="estimate-value" id="config-passengers">--</span>
-              <span class="estimate-accuracy">(±30%)</span>
             </div>
             <div class="estimate-row">
               <span class="estimate-label">📦 Cargo/giorno:</span>
               <span class="estimate-value" id="config-cargo">--</span>
-              <span class="estimate-accuracy">(±25%)</span>
             </div>
           </div>
           <button
