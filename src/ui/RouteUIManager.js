@@ -83,13 +83,9 @@ var RouteUIManager = {
         this.updateLockButton();
         
         // Reset selezione aeroplano
-        var selector = document.getElementById('aircraft-selector');
-        var detailsDiv = document.getElementById('selected-aircraft-details');
+        var selector = document.getElementById('aircraft-selector-main');
         if (selector) {
             selector.value = '';
-        }
-        if (detailsDiv) {
-            detailsDiv.style.display = 'none';
         }
     },
     
@@ -171,6 +167,7 @@ var RouteUIManager = {
         }
         
         var routeInfoPanel = document.getElementById('route-info');
+        var aircraftSelectionPanel = document.getElementById('aircraft-selection-compact');
         if (!routeInfoPanel) return;
         
         // Calcola stime usando RouteCalculator
@@ -183,13 +180,24 @@ var RouteUIManager = {
         document.getElementById('estimated-cargo').textContent = estimates.displayCargo;
         
         routeInfoPanel.style.display = 'block';
+        
+        // Mostra e popola la selezione aeroplano
+        if (aircraftSelectionPanel) {
+            aircraftSelectionPanel.style.display = 'block';
+            this.setupAircraftSelector();
+        }
     },
     
     // Nascondi informazioni rotta
     hideRouteInfo: function() {
         var routeInfoPanel = document.getElementById('route-info');
+        var aircraftSelectionPanel = document.getElementById('aircraft-selection-compact');
+        
         if (routeInfoPanel) {
             routeInfoPanel.style.display = 'none';
+        }
+        if (aircraftSelectionPanel) {
+            aircraftSelectionPanel.style.display = 'none';
         }
     },
     
@@ -479,9 +487,6 @@ var RouteUIManager = {
             // Popola i dati della rotta
             this.populateRouteConfigData();
             
-            // Setup selezione aeroplano
-            this.setupAircraftSelector();
-            
             console.log('✅ Pannello configurazione rotta aperto');
             return true;
         }
@@ -643,8 +648,7 @@ var RouteUIManager = {
 
     // Setup dropdown selezione aeroplano
     setupAircraftSelector: function() {
-        var selector = document.getElementById('aircraft-selector');
-        var detailsDiv = document.getElementById('selected-aircraft-details');
+        var selector = document.getElementById('aircraft-selector-main');
         var self = this;
         
         if (!selector) return;
@@ -659,13 +663,10 @@ var RouteUIManager = {
             if (aircraftId === '') {
                 // Gestione automatica
                 self.routeCreationState.selectedAircraftId = null;
-                detailsDiv.style.display = 'none';
                 console.log('🤖 Selezione aeroplano: Gestione automatica');
             } else {
                 // Aeroplano specifico selezionato
                 self.routeCreationState.selectedAircraftId = aircraftId;
-                self.showAircraftDetails(aircraftId);
-                detailsDiv.style.display = 'block';
                 console.log('✈️ Aeroplano selezionato:', aircraftId);
             }
         });
@@ -673,7 +674,7 @@ var RouteUIManager = {
     
     // Popola il dropdown con gli aeroplani disponibili
     populateAircraftSelector: function() {
-        var selector = document.getElementById('aircraft-selector');
+        var selector = document.getElementById('aircraft-selector-main');
         if (!selector || !game.fleetManager) return;
         
         // Svuota opzioni esistenti (tranne la prima - gestione automatica)
@@ -699,25 +700,6 @@ var RouteUIManager = {
         });
     },
     
-    // Mostra dettagli dell'aeroplano selezionato
-    showAircraftDetails: function(aircraftId) {
-        if (!game.fleetManager) return;
-        
-        var aircraft = game.fleetManager.getAircraftById(aircraftId);
-        if (!aircraft) return;
-        
-        // Aggiorna i dettagli
-        var modelSpan = document.getElementById('selected-aircraft-model');
-        var rangeSpan = document.getElementById('selected-aircraft-range');
-        var passengersSpan = document.getElementById('selected-aircraft-passengers');
-        var cargoSpan = document.getElementById('selected-aircraft-cargo');
-        
-        if (modelSpan) modelSpan.textContent = aircraft.model;
-        if (rangeSpan) rangeSpan.textContent = aircraft.range || '--';
-        if (passengersSpan) passengersSpan.textContent = aircraft.passengerCapacity || '--';
-        if (cargoSpan) cargoSpan.textContent = aircraft.cargoCapacity || '--';
-    },
-
     // Chiudi pannello configurazione e torna alla selezione
     backToSelection: function() {
         console.log('⬅️ Ritorno alla selezione aeroporti...');
