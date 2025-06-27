@@ -17,6 +17,7 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Evita elementi fuori controllo */
 }
 
 /* Header */
@@ -765,232 +766,65 @@ body {
     box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
-/* Bottoni di analisi migliorati */
-.analysis-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
-    padding: 20px;
-    border: none;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: left;
-    margin-top: 15px;
+/* Bottoni tipo rotta compatti - layout orizzontale */
+.route-type-buttons {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
 }
 
-.analysis-action-btn:hover {
+.route-type-btn-compact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 16px 12px;
+    border: 3px solid #e9ecef;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.route-type-btn-compact:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     border-color: #4a90e2;
 }
 
-.analysis-action-btn .btn-icon {
-    font-size: 24px;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-}
-
-.analysis-action-btn .btn-content {
-    flex: 1;
-}
-
-.analysis-action-btn .btn-title {
-    font-weight: bold;
-    font-size: 16px;
-    color: #2c3e50;
-    margin-bottom: 5px;
-}
-
-.analysis-action-btn .btn-subtitle {
-    font-size: 14px;
-    color: #6c757d;
-    margin-bottom: 8px;
-}
-
-.analysis-action-btn .btn-price {
-    font-weight: bold;
-    font-size: 16px;
-    color: #4a90e2;
-}
-
-.improve-btn:hover {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-}
-
-.market-btn:hover {
-    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-}
-
-/* Sezione aeroplani compatibili */
-.aircraft-compatibility {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-
-.aircraft-compatibility h4 {
-    margin: 0 0 15px 0;
-    color: #2c3e50;
-    font-size: 16px;
-    border-left: 4px solid #4a90e2;
-    padding-left: 10px;
-}
-
-.aircraft-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.aircraft-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
-    background: white;
-    border-radius: 8px;
-    border: 2px solid #e9ecef;
-    transition: all 0.3s ease;
-}
-
-.aircraft-item:hover {
-    border-color: #4a90e2;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.aircraft-item.selected {
-    border-color: #28a745;
-    background: #f8fff9;
-}
-
-.aircraft-icon {
-    font-size: 24px;
-}
-
-.aircraft-details {
-    flex: 1;
-}
-
-.aircraft-name {
-    font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 3px;
-}
-
-.aircraft-specs {
-    font-size: 14px;
-    color: #6c757d;
-}
-
-.aircraft-status {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-weight: bold;
-}
-
-.aircraft-status.available {
-    background: #d4edda;
-    color: #155724;
-}
-
-.aircraft-status.busy {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-/* Warning nessun aereo */
-.aircraft-warning {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 20px;
-    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-    border: 2px solid #ffc107;
-    border-radius: 12px;
-    margin-top: 15px;
-}
-
-.warning-icon {
-    font-size: 32px;
-}
-
-.warning-content {
-    flex: 1;
-}
-
-.warning-title {
-    font-weight: bold;
-    color: #856404;
-    margin-bottom: 5px;
-    font-size: 16px;
-}
-
-.warning-message {
-    color: #856404;
-    margin-bottom: 15px;
-    font-size: 14px;
-}
-
-.buy-aircraft-btn {
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-/* Nuovi bottoni tipo di rotta migliorati */
-.route-type-btn-new {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
-    padding: 20px;
-    margin-bottom: 10px;
-    border: 3px solid #e9ecef;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: left;
-}
-
-.route-type-btn-new:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    border-color: #4a90e2;
-}
-
-.route-type-btn-new.active {
+.route-type-btn-compact.active {
     border-color: #4a90e2;
     background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.25);
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.25);
 }
 
-.route-type-btn-new.active .route-type-icon {
+.route-type-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.route-type-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    line-height: 1.2;
+}
+
+.route-type-btn-compact.active .route-type-icon {
     background: #4a90e2;
     color: white;
     transform: scale(1.1);
 }
 
-.route-type-icon {
-    font-size: 28px;
+.route-type-btn-compact .route-type-icon {
+    font-size: 32px;
     width: 60px;
     height: 60px;
     display: flex;
@@ -1002,25 +836,11 @@ body {
     transition: all 0.3s ease;
 }
 
-.route-type-content {
-    flex: 1;
-}
-
-.route-type-title {
+.route-type-btn-compact .route-type-title {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 16px;
     color: #2c3e50;
-    margin-bottom: 5px;
-}
-
-.route-type-description {
-    font-size: 14px;
-    color: #6c757d;
-    line-height: 1.4;
-}
-
-.route-type-btn-new:first-child {
-    margin-bottom: 15px;
+    margin: 0;
 }
 
 /* Responsive per layout a 3 colonne */
@@ -1049,22 +869,49 @@ body {
         display: block;
     }
     
-    .route-type-btn-new {
-        padding: 15px;
-        gap: 12px;
+    .route-type-buttons {
+        gap: 10px;
+    }
+    
+    .route-type-btn-compact {
+        padding: 12px 8px;
+        gap: 6px;
+        min-width: 100px;
     }
     
     .route-type-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 24px;
+        font-size: 20px;
     }
     
     .route-type-title {
-        font-size: 16px;
-    }
-    
-    .route-type-description {
-        font-size: 13px;
+        font-size: 12px;
     }
 }
+
+/* Prevenzione elementi UI non autorizzati in basso */
+/* #game-container {
+    overflow: hidden; / Evita elementi fuori controllo * /
+} */
+
+/* Nascondi eventuali bottoni settings duplicati o non autorizzati */
+/* .game-content button[id*="settings"]:not(#settings-button):not(#game-settings) {
+    display: none !important;
+} */
+
+/* Assicura che solo il settings button dell'header sia visibile */
+/* #header #settings-button {
+    display: block !important;
+} */
+
+/* Forza layout corretto per i bottoni tipo rotta */
+/* .route-type-buttons {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+}
+
+.route-type-buttons .route-type-btn-compact {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+} */

@@ -459,12 +459,12 @@ WorldMap.prototype.setupRouteCreationEvents = function() {
         }
         
         // Listener per bottoni tipo di rotta
-        if (e.target && e.target.closest('.route-type-btn-new')) {
-            var button = e.target.closest('.route-type-btn-new');
+        if (e.target && e.target.closest('.route-type-btn-compact')) {
+            var button = e.target.closest('.route-type-btn-compact');
             var routeType = button.getAttribute('data-type');
             
             // Rimuovi classe active da tutti i bottoni
-            var allRouteTypeBtns = document.querySelectorAll('.route-type-btn-new');
+            var allRouteTypeBtns = document.querySelectorAll('.route-type-btn-compact');
             allRouteTypeBtns.forEach(function(btn) {
                 btn.classList.remove('active');
             });
