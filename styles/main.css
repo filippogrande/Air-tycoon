@@ -915,3 +915,413 @@ body {
     min-width: 0 !important;
     max-width: none !important;
 } */
+
+/* Stili per i bottoni di analisi nella configurazione rotta */
+.analysis-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.analysis-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: #4a90e2;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+}
+
+.analysis-action-btn .btn-icon {
+    font-size: 24px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.analysis-action-btn .btn-content {
+    flex: 1;
+}
+
+.analysis-action-btn .btn-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.analysis-action-btn .btn-subtitle {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.analysis-action-btn .btn-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+/* Stili specifici per i diversi tipi di bottoni analisi */
+.improve-btn {
+    border-color: #28a745;
+}
+
+.improve-btn:hover {
+    border-color: #1e7e34;
+    background: linear-gradient(135deg, #f0fff4 0%, #e6ffed 100%);
+}
+
+.improve-btn .btn-icon {
+    color: #28a745;
+}
+
+.market-btn {
+    border-color: #17a2b8;
+}
+
+.market-btn:hover {
+    border-color: #117a8b;
+    background: linear-gradient(135deg, #f0fdff 0%, #e6feff 100%);
+}
+
+.market-btn .btn-icon {
+    color: #17a2b8;
+}
+
+/* Stili per il bottone acquista aereo nel warning */
+.buy-aircraft-btn {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 15px;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.buy-aircraft-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+    background: linear-gradient(135deg, #f7931e 0%, #ff6b35 100%);
+}
+
+/* Stili per le sezioni di analisi */
+.demand-analysis, .market-analysis, .cost-analysis {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.demand-analysis h4, .market-analysis h4, .cost-analysis h4 {
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.demand-estimates, .market-locked, .market-unlocked, .cost-breakdown {
+    margin-bottom: 20px;
+}
+
+.estimate-row, .cost-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.estimate-row:last-child, .cost-row:last-child {
+    border-bottom: none;
+}
+
+.estimate-label {
+    font-size: 14px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.estimate-value, .cost-value, .revenue-value, .profit-value, .info-value {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cost-value {
+    color: #dc3545;
+}
+
+.revenue-value {
+    color: #17a2b8;
+}
+
+.profit-value {
+    color: #28a745;
+}
+
+.profit-row {
+    background: rgba(40, 167, 69, 0.05);
+    border-radius: 8px;
+    padding: 15px 10px;
+    margin-top: 10px;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.locked-message {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px dashed #dee2e6;
+}
+
+/* Stili per la sezione aeroplani compatibili */
+.aircraft-compatibility {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+}
+
+.aircraft-compatibility h4 {
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.aircraft-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.aircraft-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.aircraft-item:hover {
+    background: #e3f2fd;
+    border-color: #4a90e2;
+    transform: translateY(-1px);
+}
+
+.aircraft-item:last-child {
+    margin-bottom: 0;
+}
+
+.aircraft-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.aircraft-status {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-weight: 500;
+}
+
+.aircraft-status.available {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.aircraft-status.busy {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+/* Warning per nessun aereo compatibile */
+.aircraft-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 2px solid #ffc107;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+}
+
+.aircraft-warning .warning-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.aircraft-warning .warning-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #856404;
+    margin-bottom: 10px;
+}
+
+.aircraft-warning .warning-message {
+    font-size: 14px;
+    color: #6c5600;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+/* Overlay e pannello impostazioni */
+#settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
+    display: none; /* Nascosto per default */
+    align-items: center;
+    justify-content: center;
+}
+
+#settings-overlay.active {
+    display: flex;
+}
+
+#settings-panel {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    min-width: 400px;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    animation: slideInScale 0.3s ease-out;
+}
+
+@keyframes slideInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+#settings-panel h2 {
+    color: #2c3e50;
+    font-size: 24px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #4a90e2;
+    padding-bottom: 15px;
+}
+
+.settings-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.settings-btn {
+    padding: 15px 25px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.settings-btn.save {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.settings-btn.save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.settings-btn.menu {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+.settings-btn.menu:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+}
+
+.settings-btn.danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.settings-btn.danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+.settings-btn.secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.settings-btn.secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+/* Responsive per overlay impostazioni */
+@media (max-width: 768px) {
+    #settings-panel {
+        min-width: 300px;
+        padding: 30px 20px;
+        margin: 20px;
+    }
+    
+    .settings-btn {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+}

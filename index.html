@@ -196,7 +196,76 @@
                 return;
             }
             console.log('✅ Utente autenticato:', authManager.getCurrentUser().companyName);
+            
+            // Gestione overlay impostazioni
+            setupSettingsOverlay();
         });
+        
+        function setupSettingsOverlay() {
+            const settingsButton = document.getElementById('settings-button');
+            const settingsOverlay = document.getElementById('settings-overlay');
+            const backToGameBtn = document.getElementById('back-to-game');
+            
+            // Apri overlay impostazioni
+            if (settingsButton) {
+                settingsButton.addEventListener('click', function() {
+                    settingsOverlay.classList.add('active');
+                });
+            }
+            
+            // Chiudi overlay quando clicchi fuori dal pannello
+            settingsOverlay.addEventListener('click', function(e) {
+                if (e.target === settingsOverlay) {
+                    settingsOverlay.classList.remove('active');
+                }
+            });
+            
+            // Chiudi overlay con il bottone "Ritorna alla Partita"
+            if (backToGameBtn) {
+                backToGameBtn.addEventListener('click', function() {
+                    settingsOverlay.classList.remove('active');
+                });
+            }
+            
+            // Chiudi overlay con ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && settingsOverlay.classList.contains('active')) {
+                    settingsOverlay.classList.remove('active');
+                }
+            });
+            
+            // Gestisci altri bottoni impostazioni
+            const saveGameBtn = document.getElementById('save-game-settings');
+            const backToMenuBtn = document.getElementById('back-to-menu');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (saveGameBtn) {
+                saveGameBtn.addEventListener('click', function() {
+                    // TODO: Implementare salvataggio
+                    alert('Funzione salvataggio da implementare');
+                    settingsOverlay.classList.remove('active');
+                });
+            }
+            
+            if (backToMenuBtn) {
+                backToMenuBtn.addEventListener('click', function() {
+                    if (confirm('Sei sicuro di voler tornare al menu? I progressi non salvati andranno persi.')) {
+                        window.location.href = 'game-select.html';
+                    }
+                });
+            }
+            
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    if (confirm('Sei sicuro di voler fare logout? I progressi non salvati andranno persi.')) {
+                        // Pulisci l'autenticazione
+                        const authManager = new AuthManager();
+                        authManager.logout();
+                        window.location.href = 'auth.html';
+                    }
+                });
+            }
+        }
     </script>
     
     <!-- Leaflet JS -->
