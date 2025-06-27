@@ -10,7 +10,8 @@ var RouteUIManager = {
         originAirport: null,
         destinationAirport: null,
         originLocked: true,  // Lucchetto attivo di default come richiesto
-        selectedAircraftId: null
+        selectedAircraftId: null,
+        selectedRouteType: 'passenger'  // Default passeggeri
     },
     
     // Apri pannello creazione rotte
@@ -69,7 +70,8 @@ var RouteUIManager = {
             originAirport: null,
             destinationAirport: null,
             originLocked: true,  // Lucchetto attivo di default come richiesto
-            selectedAircraftId: null
+            selectedAircraftId: null,
+            selectedRouteType: 'passenger'  // Default passeggeri
         };
         
         // Reset UI
@@ -658,6 +660,35 @@ var RouteUIManager = {
         }
         
         return false;
+    },
+    
+    // Aggiorna stime basate sul tipo di rotta
+    updateRouteTypeEstimates: function(routeType) {
+        console.log('📊 Aggiornamento stime per tipo rotta:', routeType);
+        
+        var origin = this.routeCreationState.originAirport;
+        var destination = this.routeCreationState.destinationAirport;
+        
+        if (!origin || !destination) return;
+        
+        // Calcola stime specifiche per tipo di rotta
+        if (typeof RouteCalculator !== 'undefined') {
+            var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, routeType);
+            
+            // Aggiorna valori nel pannello configurazione se è aperto
+            var passengerSpan = document.getElementById('config-passengers');
+            var cargoSpan = document.getElementById('config-cargo');
+            
+            if (routeType === 'passenger') {
+                // Focus sui passeggeri, cargo ridotto
+                if (passengerSpan) passengerSpan.textContent = estimates.displayPassengers;
+                if (cargoSpan) cargoSpan.textContent = Math.round(estimates.cargo * 0.3); // Cargo ridotto
+            } else if (routeType === 'cargo') {
+                // Focus sul cargo, passeggeri ridotti
+                if (passengerSpan) passengerSpan.textContent = Math.round(estimates.passengers * 0.2); // Passeggeri ridotti
+                if (cargoSpan) cargoSpan.textContent = estimates.displayCargo;
+            }
+        }
     },
 };
 

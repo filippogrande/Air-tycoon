@@ -90,24 +90,29 @@
           <div class="route-type-buttons">
             <button
               id="route-type-passenger"
-              class="route-type-btn active"
+              class="route-type-btn-new active"
               data-type="passenger"
             >
-              👥 Passeggeri
+              <div class="route-type-icon">👥</div>
+              <div class="route-type-content">
+                <div class="route-type-title">Passeggeri</div>
+                <div class="route-type-description">
+                  Trasporto persone e bagagli
+                </div>
+              </div>
             </button>
             <button
               id="route-type-cargo"
-              class="route-type-btn"
+              class="route-type-btn-new"
               data-type="cargo"
             >
-              📦 Cargo
-            </button>
-            <button
-              id="route-type-mixed"
-              class="route-type-btn"
-              data-type="mixed"
-            >
-              🔄 Misto
+              <div class="route-type-icon">📦</div>
+              <div class="route-type-content">
+                <div class="route-type-title">Cargo</div>
+                <div class="route-type-description">
+                  Trasporto merci e spedizioni
+                </div>
+              </div>
             </button>
           </div>
         </div>
@@ -138,7 +143,10 @@
             </div>
           </button>
         </div>
+      </div>
 
+      <!-- Colonna centrale -->
+      <div class="config-center-column">
         <div class="market-analysis">
           <h4>Analisi di Mercato</h4>
           <div class="market-locked" id="market-locked">
@@ -186,6 +194,24 @@
             </div>
           </div>
         </div>
+
+        <div class="cost-analysis">
+          <h4>Costi Operativi</h4>
+          <div class="cost-breakdown">
+            <div class="cost-row">
+              <span>💰 Costo creazione rotta:</span>
+              <span class="cost-value"
+                >€<span id="route-creation-cost">--</span></span
+              >
+            </div>
+            <div class="cost-row">
+              <span>🌍 Nazioni sorvolate:</span>
+              <span class="info-value"
+                ><span id="countries-count">--</span></span
+              >
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Colonna destra -->
@@ -207,24 +233,6 @@
                 Non possiedi nessun aereo che può fare questa rotta
               </div>
               <button class="buy-aircraft-btn">🛒 Acquista Aereo</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cost-analysis">
-          <h4>Costi Operativi</h4>
-          <div class="cost-breakdown">
-            <div class="cost-row">
-              <span>💰 Costo creazione rotta:</span>
-              <span class="cost-value"
-                >€<span id="route-creation-cost">--</span></span
-              >
-            </div>
-            <div class="cost-row">
-              <span>🌍 Nazioni sorvolate:</span>
-              <span class="info-value"
-                ><span id="countries-count">--</span></span
-              >
             </div>
           </div>
         </div>

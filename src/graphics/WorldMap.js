@@ -22,7 +22,8 @@ Object.defineProperty(WorldMap.prototype, 'routeCreationState', {
             originAirport: null,
             destinationAirport: null,
             originLocked: true,  // Lucchetto attivo di default
-            selectedAircraftId: null
+            selectedAircraftId: null,
+            selectedRouteType: 'passenger'
         };
     },
     set: function(value) {
@@ -133,11 +134,6 @@ WorldMap.prototype.loadAirports = function() {
         return;
     }
     
-    // Debug: mostra primi 3 aeroporti
-    console.log('🔍 DEBUG: Primi 3 aeroporti:', airports.slice(0, 3).map(function(a) {
-        return a.code + ' (' + a.name + ') - ' + a.latitude + ',' + a.longitude + ' - size: ' + a.size;
-    }));
-    
     for (var i = 0; i < airports.length; i++) {
         var airport = airports[i];
         
@@ -161,7 +157,6 @@ WorldMap.prototype.loadAirports = function() {
         console.log('✅ MapVisibilityManager disponibile, inizializzazione...');
         var self = this;
         MapVisibilityManager.setupZoomBasedVisibility(this.map, function(zoom) {
-            console.log('🔍 Callback visibilità chiamato, zoom:', zoom);
             MapVisibilityManager.updateAirportVisibility(self.game, self.map, self.airportMarkers, zoom);
         });
     } else {
@@ -345,7 +340,7 @@ WorldMap.prototype.setupMapEvents = function() {
     
     // Event per zoom
     this.map.on('zoomend', function() {
-        console.log('🔍 Zoom level:', self.map.getZoom());
+        // Zoom event handler - può essere usato per aggiornamenti futuri
     });
     
     // Event per click sulla mappa (non su marker)
@@ -460,6 +455,33 @@ WorldMap.prototype.setupRouteCreationEvents = function() {
             // Mostra notifica
             if (self.game.uiManager) {
                 self.game.uiManager.showNotification('Vai al tab Flotta per acquistare un aereo', 'info');
+            }
+        }
+        
+        // Listener per bottoni tipo di rotta
+        if (e.target && e.target.closest('.route-type-btn-new')) {
+            var button = e.target.closest('.route-type-btn-new');
+            var routeType = button.getAttribute('data-type');
+            
+            // Rimuovi classe active da tutti i bottoni
+            var allRouteTypeBtns = document.querySelectorAll('.route-type-btn-new');
+            allRouteTypeBtns.forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            
+            // Aggiungi classe active al bottone cliccato
+            button.classList.add('active');
+            
+            console.log('📋 Tipo di rotta selezionato:', routeType);
+            
+            // Salva selezione nello stato
+            if (typeof RouteUIManager !== 'undefined') {
+                RouteUIManager.routeCreationState.selectedRouteType = routeType;
+            }
+            
+            // Aggiorna stime basate sul tipo di rotta
+            if (typeof RouteUIManager !== 'undefined' && RouteUIManager.updateRouteTypeEstimates) {
+                RouteUIManager.updateRouteTypeEstimates(routeType);
             }
         }
     });
