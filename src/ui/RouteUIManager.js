@@ -661,9 +661,9 @@ var RouteUIManager = {
             var aircraftId = this.value;
             
             if (aircraftId === '') {
-                // Gestione automatica
+                // Nessun aeroplano selezionato
                 self.routeCreationState.selectedAircraftId = null;
-                console.log('🤖 Selezione aeroplano: Gestione automatica');
+                console.log('🚫 Nessun aereoplano selezionato');
             } else {
                 // Aeroplano specifico selezionato
                 self.routeCreationState.selectedAircraftId = aircraftId;
@@ -680,7 +680,7 @@ var RouteUIManager = {
         var selector = document.getElementById('aircraft-selector-main');
         if (!selector || !game.fleetManager) return;
         
-        // Svuota opzioni esistenti (tranne la prima - gestione automatica)
+        // Svuota opzioni esistenti (tranne la prima - nessun aeroplano selezionato)
         while (selector.children.length > 1) {
             selector.removeChild(selector.lastChild);
         }
