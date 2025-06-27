@@ -161,26 +161,44 @@ var RouteUIManager = {
         
         createBtn.disabled = !(hasOrigin && hasDestination);
     },
-    
-    // Mostra informazioni rotta
+     // Mostra informazioni rotta
     updateRouteInfo: function(origin, destination) {
         if (!origin || !destination) {
             this.hideRouteInfo();
             return;
         }
-        
+
         var routeInfoPanel = document.getElementById('route-info');
         if (!routeInfoPanel) return;
-        
-        // Calcola stime usando RouteCalculator
-        var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
-        
+
+        // Usa DemandEstimationManager se disponibile per stime consistenti
+        var estimates;
+        if (game.demandManager) {
+            var demandEstimate = game.demandManager.getPassengerEstimate(origin, destination);
+            estimates = {
+                distance: demandEstimate.distance,
+                displayPassengers: demandEstimate.passengers,
+                displayCargo: demandEstimate.cargo
+            };
+            
+            // Calcola tempo di volo usando RouteCalculator
+            if (typeof RouteCalculator !== 'undefined') {
+                var routeCalc = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+                estimates.flightTime = routeCalc.flightTime;
+            } else {
+                estimates.flightTime = { formatted: 'N/A' };
+            }
+        } else {
+            // Fallback al RouteCalculator
+            estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+        }
+
         // Aggiorna display
         document.getElementById('route-distance').textContent = Math.round(estimates.distance);
         document.getElementById('flight-time').textContent = estimates.flightTime.formatted;
-        document.getElementById('estimated-passengers').textContent = estimates.displayPassengers;
-        document.getElementById('estimated-cargo').textContent = estimates.displayCargo;
-        
+        document.getElementById('estimated-passengers').textContent = estimates.displayPassengers.toLocaleString();
+        document.getElementById('estimated-cargo').textContent = estimates.displayCargo.toLocaleString();
+
         routeInfoPanel.style.display = 'block';
     },
     
@@ -501,6 +519,12 @@ var RouteUIManager = {
         if (originSpan) originSpan.textContent = origin.name + ' (' + origin.code + ')';
         if (destinationSpan) destinationSpan.textContent = destination.name + ' (' + destination.code + ')';
         
+        // Popola stime domanda usando DemandEstimationManager
+        this.populateDemandEstimates(origin, destination);
+        
+        // Setup event listener per miglioramento analisi
+        this.setupDemandAnalysisButton(origin, destination);
+        
         // Calcola dati rotta
         if (typeof RouteCalculator !== 'undefined') {
             var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
@@ -750,71 +774,235 @@ var RouteUIManager = {
         return false;
     },
     
-    // Aggiorna stime basate sul tipo di rotta
-    updateRouteTypeEstimates: function(routeType) {
-        console.log('📊 Aggiornamento stime per tipo rotta:', routeType);
-        
-        var origin = this.routeCreationState.originAirport;
-        var destination = this.routeCreationState.destinationAirport;
-        
+    // Popola stime domanda usando DemandEstimationManager
+    populateDemandEstimates: function(origin, destination) {
         if (!origin || !destination) return;
         
-        // Calcola stime specifiche per tipo di rotta
-        if (typeof RouteCalculator !== 'undefined') {
-            var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, routeType);
+        var passengerSpan = document.getElementById('config-passengers');
+        var cargoSpan = document.getElementById('config-cargo');
+        
+        if (!passengerSpan || !cargoSpan) return;
+        
+        // Usa DemandEstimationManager se disponibile, altrimenti fallback a RouteCalculator
+        if (game.demandManager) {
+            var estimate = game.demandManager.getPassengerEstimate(origin, destination);
             
-            // Aggiorna valori nel pannello configurazione se è aperto
-            var passengerSpan = document.getElementById('config-passengers');
-            var cargoSpan = document.getElementById('config-cargo');
+            if (passengerSpan) passengerSpan.textContent = estimate.passengers.toLocaleString();
+            if (cargoSpan) cargoSpan.textContent = estimate.cargo.toLocaleString();
             
-            if (routeType === 'passenger') {
-                // Focus sui passeggeri, cargo ridotto
-                if (passengerSpan) passengerSpan.textContent = estimates.displayPassengers;
-                if (cargoSpan) cargoSpan.textContent = Math.round(estimates.cargo * 0.3); // Cargo ridotto
-            } else if (routeType === 'cargo') {
-                // Focus sul cargo, passeggeri ridotti
-                if (passengerSpan) passengerSpan.textContent = Math.round(estimates.passengers * 0.2); // Passeggeri ridotti
-                if (cargoSpan) cargoSpan.textContent = estimates.displayCargo;
+            console.log('📊 Stime aggiornate:', estimate.passengers, 'passeggeri,', estimate.cargo, 'tonnellate cargo');
+            
+            // Mostra accuratezza della stima
+            this.updateEstimateAccuracy(estimate.analysisLevel);
+            
+        } else if (typeof RouteCalculator !== 'undefined') {
+            // Fallback al RouteCalculator
+            var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+            
+            if (passengerSpan) passengerSpan.textContent = estimates.displayPassengers;
+            if (cargoSpan) cargoSpan.textContent = estimates.displayCargo;
+            
+            console.log('📊 Stime base (RouteCalculator):', estimates.displayPassengers, 'passeggeri');
+        }
+    },
+    
+    // Aggiorna indicatore accuratezza stima
+    updateEstimateAccuracy: function(analysisLevel) {
+        var demandEstimates = document.getElementById('demand-estimates');
+        if (!demandEstimates) return;
+        
+        // Rimuovi classi precedenti
+        demandEstimates.classList.remove('basic-analysis', 'improved-analysis', 'precise-analysis');
+        
+        // Aggiungi classe appropriata
+        switch (analysisLevel) {
+            case 'basic':
+                demandEstimates.classList.add('basic-analysis');
+                break;
+            case 'improved':
+                demandEstimates.classList.add('improved-analysis');
+                break;
+            case 'precise':
+                demandEstimates.classList.add('precise-analysis');
+                break;
+        }
+        
+        // Aggiorna tooltip o indicatore
+        var accuracyIndicator = demandEstimates.querySelector('.accuracy-indicator');
+        if (!accuracyIndicator) {
+            accuracyIndicator = document.createElement('div');
+            accuracyIndicator.className = 'accuracy-indicator';
+            demandEstimates.appendChild(accuracyIndicator);
+        }
+        
+        switch (analysisLevel) {
+            case 'basic':
+                accuracyIndicator.innerHTML = '📊 <span class="accuracy-text">Stima Base (±30%)</span>';
+                break;
+            case 'improved':
+                accuracyIndicator.innerHTML = '📈 <span class="accuracy-text">Stima Migliorata (±8%)</span>';
+                break;
+            case 'precise':
+                accuracyIndicator.innerHTML = '🎯 <span class="accuracy-text">Stima Precisa (±3%)</span>';
+                break;
+        }
+    },
+    
+    // Setup event listener per pulsante miglioramento analisi
+    setupDemandAnalysisButton: function(origin, destination) {
+        var improveBtn = document.getElementById('improve-analysis-btn');
+        var self = this;
+        
+        if (!improveBtn) return;
+        
+        // Rimuovi listener precedenti
+        var newBtn = improveBtn.cloneNode(true);
+        improveBtn.parentNode.replaceChild(newBtn, improveBtn);
+        improveBtn = newBtn;
+        
+        // Controlla stato del pulsante
+        this.updateImproveAnalysisButton(origin, destination);
+        
+        // Aggiungi nuovo listener
+        improveBtn.addEventListener('click', function() {
+            self.improveRouteAnalysis(origin, destination);
+        });
+    },
+    
+    // Aggiorna stato pulsante miglioramento analisi
+    updateImproveAnalysisButton: function(origin, destination) {
+        var improveBtn = document.getElementById('improve-analysis-btn');
+        if (!improveBtn || !game.demandManager) return;
+        
+        var routeKey = game.demandManager.getRouteKey(origin.code, destination.code);
+        var improved = game.demandManager.improvedEstimates[routeKey];
+        
+        var btnTitle = improveBtn.querySelector('.btn-title');
+        var btnSubtitle = improveBtn.querySelector('.btn-subtitle');
+        var btnPrice = improveBtn.querySelector('.btn-price');
+        
+        if (improved && game.demandManager.isAnalysisValid(improved)) {
+            // Analisi già migliorata
+            improveBtn.disabled = true;
+            improveBtn.classList.add('completed');
+            
+            if (btnTitle) btnTitle.textContent = 'Analisi Migliorata';
+            if (btnSubtitle) {
+                var expirationMonth = game.demandManager.getExpirationMonth(improved);
+                btnSubtitle.textContent = 'Valida fino a ' + expirationMonth;
+            }
+            if (btnPrice) btnPrice.textContent = '✅ Completata';
+            
+        } else {
+            // Analisi non ancora migliorata o scaduta
+            improveBtn.disabled = false;
+            improveBtn.classList.remove('completed');
+            
+            if (btnTitle) btnTitle.textContent = 'Migliora Stima Domanda';
+            if (btnSubtitle) btnSubtitle.textContent = 'Analisi dettagliata del traffico';
+            if (btnPrice) btnPrice.textContent = '€' + game.demandManager.analysisState.basicAnalysisCost.toLocaleString();
+            
+            // Controlla se il giocatore ha abbastanza denaro
+            var currentMoney = game.state.money || game.state.company.money || 0;
+            if (currentMoney < game.demandManager.analysisState.basicAnalysisCost) {
+                improveBtn.disabled = true;
+                improveBtn.classList.add('insufficient-funds');
+                if (btnPrice) btnPrice.textContent = '💰 Fondi insufficienti';
+            } else {
+                improveBtn.classList.remove('insufficient-funds');
             }
         }
     },
     
-    // Aggiorna filtri aeroporti in base all'autonomia dell'aereo selezionato
-    updateAirportFilters: function() {
-        if (!game.worldMap) return;
+    // Migliora analisi per la rotta
+    improveRouteAnalysis: function(origin, destination) {
+        if (!game.demandManager) {
+            console.error('❌ DemandEstimationManager non disponibile');
+            return;
+        }
         
-        var selectedAircraftId = this.routeCreationState.selectedAircraftId;
-        var maxRange = null;
+        console.log('🔍 Miglioramento analisi per rotta:', origin.code, '→', destination.code);
         
-        // Se è selezionato un aereo specifico, ottieni la sua autonomia
-        if (selectedAircraftId && game.fleetManager) {
-            var aircraft = game.fleetManager.getAircraft(selectedAircraftId);
-            if (aircraft && aircraft.range) {
-                maxRange = aircraft.range;
-                console.log('🛩️ Filtro aeroporti per autonomia:', maxRange, 'km');
+        var result = game.demandManager.improveAnalysis(origin.code, destination.code);
+        
+        if (result.success) {
+            // Successo
+            console.log('✅ Analisi migliorata:', result.message);
+            
+            // Aggiorna UI
+            this.populateDemandEstimates(origin, destination);
+            this.updateImproveAnalysisButton(origin, destination);
+            
+            // Aggiorna denaro nel header
+            if (game.uiManager && game.uiManager.updateUI) {
+                game.uiManager.updateUI();
             }
-        }
-        
-        // Aggiorna la mappa con il filtro autonomia
-        if (game.worldMap.setRangeFilter) {
-            game.worldMap.setRangeFilter(maxRange);
-        }
-        
-        // Se abbiamo già un aeroporto di origine, aggiorna i filtri per la destinazione
-        if (this.routeCreationState.originAirport && maxRange) {
-            this.filterDestinationsByRange(this.routeCreationState.originAirport, maxRange);
+            
+            // Mostra notifica
+            if (game.uiManager && game.uiManager.showNotification) {
+                game.uiManager.showNotification(
+                    '📈 Analisi migliorata! Stime più precise per 12 mesi. -€' + result.cost.toLocaleString(),
+                    'success'
+                );
+            }
+            
+            // Effetto visivo
+            this.showAnalysisImprovementEffect();
+            
+        } else {
+            // Errore
+            console.warn('⚠️ Errore miglioramento analisi:', result.message);
+            
+            if (game.uiManager && game.uiManager.showNotification) {
+                game.uiManager.showNotification(result.message, 'warning');
+            }
         }
     },
     
-    // Filtra le destinazioni raggiungibili in base all'autonomia
-    filterDestinationsByRange: function(originAirport, maxRange) {
-        if (!game.worldMap) return;
+    // Effetto visivo per miglioramento analisi
+    showAnalysisImprovementEffect: function() {
+        var demandEstimates = document.getElementById('demand-estimates');
+        if (!demandEstimates) return;
         
-        console.log('🎯 Filtro destinazioni da', originAirport.code, 'con autonomia', maxRange, 'km');
+        // Effetto di highlight temporaneo
+        demandEstimates.classList.add('analysis-improved');
         
-        // Implementa il filtro nella WorldMap
-        if (game.worldMap.highlightReachableAirports) {
-            game.worldMap.highlightReachableAirports(originAirport, maxRange);
+        setTimeout(function() {
+            demandEstimates.classList.remove('analysis-improved');
+        }, 2000);
+        
+        // Effetto particelle se si vuole essere più fancy
+        this.createAnalysisParticles();
+    },
+    
+    // Crea effetto particelle per analisi migliorata
+    createAnalysisParticles: function() {
+        var demandSection = document.querySelector('.demand-analysis');
+        if (!demandSection) return;
+        
+        var particles = ['📊', '📈', '🎯', '✨'];
+        
+        for (var i = 0; i < 6; i++) {
+            setTimeout(function() {
+                var particle = document.createElement('div');
+                particle.className = 'analysis-particle';
+                particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+                particle.style.position = 'absolute';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = '50%';
+                particle.style.fontSize = '16px';
+                particle.style.pointerEvents = 'none';
+                particle.style.animation = 'floatUp 1.5s ease-out forwards';
+                
+                demandSection.style.position = 'relative';
+                demandSection.appendChild(particle);
+                
+                setTimeout(function() {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 1500);
+            }, i * 200);
         }
     },
 };

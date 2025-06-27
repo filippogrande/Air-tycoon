@@ -25,8 +25,13 @@
                     <span id="date">📅 Gen 2024</span>
                 </div>
             </div>
-            <!-- Tasto impostazioni -->
-            <button id="settings-button" title="Impostazioni"></button>
+            <!-- Tasto impostazioni e controlli tempo -->
+            <div class="header-controls">
+                <button id="advance-month-btn" class="time-control-btn" title="Avanza di un mese">
+                    📅 Avanza Mese
+                </button>
+                <button id="settings-button" title="Impostazioni"></button>
+            </div>
         </header>
 
         <!-- Menu principale -->
@@ -35,6 +40,7 @@
             <button class="menu-btn" data-tab="fleet">✈️ Flotta</button>
             <button class="menu-btn" data-tab="routes">🛣️ Rotte</button>
             <button class="menu-btn" data-tab="finances">💼 Finanze</button>
+            <button class="menu-btn" data-tab="infrastructure">🏗️ Infrastrutture</button>
             <button class="menu-btn" data-tab="research">🔬 Ricerca</button>
         </nav>
 
@@ -86,6 +92,43 @@
                         <div class="stat-card">
                             <h3>Profitto</h3>
                             <span id="monthly-profit">$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Infrastrutture -->
+            <div id="infrastructure-tab" class="tab-content">
+                <div class="infrastructure-overview">
+                    <h2>🏗️ Stato Infrastrutture Mondiali</h2>
+                    
+                    <div class="infrastructure-summary">
+                        <div class="current-year">
+                            <h3 id="infrastructure-year">Anno: 1960</h3>
+                        </div>
+                        
+                        <div class="global-trends">
+                            <h4>Tendenze Globali</h4>
+                            <div id="infrastructure-trends" class="trends-list">
+                                <!-- Tendenze verranno popolate dinamicamente -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="infrastructure-impact-info">
+                        <h4>📊 Impatto sulle Rotte Aeree</h4>
+                        <p>Lo sviluppo delle infrastrutture terrestri influenza la domanda di voli, specialmente per le rotte brevi:</p>
+                        <ul>
+                            <li><strong>🚂 Ferrovie:</strong> Riducono la domanda per distanze 50-500 km</li>
+                            <li><strong>🛣️ Autostrade:</strong> Facilitano i viaggi su strada, impattando voli regionali</li>
+                            <li><strong>🚄 Alta Velocità:</strong> Forte concorrenza per rotte brevi e medie</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="regions-infrastructure">
+                        <h4>🌍 Sviluppo per Regione</h4>
+                        <div id="infrastructure-regions" class="infrastructure-grid">
+                            <!-- Dati regionali verranno popolati dinamicamente -->
                         </div>
                     </div>
                 </div>
@@ -296,6 +339,12 @@
     <script src="src/managers/RouteManager.js"></script>
     <script src="src/managers/FinanceManager.js"></script>
     <script src="src/managers/HubManager.js"></script>
+    <script src="src/managers/DemandEstimationManager.js"></script>
+    <script src="src/managers/InfrastructureManager.js"></script>
+    
+    <!-- Simulation engines -->
+    <script src="src/simulation/EconomyEngine.js"></script>
+    <script src="src/simulation/WeatherEngine.js"></script>
     
     <!-- UI e Graphics -->
     <script src="src/ui/UIManager.js"></script>

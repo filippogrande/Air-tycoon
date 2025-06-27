@@ -96,6 +96,10 @@ function GameState() {
         totalRevenue: 0,
         totalExpenses: 0
     };
+    
+    // Proprietà di convenienza per accesso rapido
+    this.money = this.company.money;
+    this.gameDate = null; // Data di gioco aggiuntiva per funzionalità estese
 }
 
 GameState.prototype.toSaveData = function() {
@@ -116,6 +120,17 @@ GameState.prototype.toSaveData = function() {
         }),
         research: this.research,
         statistics: this.statistics,
+        
+        // Salva stati sistema estesi
+        demandEstimationState: this.game && this.game.demandManager ? 
+            this.game.demandManager.saveState() : null,
+        infrastructureState: this.infrastructureManager ?
+            this.infrastructureManager.saveState() : null,
+        economyState: (typeof EconomyEngine !== 'undefined' && EconomyEngine.saveEconomyState) ?
+            EconomyEngine.saveEconomyState() : null,
+        weatherState: (typeof WeatherEngine !== 'undefined' && WeatherEngine.saveWeatherState) ?
+            WeatherEngine.saveWeatherState() : null,
+        
         saveDate: new Date().toISOString(),
         version: '1.0.0'
     };
@@ -148,6 +163,23 @@ GameState.prototype.loadFromData = function(data) {
             activeProject: null
         };
         
+        // Carica stati sistema estesi se presenti
+        if (data.demandEstimationState && this.game && this.game.demandManager) {
+            this.game.demandManager.loadState(data.demandEstimationState);
+        }
+        
+        if (data.infrastructureState && this.infrastructureManager) {
+            this.infrastructureManager.loadState(data.infrastructureState);
+        }
+        
+        if (data.economyState && typeof EconomyEngine !== 'undefined' && EconomyEngine.loadEconomyState) {
+            EconomyEngine.loadEconomyState(data.economyState);
+        }
+        
+        if (data.weatherState && typeof WeatherEngine !== 'undefined' && WeatherEngine.loadWeatherState) {
+            WeatherEngine.loadWeatherState(data.weatherState);
+        }
+
         // Carica statistiche
         this.statistics = data.statistics || {
             totalPassengers: 0,
@@ -233,6 +265,33 @@ GameState.prototype.getMonthlyProfit = function() {
     }
     
     return totalRevenue - totalExpenses;
+};
+
+// Metodo per sincronizzare le proprietà di convenienza
+GameState.prototype.syncConvenienceProperties = function() {
+    this.money = this.company.money;
+};
+
+// Metodo per aggiornare denaro e sincronizzare
+GameState.prototype.updateMoney = function(amount) {
+    this.company.money = amount;
+    this.money = amount;
+};
+
+// Metodo per spendere denaro
+GameState.prototype.spendMoney = function(amount) {
+    if (this.company.money >= amount) {
+        this.company.money -= amount;
+        this.money = this.company.money;
+        return true;
+    }
+    return false;
+};
+
+// Metodo per guadagnare denaro
+GameState.prototype.earnMoney = function(amount) {
+    this.company.money += amount;
+    this.money = this.company.money;
 };
 
 // Rendi disponibili globalmente

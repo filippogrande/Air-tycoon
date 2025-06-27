@@ -485,3 +485,283 @@
     background: #ccc;
     cursor: not-allowed;
 }
+
+/* Accuratezza stime */
+.accuracy-indicator {
+    margin-top: 8px;
+    padding: 4px 8px;
+    background: rgba(108, 117, 125, 0.1);
+    border-radius: 4px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.accuracy-text {
+    font-weight: 500;
+}
+
+.demand-estimates.basic-analysis .accuracy-indicator {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+}
+
+.demand-estimates.improved-analysis .accuracy-indicator {
+    background: rgba(40, 167, 69, 0.1);
+    color: #155724;
+}
+
+.demand-estimates.precise-analysis .accuracy-indicator {
+    background: rgba(0, 123, 255, 0.1);
+    color: #0c5460;
+}
+
+/* Stati pulsante analisi */
+.analysis-action-btn.completed {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    cursor: default;
+}
+
+.analysis-action-btn.completed:hover {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    transform: none;
+}
+
+.analysis-action-btn.insufficient-funds {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+.analysis-action-btn.insufficient-funds:hover {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    transform: none;
+}
+
+/* Effetti miglioramento analisi */
+.demand-estimates.analysis-improved {
+    animation: analysisGlow 2s ease-in-out;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(0, 123, 255, 0.1));
+    border-radius: 8px;
+    padding: 8px;
+    margin: -8px;
+}
+
+@keyframes analysisGlow {
+    0% { 
+        box-shadow: 0 0 0 rgba(40, 167, 69, 0.4);
+    }
+    50% { 
+        box-shadow: 0 0 20px rgba(40, 167, 69, 0.6);
+    }
+    100% { 
+        box-shadow: 0 0 0 rgba(40, 167, 69, 0.4);
+    }
+}
+
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-30px) scale(1.2);
+    }
+}
+
+.analysis-particle {
+    z-index: 1000;
+}
+
+/* Responsive per pannello configurazione rotta */
+
+/* Stili per sezione infrastrutture */
+.infrastructure-overview h2 {
+    color: #2c3e50;
+    margin-bottom: 30px;
+    font-size: 28px;
+    border-bottom: 2px solid #4a90e2;
+    padding-bottom: 15px;
+}
+
+.infrastructure-summary {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.current-year {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.current-year h3 {
+    color: #2c3e50;
+    font-size: 24px;
+    margin: 0;
+}
+
+.global-trends {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.global-trends h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.trends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.trend-item {
+    background: rgba(74, 144, 226, 0.1);
+    padding: 12px 15px;
+    border-radius: 8px;
+    border-left: 4px solid #4a90e2;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.infrastructure-impact-info {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.infrastructure-impact-info h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.infrastructure-impact-info p {
+    color: #666;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.infrastructure-impact-info ul {
+    color: #555;
+    padding-left: 20px;
+}
+
+.infrastructure-impact-info li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.regions-infrastructure {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.regions-infrastructure h4 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.infrastructure-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.region-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    transition: all 0.3s ease;
+}
+
+.region-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.region-card h5 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 16px;
+    text-align: center;
+}
+
+.infrastructure-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.infrastructure-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #666;
+}
+
+.bar-container {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.bar-fill.railway {
+    background: linear-gradient(90deg, #ffc107, #ff8f00);
+}
+
+.bar-fill.highway {
+    background: linear-gradient(90deg, #6c757d, #495057);
+}
+
+.bar-fill.high-speed-rail {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+}
+
+/* Responsive per infrastrutture */
+@media (max-width: 768px) {
+    .infrastructure-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .infrastructure-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -601,6 +601,9 @@ function updateGameMenuInfo() {
 function setupUIEvents() {
     console.log('🔧 Setup eventi UI base...');
     
+    // Setup tab navigation
+    setupTabNavigation();
+    
     // Gestione resize finestra
     window.addEventListener('resize', function() {
         if (game && game.worldMap && game.worldMap.map) {
@@ -631,143 +634,498 @@ function setupUIEvents() {
     console.log('✅ Eventi UI base configurati');
 }
 
-function setupGameMenuEvents() {
-    console.log('🔧 Setup eventi menu di gioco...');
+// Setup navigazione tra tab
+function setupTabNavigation() {
+    console.log('🏷️ Setup navigazione tab...');
     
-    // Menu di gioco (hamburger menu)
-    var menuButton = document.getElementById('menu-button');
-    if (menuButton) {
-        menuButton.addEventListener('click', toggleGameMenu);
+    var tabButtons = document.querySelectorAll('.menu-btn[data-tab]');
+    var tabContents = document.querySelectorAll('.tab-content');
+    
+    if (!tabButtons.length || !tabContents.length) {
+        console.warn('⚠️ Tab buttons o content non trovati');
+        return;
     }
     
-    // Tasto impostazioni
-    var settingsButton = document.getElementById('settings-button');
-    if (settingsButton) {
-        settingsButton.addEventListener('click', showSettingsOverlay);
-    }
+    // Aggiungi event listener a ogni pulsante tab
+    tabButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var targetTab = this.getAttribute('data-tab');
+            if (targetTab) {
+                switchToTab(targetTab);
+            }
+        });
+    });
     
-    // Eventi overlay impostazioni
-    setupSettingsEvents();
-    
-    console.log('✅ Eventi menu di gioco configurati');
+    console.log('✅ Navigazione tab configurata');
 }
 
-function setupSettingsEvents() {
-    console.log('🔧 Setup eventi impostazioni...');
+// Cambia tab attivo
+function switchToTab(tabName) {
+    console.log('🔄 Cambio a tab:', tabName);
     
-    var overlay = document.getElementById('settings-overlay');
-    var saveBtn = document.getElementById('save-game-settings');
-    var menuBtn = document.getElementById('back-to-menu');
-    var logoutBtn = document.getElementById('logout-btn');
-    var backBtn = document.getElementById('back-to-game');
+    // Rimuovi classe active da tutti i pulsanti e contenuti
+    var allButtons = document.querySelectorAll('.menu-btn[data-tab]');
+    var allContents = document.querySelectorAll('.tab-content');
     
-    // Salva partita
-    if (saveBtn) {
-        saveBtn.addEventListener('click', function() {
-            console.log('💾 Click su Salva Partita...');
-            if (game) {
-                try {
-                    console.log('🎮 Chiamata game.saveGame()...');
-                    var success = game.saveGame();
-                    console.log('💾 Risultato salvataggio:', success);
-                    
-                    if (success) {
-                        if (game.uiManager && game.uiManager.showNotification) {
-                            game.uiManager.showNotification('Partita salvata!', 'success');
-                        } else {
-                            console.log('✅ Partita salvata!');
-                        }
-                        hideSettingsOverlay();
-                    } else {
-                        console.error('❌ Salvataggio fallito');
-                        if (game.uiManager && game.uiManager.showNotification) {
-                            game.uiManager.showNotification('Errore durante il salvataggio', 'error');
-                        }
-                    }
-                } catch (error) {
-                    console.error('❌ Errore salvataggio:', error);
-                    console.error('❌ Stack trace:', error.stack);
-                    if (game.uiManager && game.uiManager.showNotification) {
-                        game.uiManager.showNotification('Errore: ' + error.message, 'error');
-                    }
-                }
+    allButtons.forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    
+    allContents.forEach(function(content) {
+        content.classList.remove('active');
+    });
+    
+    // Aggiungi classe active al pulsante selezionato
+    var targetButton = document.querySelector('.menu-btn[data-tab="' + tabName + '"]');
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
+    
+    // Aggiungi classe active al contenuto selezionato
+    var targetContent = document.getElementById(tabName + '-tab');
+    if (targetContent) {
+        targetContent.classList.add('active');
+    }
+    
+    // Gestisci azioni specifiche per tab
+    handleTabSwitch(tabName);
+}
+
+// Ottieni il tab attualmente attivo
+function getCurrentActiveTab() {
+    var activeButton = document.querySelector('.menu-btn[data-tab].active');
+    if (activeButton) {
+        return activeButton.getAttribute('data-tab');
+    }
+    return 'world'; // Default fallback
+}
+
+// Funzione helper per aprire un tab specifico (utilizzabile da altri moduli)
+window.switchToTab = switchToTab;
+window.getCurrentActiveTab = getCurrentActiveTab;
+
+// Gestisce azioni specifiche quando si cambia tab
+function handleTabSwitch(tabName) {
+    if (!game) {
+        console.warn('⚠️ Game non disponibile per gestione tab switch');
+        return;
+    }
+    
+    switch(tabName) {
+        case 'world':
+            // Assicurati che la mappa sia ridimensionata correttamente
+            if (game.worldMap && game.worldMap.map) {
+                setTimeout(function() {
+                    game.worldMap.map.invalidateSize();
+                }, 100);
+            }
+            break;
+            
+        case 'fleet':
+            // Aggiorna UI della flotta
+            if (game.uiManager && game.uiManager.updateFleetUI) {
+                game.uiManager.updateFleetUI();
+            }
+            break;
+            
+        case 'routes':
+            // Aggiorna UI delle rotte
+            if (game.routeUIManager && game.routeUIManager.updateRoutesList) {
+                game.routeUIManager.updateRoutesList();
+            }
+            break;
+            
+        case 'finances':
+            // Aggiorna UI finanze
+            if (game.uiManager && game.uiManager.updateFinanceUI) {
+                game.uiManager.updateFinanceUI();
+            }
+            break;
+            
+        case 'infrastructure':
+            // Aggiorna UI infrastrutture
+            if (game.uiManager && game.uiManager.updateInfrastructureUI) {
+                console.log('🏗️ Aggiornamento UI infrastrutture...');
+                game.uiManager.updateInfrastructureUI();
             } else {
-                console.error('❌ Game non disponibile');
+                console.warn('⚠️ updateInfrastructureUI non disponibile');
+            }
+            break;
+            
+        case 'research':
+            // Aggiorna UI ricerca (placeholder per futuro sviluppo)
+            console.log('🔬 Tab ricerca - funzionalità in sviluppo');
+            break;
+            
+        default:
+            console.log('📋 Tab sconosciuto:', tabName);
+    }
+}
+
+// Inizializzazione completata
+console.log('🎮 Sistema di gioco caricato e pronto!');
+
+// Setup eventi del menu di gioco
+function setupGameMenuEvents() {
+    console.log('🎮 Setup eventi menu di gioco...');
+    
+    // Apri menu di gioco
+    var gameMenuBtn = document.getElementById('game-menu-btn');
+    var gameMenuModal = document.getElementById('game-menu-modal');
+    var closeGameMenuBtn = document.getElementById('close-game-menu');
+    
+    if (gameMenuBtn && gameMenuModal) {
+        gameMenuBtn.addEventListener('click', function() {
+            console.log('📋 Apertura menu di gioco');
+            updateGameMenuInfo();
+            gameMenuModal.classList.remove('hidden');
+        });
+    }
+    
+    if (closeGameMenuBtn && gameMenuModal) {
+        closeGameMenuBtn.addEventListener('click', function() {
+            gameMenuModal.classList.add('hidden');
+        });
+    }
+    
+    // Salva e continua
+    var saveAndContinueBtn = document.getElementById('save-and-continue');
+    if (saveAndContinueBtn) {
+        saveAndContinueBtn.addEventListener('click', function() {
+            console.log('💾 Salvataggio partita...');
+            if (game && game.saveGame) {
+                try {
+                    game.saveGame();
+                    alert('✅ Partita salvata con successo!');
+                    gameMenuModal.classList.add('hidden');
+                } catch (error) {
+                    console.error('❌ Errore nel salvataggio:', error);
+                    alert('❌ Errore nel salvataggio: ' + error.message);
+                }
             }
         });
     }
     
-    // Torna al menu di selezione
-    if (menuBtn) {
-        menuBtn.addEventListener('click', function() {
-            if (confirm('Tornare al menu? Il progresso non salvato andrà perso.')) {
+    // Torna alla selezione giochi
+    var returnToGameSelectBtn = document.getElementById('return-to-game-select');
+    if (returnToGameSelectBtn) {
+        returnToGameSelectBtn.addEventListener('click', function() {
+            console.log('🔙 Ritorno alla selezione giochi...');
+            if (confirm('Vuoi davvero tornare alla selezione dei giochi? Assicurati di aver salvato la partita.')) {
+                // Salva automaticamente prima di uscire
+                if (game && game.saveGame) {
+                    try {
+                        game.saveGame();
+                        console.log('💾 Partita salvata automaticamente prima dell\'uscita');
+                    } catch (error) {
+                        console.warn('⚠️ Errore nel salvataggio automatico:', error);
+                    }
+                }
                 window.location.href = 'game-select.html';
             }
         });
     }
     
-    // Log out
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
-            if (confirm('Fare il logout? Il progresso non salvato andrà perso.')) {
-                // Chiama AuthManager per logout
-                if (window.AuthManager) {
-                    AuthManager.logout();
+    // Impostazioni (placeholder)
+    var gameSettingsBtn = document.getElementById('game-settings');
+    if (gameSettingsBtn) {
+        gameSettingsBtn.addEventListener('click', function() {
+            alert('⚙️ Funzionalità impostazioni in sviluppo');
+        });
+    }
+    
+    // Logout
+    var logoutFromGameBtn = document.getElementById('logout-from-game');
+    if (logoutFromGameBtn) {
+        logoutFromGameBtn.addEventListener('click', function() {
+            console.log('🚪 Logout dal gioco...');
+            if (confirm('Vuoi davvero fare il logout? Assicurati di aver salvato la partita.')) {
+                // Salva automaticamente prima del logout
+                if (game && game.saveGame) {
+                    try {
+                        game.saveGame();
+                        console.log('💾 Partita salvata automaticamente prima del logout');
+                    } catch (error) {
+                        console.warn('⚠️ Errore nel salvataggio automatico:', error);
+                    }
                 }
+                
+                // Effettua logout
+                var authManager = new AuthManager();
+                authManager.logout();
                 window.location.href = 'auth.html';
             }
         });
     }
     
-    // Ritorna alla partita
-    if (backBtn) {
-        backBtn.addEventListener('click', hideSettingsOverlay);
-    }
-    
-    // Chiudi overlay cliccando fuori
-    if (overlay) {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-                hideSettingsOverlay();
+    // Gestione salvataggio rapido
+    var saveGameBtn = document.getElementById('save-game-btn');
+    if (saveGameBtn) {
+        saveGameBtn.addEventListener('click', function() {
+            console.log('💾 Salvataggio rapido...');
+            if (game && game.saveGame) {
+                try {
+                    game.saveGame();
+                    // Mostra feedback visivo temporaneo
+                    saveGameBtn.textContent = '✅ Salvato!';
+                    saveGameBtn.style.background = '#2ecc71';
+                    setTimeout(function() {
+                        saveGameBtn.textContent = '💾 Salva';
+                        saveGameBtn.style.background = '';
+                    }, 2000);
+                } catch (error) {
+                    console.error('❌ Errore nel salvataggio rapido:', error);
+                    saveGameBtn.textContent = '❌ Errore';
+                    saveGameBtn.style.background = '#e74c3c';
+                    setTimeout(function() {
+                        saveGameBtn.textContent = '💾 Salva';
+                        saveGameBtn.style.background = '';
+                    }, 2000);
+                }
             }
         });
     }
     
-    // Chiudi overlay con ESC
+    // Gestione pausa
+    var pauseBtn = document.getElementById('pause-btn');
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', function() {
+            if (game) {
+                if (game.isPaused) {
+                    game.resume();
+                    pauseBtn.textContent = '⏸️ Pausa';
+                    console.log('▶️ Gioco ripreso');
+                } else {
+                    game.pause();
+                    pauseBtn.textContent = '▶️ Riprendi';
+                    console.log('⏸️ Gioco in pausa');
+                }
+            }
+        });
+    }
+    
+    console.log('✅ Eventi menu di gioco configurati');
+}
+
+// Aggiorna informazioni nel menu di gioco
+function updateGameMenuInfo() {
+    console.log('📊 Aggiornamento info menu di gioco...');
+    
+    try {
+        var authManager = new AuthManager();
+        var currentUser = authManager.getCurrentUser();
+        var currentSave = authManager.getCurrentSave();
+        
+        // Nome del salvataggio
+        var saveNameEl = document.getElementById('current-save-name');
+        if (saveNameEl) {
+            saveNameEl.textContent = currentSave ? currentSave.name : 'Nessun salvataggio';
+        }
+        
+        // Nome compagnia
+        var companyNameEl = document.getElementById('current-company-name');
+        if (companyNameEl && game && game.state) {
+            companyNameEl.textContent = game.state.company.name || 'Sconosciuta';
+        }
+        
+        // Tempo di gioco (placeholder)
+        var playTimeEl = document.getElementById('play-time');
+        if (playTimeEl) {
+            // Calcola tempo dalla data di creazione del salvataggio se disponibile
+            if (currentSave && currentSave.metadata && currentSave.metadata.createdAt) {
+                var startTime = new Date(currentSave.metadata.createdAt);
+                var now = new Date();
+                var playTime = Math.round((now - startTime) / (1000 * 60)); // minuti
+                
+                if (playTime < 60) {
+                    playTimeEl.textContent = playTime + ' minuti';
+                } else {
+                    var hours = Math.floor(playTime / 60);
+                    var minutes = playTime % 60;
+                    playTimeEl.textContent = hours + 'h ' + minutes + 'm';
+                }
+            } else {
+                playTimeEl.textContent = 'N/A';
+            }
+        }
+        
+        // Ultimo salvataggio
+        var lastSaveEl = document.getElementById('last-save-time');
+        if (lastSaveEl) {
+            if (currentSave && currentSave.metadata && currentSave.metadata.lastSaved) {
+                var lastSave = new Date(currentSave.metadata.lastSaved);
+                lastSaveEl.textContent = lastSave.toLocaleString('it-IT');
+            } else {
+                lastSaveEl.textContent = 'Mai salvato';
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Errore aggiornamento info menu:', error);
+    }
+}
+
+// Gestione eventi UI
+function setupUIEvents() {
+    console.log('🔧 Setup eventi UI base...');
+    
+    // Setup tab navigation
+    setupTabNavigation();
+    
+    // Gestione resize finestra
+    window.addEventListener('resize', function() {
+        if (game && game.worldMap && game.worldMap.map) {
+            // Invalida la dimensione della mappa per Leaflet
+            setTimeout(function() {
+                game.worldMap.map.invalidateSize();
+            }, 100);
+        }
+    });
+    
+    // Gestione tasti di scelta rapida
     document.addEventListener('keydown', function(e) {
+        // ESC per aprire/chiudere menu
         if (e.key === 'Escape') {
-            var overlay = document.getElementById('settings-overlay');
-            if (overlay && overlay.classList.contains('active')) {
-                hideSettingsOverlay();
+            toggleGameMenu();
+        }
+        
+        // Salvataggio rapido con Ctrl+S
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            if (game) {
+                game.saveGame();
+                showNotification('Gioco salvato!', 'success');
             }
         }
     });
     
-    console.log('✅ Eventi impostazioni configurati');
+    console.log('✅ Eventi UI base configurati');
 }
 
-function showSettingsOverlay() {
-    console.log('⚙️ Mostra overlay impostazioni');
-    var overlay = document.getElementById('settings-overlay');
-    if (overlay) {
-        overlay.classList.add('active');
-        
-        // Pausa il gioco se è in esecuzione
-        if (game && game.isRunning) {
-            game.pause();
-        }
+// Setup navigazione tra tab
+function setupTabNavigation() {
+    console.log('🏷️ Setup navigazione tab...');
+    
+    var tabButtons = document.querySelectorAll('.menu-btn[data-tab]');
+    var tabContents = document.querySelectorAll('.tab-content');
+    
+    if (!tabButtons.length || !tabContents.length) {
+        console.warn('⚠️ Tab buttons o content non trovati');
+        return;
     }
+    
+    // Aggiungi event listener a ogni pulsante tab
+    tabButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var targetTab = this.getAttribute('data-tab');
+            if (targetTab) {
+                switchToTab(targetTab);
+            }
+        });
+    });
+    
+    console.log('✅ Navigazione tab configurata');
 }
 
-function hideSettingsOverlay() {
-    console.log('⚙️ Nascondi overlay impostazioni');
-    var overlay = document.getElementById('settings-overlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-        
-        // Riprendi il gioco se era in pausa
-        if (game && !game.isRunning) {
-            game.start();
-        }
+// Cambia tab attivo
+function switchToTab(tabName) {
+    console.log('🔄 Cambio a tab:', tabName);
+    
+    // Rimuovi classe active da tutti i pulsanti e contenuti
+    var allButtons = document.querySelectorAll('.menu-btn[data-tab]');
+    var allContents = document.querySelectorAll('.tab-content');
+    
+    allButtons.forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    
+    allContents.forEach(function(content) {
+        content.classList.remove('active');
+    });
+    
+    // Aggiungi classe active al pulsante selezionato
+    var targetButton = document.querySelector('.menu-btn[data-tab="' + tabName + '"]');
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
+    
+    // Aggiungi classe active al contenuto selezionato
+    var targetContent = document.getElementById(tabName + '-tab');
+    if (targetContent) {
+        targetContent.classList.add('active');
+    }
+    
+    // Gestisci azioni specifiche per tab
+    handleTabSwitch(tabName);
+}
+
+// Ottieni il tab attualmente attivo
+function getCurrentActiveTab() {
+    var activeButton = document.querySelector('.menu-btn[data-tab].active');
+    if (activeButton) {
+        return activeButton.getAttribute('data-tab');
+    }
+    return 'world'; // Default fallback
+}
+
+// Funzione helper per aprire un tab specifico (utilizzabile da altri moduli)
+window.switchToTab = switchToTab;
+window.getCurrentActiveTab = getCurrentActiveTab;
+
+// Gestisce azioni specifiche quando si cambia tab
+function handleTabSwitch(tabName) {
+    if (!game) {
+        console.warn('⚠️ Game non disponibile per gestione tab switch');
+        return;
+    }
+    
+    switch(tabName) {
+        case 'world':
+            // Assicurati che la mappa sia ridimensionata correttamente
+            if (game.worldMap && game.worldMap.map) {
+                setTimeout(function() {
+                    game.worldMap.map.invalidateSize();
+                }, 100);
+            }
+            break;
+            
+        case 'fleet':
+            // Aggiorna UI della flotta
+            if (game.uiManager && game.uiManager.updateFleetUI) {
+                game.uiManager.updateFleetUI();
+            }
+            break;
+            
+        case 'routes':
+            // Aggiorna UI delle rotte
+            if (game.routeUIManager && game.routeUIManager.updateRoutesList) {
+                game.routeUIManager.updateRoutesList();
+            }
+            break;
+            
+        case 'finances':
+            // Aggiorna UI finanze
+            if (game.uiManager && game.uiManager.updateFinanceUI) {
+                game.uiManager.updateFinanceUI();
+            }
+            break;
+            
+        case 'infrastructure':
+            // Aggiorna UI infrastrutture
+            if (game.uiManager && game.uiManager.updateInfrastructureUI) {
+                console.log('🏗️ Aggiornamento UI infrastrutture...');
+                game.uiManager.updateInfrastructureUI();
+            } else {
+                console.warn('⚠️ updateInfrastructureUI non disponibile');
+            }
+            break;
+            
+        case 'research':
+            // Aggiorna UI ricerca (placeholder per futuro sviluppo)
+            console.log('🔬 Tab ricerca - funzionalità in sviluppo');
+            break;
+            
+        default:
+            console.log('📋 Tab sconosciuto:', tabName);
     }
 }

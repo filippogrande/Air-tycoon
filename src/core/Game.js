@@ -21,6 +21,21 @@ function Game() {
         this.hubManager = new HubManager(this.state);
         console.log('✅ HubManager creato');
         
+        // Inizializza DemandEstimationManager
+        this.demandManager = new DemandEstimationManager(this.state);
+        console.log('✅ DemandEstimationManager creato');
+        
+        // Inizializza InfrastructureManager
+        this.infrastructureManager = new InfrastructureManager(this.state);
+        this.state.infrastructureManager = this.infrastructureManager; // Riferimento per altri manager
+        console.log('✅ InfrastructureManager creato');
+        
+        // Inizializza EconomyEngine se disponibile
+        if (typeof EconomyEngine !== 'undefined') {
+            EconomyEngine.initialize(this.state);
+            console.log('✅ EconomyEngine inizializzato');
+        }
+        
         this.uiManager = new UIManager(this);
         console.log('✅ UIManager creato');
         
@@ -199,6 +214,170 @@ Game.prototype.loadGame = function() {
         console.error('❌ Errore durante il caricamento:', error);
         return false;
     }
+};
+
+// Avanza di un mese nel gioco
+Game.prototype.advanceMonth = function() {
+    console.log('📅 Avanzamento di un mese...');
+    
+    try {
+        // Avanza il tempo nel DemandEstimationManager
+        if (this.demandManager) {
+            this.demandManager.advanceGameTime();
+        }
+        
+        // Avanza sviluppo infrastrutture
+        if (this.infrastructureManager) {
+            this.infrastructureManager.advanceMonth();
+        }
+        
+        // Aggiorna data di gioco
+        if (!this.state.gameDate) {
+            this.state.gameDate = new Date(2024, 0, 1); // Inizia da Gennaio 2024
+        } else {
+            this.state.gameDate.setMonth(this.state.gameDate.getMonth() + 1);
+        }
+        
+        // Calcola ricavi e costi mensili per le rotte attive
+        this.processMonthlyFinances();
+        
+        // Aggiorna UI con nuova data
+        this.updateUI();
+        
+        // Notifica al giocatore
+        var dateStr = this.state.gameDate.toLocaleDateString('it-IT', { 
+            month: 'long', 
+            year: 'numeric' 
+        });
+        
+        if (this.uiManager && this.uiManager.showNotification) {
+            this.uiManager.showNotification('📅 Avanzato a ' + dateStr, 'info');
+        }
+        
+        console.log('✅ Mese avanzato a:', dateStr);
+        
+        // Auto-save dopo avanzamento
+        this.saveGame();
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Errore avanzamento mese:', error);
+        return false;
+    }
+};
+
+// Processa finanze mensili
+Game.prototype.processMonthlyFinances = function() {
+    var totalRevenue = 0;
+    var totalCosts = 0;
+    
+    // Processa rotte attive
+    if (this.routeManager) {
+        var activeRoutes = this.routeManager.getActiveRoutes();
+        
+        for (var i = 0; i < activeRoutes.length; i++) {
+            var route = activeRoutes[i];
+            
+            // Simula operazioni mensili per la rotta
+            var monthlyResult = this.simulateMonthlyRoute(route);
+            
+            totalRevenue += monthlyResult.revenue;
+            totalCosts += monthlyResult.costs;
+            
+            // Aggiorna statistiche rotta
+            route.totalRevenue += monthlyResult.revenue;
+            route.totalExpenses += monthlyResult.costs;
+            route.totalFlights += monthlyResult.flights;
+            route.totalPassengers += monthlyResult.passengers;
+        }
+    }
+    
+    // Costi fissi flotta
+    if (this.fleetManager) {
+        var fleetCosts = this.fleetManager.getMonthlyMaintenanceCosts();
+        totalCosts += fleetCosts;
+    }
+    
+    // Aggiorna bilancio
+    var netProfit = totalRevenue - totalCosts;
+    if (this.state.earnMoney) {
+        this.state.earnMoney(netProfit);
+    } else {
+        // Fallback
+        this.state.money += netProfit;
+        this.state.company.money = this.state.money;
+    }
+    
+    // Aggiorna statistiche mensili
+    if (!this.state.monthlyStats) {
+        this.state.monthlyStats = [];
+    }
+    
+    this.state.monthlyStats.push({
+        month: new Date(this.state.gameDate),
+        revenue: totalRevenue,
+        costs: totalCosts,
+        profit: netProfit,
+        cash: this.state.money
+    });
+    
+    // Mantieni solo ultimi 24 mesi
+    if (this.state.monthlyStats.length > 24) {
+        this.state.monthlyStats.shift();
+    }
+    
+    console.log('💰 Finanze mensili:', {
+        ricavi: totalRevenue.toLocaleString(),
+        costi: totalCosts.toLocaleString(),
+        profitto: netProfit.toLocaleString(),
+        liquidità: this.state.money.toLocaleString()
+    });
+};
+
+// Simula operazioni mensili per una rotta
+Game.prototype.simulateMonthlyRoute = function(route) {
+    var aircraft = this.fleetManager ? this.fleetManager.getAircraft(route.aircraftId) : null;
+    
+    if (!aircraft) {
+        return { revenue: 0, costs: 0, flights: 0, passengers: 0 };
+    }
+    
+    // Ottieni stime domanda aggiornate
+    var origin = AirportData.getAirportByCode(route.origin);
+    var destination = AirportData.getAirportByCode(route.destination);
+    
+    if (!origin || !destination) {
+        return { revenue: 0, costs: 0, flights: 0, passengers: 0 };
+    }
+    
+    var estimate = this.demandManager ? 
+        this.demandManager.getPassengerEstimate(origin, destination) :
+        { passengers: 100, revenue: 12000 }; // Fallback
+    
+    // Simula 30 giorni di operazioni
+    var dailyFlights = route.frequency / 7; // da settimanale a giornaliera
+    var monthlyFlights = Math.round(dailyFlights * 30);
+    
+    var totalPassengers = 0;
+    var totalRevenue = 0;
+    var totalCosts = 0;
+    
+    for (var day = 0; day < 30; day++) {
+        var dailyDemand = estimate.passengers * (0.8 + Math.random() * 0.4); // ±20% variazione
+        var actualPassengers = Math.min(dailyDemand, aircraft.capacity * dailyFlights);
+        
+        totalPassengers += actualPassengers;
+        totalRevenue += actualPassengers * route.ticketPrice;
+        totalCosts += (route.distance * 2.5) + 1000; // Costi operativi semplificati
+    }
+    
+    return {
+        revenue: totalRevenue,
+        costs: totalCosts,
+        flights: monthlyFlights,
+        passengers: totalPassengers
+    };
 };
 
 Game.prototype.newGame = function() {

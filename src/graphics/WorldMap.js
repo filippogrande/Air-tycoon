@@ -485,41 +485,6 @@ WorldMap.prototype.setupRouteCreationEvents = function() {
             }
         }
     });
-    
-    // Eventi per selezione aeroplano
-    var aircraftSlot = document.getElementById('selected-aircraft');
-    var aircraftDropdown = document.getElementById('aircraft-dropdown');
-    var refreshAircraftBtn = document.getElementById('refresh-aircraft-btn');
-    
-    if (aircraftSlot) {
-        aircraftSlot.addEventListener('click', function() {
-            // Popola e mostra/nascondi dropdown
-            RouteUIManager.populateAircraftList();
-            if (aircraftDropdown) {
-                var isVisible = aircraftDropdown.style.display === 'block';
-                aircraftDropdown.style.display = isVisible ? 'none' : 'block';
-            }
-        });
-    }
-    
-    if (refreshAircraftBtn) {
-        refreshAircraftBtn.addEventListener('click', function(e) {
-            e.stopPropagation(); // Evita che si propaghi al click del slot
-            RouteUIManager.populateAircraftList();
-            if (aircraftDropdown) {
-                aircraftDropdown.style.display = 'block';
-            }
-        });
-    }
-    
-    // Chiudi dropdown quando clicchi fuori
-    document.addEventListener('click', function(e) {
-        if (aircraftDropdown && 
-            !aircraftSlot.contains(e.target) && 
-            !aircraftDropdown.contains(e.target)) {
-            aircraftDropdown.style.display = 'none';
-        }
-    });
 };
 
 // Gestisce click su aeroporto
