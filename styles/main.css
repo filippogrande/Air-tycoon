@@ -721,6 +721,19 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Rimuovi le bolle solo dai valori nella configurazione rotte */
+.route-config-panel .estimate-value,
+.route-config-panel .cost-value,
+.route-config-panel .revenue-value,
+.route-config-panel .profit-value,
+.route-config-panel .info-value {
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
 .config-actions {
     grid-column: 1 / -1; /* Occupa entrambe le colonne */
     display: flex;
