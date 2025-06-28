@@ -1,11 +1,16 @@
-// Sistema di salvataggio avanzato che usa sia localStorage che database
+// Sistema di salvataggio avanzato: Server-first con cache sincronizzata
 console.log('📂 Caricamento SaveLoad avanzato...');
 
-// Oggetto SaveLoad compatibile con tutti i browser ma con supporto database
+// Oggetto SaveLoad con strategia server-first
 window.SaveLoad = {
-    SAVE_KEY: 'air-tycoon-2-save',
+    SAVE_KEY: 'air-tycoon-2-save', // Legacy per retrocompatibilità
+    CACHE_KEY: 'air-tycoon-cache', // Cache sincronizzata
+    SYNC_KEY: 'air-tycoon-sync-meta', // Metadati sincronizzazione
     _companyId: null,
     _useDatabase: false,
+    _lastDatabaseSave: 0,
+    _syncInterval: null,
+    SYNC_INTERVAL_MS: 3 * 60 * 1000, // 3 minuti
     
     // Inizializza il sistema di salvataggio con l'ID della compagnia
     initialize: function(companyId, forceLocalStorageOnly = false) {
@@ -20,11 +25,87 @@ window.SaveLoad = {
         this._useDatabase = true;
         console.log('🔧 SaveLoad inizializzato con compagnia ID:', companyId);
         this._testDatabaseConnection();
+        this._startGameDataSync();
         
         // Dopo un piccolo delay, sincronizza la compagnia con il database
         setTimeout(() => {
             this._createOrUpdateCompanyInDatabase();
         }, 1000);
+    },
+    
+    // Avvia sincronizzazione periodica dei dati di gioco
+    _startGameDataSync: function() {
+        if (this._syncInterval) {
+            clearInterval(this._syncInterval);
+        }
+        
+        if (this._useDatabase && this._companyId) {
+            this._syncInterval = setInterval(() => {
+                this._syncGameDataFromServer();
+            }, this.SYNC_INTERVAL_MS);
+            
+            console.log('🔄 Sincronizzazione dati gioco avviata (ogni 3 minuti)');
+        }
+    },
+    
+    // Sincronizza dati di gioco dal server
+    _syncGameDataFromServer: function() {
+        if (!this._useDatabase || !this._companyId) return;
+        
+        fetch(`/api/game/companies/${this._companyId}/latest-save`)
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            })
+            .then(result => {
+                if (result.success && result.data) {
+                    // Aggiorna la cache solo se i dati del server sono più recenti
+                    var serverData = result.data;
+                    var localMeta = this._getLocalSyncMeta();
+                    
+                    if (!localMeta.lastServerSync || 
+                        new Date(serverData.updated_at) > new Date(localMeta.lastServerSync)) {
+                        
+                        // Aggiorna cache
+                        localStorage.setItem(this.CACHE_KEY, JSON.stringify(serverData.game_data));
+                        
+                        // Aggiorna metadati sincronizzazione
+                        this._updateSyncMeta({
+                            lastServerSync: serverData.updated_at,
+                            syncTimestamp: new Date().toISOString()
+                        });
+                        
+                        console.log('🔄 Dati gioco sincronizzati dal server');
+                    }
+                }
+            })
+            .catch(error => {
+                console.warn('⚠️ Errore sincronizzazione dati gioco:', error.message);
+            });
+    },
+    
+    // Ottieni metadati sincronizzazione
+    _getLocalSyncMeta: function() {
+        try {
+            var meta = localStorage.getItem(this.SYNC_KEY);
+            return meta ? JSON.parse(meta) : {};
+        } catch (error) {
+            return {};
+        }
+    },
+    
+    // Aggiorna metadati sincronizzazione
+    _updateSyncMeta: function(updates) {
+        try {
+            var meta = this._getLocalSyncMeta();
+            Object.assign(meta, updates);
+            localStorage.setItem(this.SYNC_KEY, JSON.stringify(meta));
+        } catch (error) {
+            console.warn('⚠️ Errore aggiornamento metadati sync:', error);
+        }
     },
     
     // Test della connessione al database
@@ -49,7 +130,7 @@ window.SaveLoad = {
             });
     },
     
-    // Salva i dati di gioco (localStorage + database se disponibile)
+    // Salva i dati di gioco (DATABASE-FIRST, poi localStorage come cache)
     saveGame: function(gameData, saveName = 'autosave') {
         try {
             var saveData = {
@@ -58,33 +139,54 @@ window.SaveLoad = {
                 data: gameData
             };
             
-            // Salvataggio localStorage (sempre)
-            var jsonData = JSON.stringify(saveData);
-            localStorage.setItem(this.SAVE_KEY, jsonData);
-            console.log('💾 Gioco salvato su localStorage');
-            
-            // Salvataggio database (se disponibile)
+            // STRATEGIA DATABASE-FIRST
             if (this._useDatabase && this._companyId) {
+                console.log('🌐 Salvataggio prioritario su database...');
                 // Prima sincronizza la compagnia, poi salva il gioco
                 this._createOrUpdateCompanyInDatabase();
-                setTimeout(() => {
-                    this._saveToDatabaseAsync(saveData, saveName);
-                }, 500); // Piccolo delay per permettere la sincronizzazione
+                return this._saveToDatabaseSync(saveData, saveName);
+            } else {
+                // Fallback su localStorage solo se database non disponibile
+                console.log('💾 Fallback: salvataggio solo su localStorage');
+                return this._saveToLocalStorageOnly(saveData);
             }
             
-            return true;
         } catch (error) {
             console.error('❌ Errore durante il salvataggio:', error);
+            // In caso di errore, prova almeno a salvare in localStorage
+            try {
+                return this._saveToLocalStorageOnly({
+                    version: '2.0.0',
+                    timestamp: new Date().toISOString(),
+                    data: gameData
+                });
+            } catch (fallbackError) {
+                console.error('❌ Errore anche nel fallback localStorage:', fallbackError);
+                return false;
+            }
+        }
+    },
+    
+    // Salvataggio solo su localStorage (fallback)
+    _saveToLocalStorageOnly: function(saveData) {
+        try {
+            var jsonData = JSON.stringify(saveData);
+            localStorage.setItem(this.SAVE_KEY, jsonData);
+            console.log('💾 Gioco salvato su localStorage (fallback)');
+            this._showSaveNotification('Salvato localmente (database non disponibile)', 'warning');
+            return true;
+        } catch (error) {
+            console.error('❌ Errore salvataggio localStorage:', error);
             return false;
         }
     },
     
-    // Salvataggio asincrono su database
-    _saveToDatabaseAsync: function(saveData, saveName) {
+    // Salvataggio SINCRONO su database (database-first)
+    _saveToDatabaseSync: function(saveData, saveName) {
         // Verifica che i dati siano validi prima di inviarli
         if (!this._companyId) {
-            console.warn('⚠️ ID compagnia mancante, skip salvataggio database');
-            return;
+            console.warn('⚠️ ID compagnia mancante, fallback localStorage');
+            return this._saveToLocalStorageOnly(saveData);
         }
         
         // Prepara i dati per il database
@@ -99,45 +201,52 @@ window.SaveLoad = {
             JSON.stringify(payload);
         } catch (jsonError) {
             console.error('❌ Errore serializzazione dati per database:', jsonError);
-            this._showSaveNotification('Salvato solo localmente (dati non serializzabili)', 'warning');
-            return;
+            return this._saveToLocalStorageOnly(saveData);
         }
         
-        fetch('/api/game/save', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(response => {
-            if (!response.ok) {
-                // Log dell'errore HTTP
-                console.warn('⚠️ Errore HTTP salvataggio database:', response.status, response.statusText);
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(result => {
-            if (result && result.success) {
-                console.log('🌐 Gioco salvato su database');
-                this._showSaveNotification('Gioco salvato su database');
-            } else {
-                console.warn('⚠️ Errore salvataggio database:', result ? result.error : 'Risposta non valida');
-                this._showSaveNotification('Salvato solo localmente (errore database)', 'warning');
-                this._useDatabase = false; // Disabilita database per questa sessione
-            }
-        })
-        .catch(error => {
-            console.warn('⚠️ Errore salvataggio database:', error.message);
-            this._showSaveNotification('Salvato solo localmente (database non disponibile)', 'warning');
+        // Salvataggio sincrono con XMLHttpRequest
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/game/save', false); // false = sincrono
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        try {
+            xhr.send(JSON.stringify(payload));
             
-            // Se l'errore è un 500, disabilita temporaneamente il database
-            if (error.message.includes('500')) {
-                this._useDatabase = false;
-                console.warn('⚠️ Database disabilitato per questa sessione a causa di errori server');
+            if (xhr.status === 200) {
+                var result = JSON.parse(xhr.responseText);
+                if (result && result.success) {
+                    console.log('🌐 Gioco salvato su database (sync)');
+                    this._showSaveNotification('Gioco salvato su database');
+                    
+                    // AGGIORNA LA CACHE localStorage dopo il successo del database
+                    this._updateLocalStorageCache(saveData);
+                    return true;
+                } else {
+                    console.warn('⚠️ Errore salvataggio database:', result ? result.error : 'Risposta non valida');
+                    this._useDatabase = false; // Disabilita database per questa sessione
+                    return this._saveToLocalStorageOnly(saveData);
+                }
+            } else {
+                console.warn('⚠️ Errore HTTP salvataggio database:', xhr.status, xhr.statusText);
+                this._useDatabase = false; // Disabilita database per questa sessione
+                return this._saveToLocalStorageOnly(saveData);
             }
-        });
+        } catch (error) {
+            console.warn('⚠️ Errore comunicazione database:', error.message);
+            this._useDatabase = false; // Disabilita database per questa sessione
+            return this._saveToLocalStorageOnly(saveData);
+        }
+    },
+    
+    // Aggiorna la cache localStorage (solo dopo salvataggio database riuscito)
+    _updateLocalStorageCache: function(saveData) {
+        try {
+            var jsonData = JSON.stringify(saveData);
+            localStorage.setItem(this.CACHE_KEY, jsonData);
+            console.log('🗃️ Cache localStorage aggiornata');
+        } catch (error) {
+            console.warn('⚠️ Errore aggiornamento cache localStorage:', error);
+        }
     },
     
     // Mostra notifica di salvataggio
@@ -173,42 +282,84 @@ window.SaveLoad = {
         }, timeout);
     },
     
-    // Carica i dati di gioco (prova database prima, poi localStorage)
+    // Carica i dati di gioco (CACHE-FIRST: localStorage cache, poi database se necessario)
     loadGame: function() {
         try {
-            // Se il database è disponibile e abbiamo un ID compagnia, prova a caricare da lì
+            // STRATEGIA CACHE-FIRST: prima prova a caricare dalla cache localStorage
+            var cacheData = this._loadFromCache();
+            if (cacheData) {
+                console.log('📂 Dati caricati dalla cache localStorage');
+                return cacheData;
+            }
+            
+            // Se la cache è vuota, prova a caricare dal salvataggio legacy
+            var legacyData = this._loadFromLegacySave();
+            if (legacyData) {
+                console.log('📂 Dati caricati da salvataggio legacy');
+                // Aggiorna la cache con i dati legacy
+                this._updateLocalStorageCache({
+                    version: '2.0.0',
+                    timestamp: new Date().toISOString(),
+                    data: legacyData
+                });
+                return legacyData;
+            }
+            
+            // TODO: In futuro, se cache e legacy sono vuoti, prova a caricare dal database
             if (this._useDatabase && this._companyId) {
-                // Per ora manteniamo sincrono, in futuro si può rendere asincrono
-                console.log('📂 Caricamento da localStorage (database asincrono non implementato)');
+                console.log('📂 TODO: Caricamento asincrono da database non ancora implementato');
+                // Questo sarà implementato in futuro per caricare dal database
+                // e aggiornare la cache localStorage
             }
             
-            // Caricamento da localStorage
-            var jsonData = localStorage.getItem(this.SAVE_KEY);
-            
-            if (!jsonData) {
-                console.log('📄 Nessun salvataggio trovato');
-                return null;
-            }
-            
-            var saveData = JSON.parse(jsonData);
-            console.log('📂 Dati caricati dal salvataggio');
-            return saveData.data;
+            console.log('� Nessun salvataggio trovato');
+            return null;
         } catch (error) {
             console.error('❌ Errore durante il caricamento:', error);
             return null;
         }
     },
     
-    // Verifica se esistono dati salvati
-    hasSaveData: function() {
-        return localStorage.getItem(this.SAVE_KEY) !== null;
+    // Carica dalla cache localStorage
+    _loadFromCache: function() {
+        try {
+            var jsonData = localStorage.getItem(this.CACHE_KEY);
+            if (!jsonData) return null;
+            
+            var saveData = JSON.parse(jsonData);
+            return saveData.data;
+        } catch (error) {
+            console.warn('⚠️ Errore caricamento cache:', error);
+            return null;
+        }
     },
     
-    // Elimina i dati salvati
+    // Carica dal salvataggio legacy (per retrocompatibilità)
+    _loadFromLegacySave: function() {
+        try {
+            var jsonData = localStorage.getItem(this.SAVE_KEY);
+            if (!jsonData) return null;
+            
+            var saveData = JSON.parse(jsonData);
+            return saveData.data;
+        } catch (error) {
+            console.warn('⚠️ Errore caricamento legacy save:', error);
+            return null;
+        }
+    },
+    
+    // Verifica se esistono dati salvati (cache o legacy)
+    hasSaveData: function() {
+        return localStorage.getItem(this.CACHE_KEY) !== null || 
+               localStorage.getItem(this.SAVE_KEY) !== null;
+    },
+    
+    // Elimina i dati salvati (sia cache che legacy)
     deleteSave: function() {
         try {
+            localStorage.removeItem(this.CACHE_KEY);
             localStorage.removeItem(this.SAVE_KEY);
-            console.log('🗑️ Salvataggio eliminato');
+            console.log('🗑️ Cache e salvataggio eliminati');
             return true;
         } catch (error) {
             console.error('❌ Errore eliminazione salvataggio:', error);
@@ -356,8 +507,10 @@ console.log('✅ SaveLoad avanzato caricato');
 window.SaveLoadDebug = {
     status: function() {
         console.log('📊 Stato SaveLoad:', SaveLoad.getDatabaseStatus());
-        console.log('💾 localStorage disponibile:', SaveLoad.hasSaveData());
+        console.log('💾 Cache localStorage disponibile:', localStorage.getItem(SaveLoad.CACHE_KEY) !== null);
+        console.log('💾 Legacy save disponibile:', localStorage.getItem(SaveLoad.SAVE_KEY) !== null);
         console.log('🏢 Company ID:', SaveLoad._companyId);
+        console.log('🌐 Database attivo:', SaveLoad._useDatabase);
     },
     
     enableDatabase: function() {
@@ -381,8 +534,25 @@ window.SaveLoadDebug = {
     clearLocalStorage: function() {
         if (confirm('Vuoi cancellare tutti i dati localStorage del gioco?')) {
             localStorage.removeItem(SaveLoad.SAVE_KEY);
+            localStorage.removeItem(SaveLoad.CACHE_KEY);
             localStorage.removeItem('air-tycoon-company-id');
-            console.log('🗑️ localStorage pulito');
+            console.log('🗑️ localStorage pulito (cache e legacy)');
+        }
+    },
+    
+    clearCacheOnly: function() {
+        localStorage.removeItem(SaveLoad.CACHE_KEY);
+        console.log('🗃️ Cache localStorage pulita');
+    },
+    
+    forceDatabaseSave: function() {
+        if (window.game && SaveLoad._companyId) {
+            console.log('🌐 Forzando salvataggio database...');
+            SaveLoad._useDatabase = true;
+            var result = window.game.saveGame();
+            console.log('🌐 Risultato salvataggio database:', result);
+        } else {
+            console.log('❌ Game o companyId non disponibili');
         }
     },
     
@@ -397,5 +567,7 @@ console.log('  SaveLoadDebug.status() - Mostra stato sistema');
 console.log('  SaveLoadDebug.enableDatabase() - Riabilita database');
 console.log('  SaveLoadDebug.disableDatabase() - Disabilita database');
 console.log('  SaveLoadDebug.testSave() - Test salvataggio');
-console.log('  SaveLoadDebug.clearLocalStorage() - Pulisci localStorage');
+console.log('  SaveLoadDebug.forceDatabaseSave() - Forza salvataggio solo su database');
+console.log('  SaveLoadDebug.clearLocalStorage() - Pulisci tutto localStorage');
+console.log('  SaveLoadDebug.clearCacheOnly() - Pulisci solo cache');
 console.log('  SaveLoadDebug.syncCompanyToDatabase() - Forza sincronizzazione compagnia');

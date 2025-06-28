@@ -99,20 +99,25 @@ function handleLogin(e) {
     
     showLoading('Accesso in corso...');
     
-    // Simula delay di rete
-    setTimeout(function() {
-        const result = authManager.login(email, password);
-        hideLoading();
-        
-        if (result.success) {
-            showMessage(result.message, 'success');
-            setTimeout(function() {
-                redirectToGameSelect();
-            }, 1000);
-        } else {
-            showMessage(result.message, 'error');
-        }
-    }, 1000);
+    // Chiamata asincrona al login
+    authManager.login(email, password)
+        .then(result => {
+            hideLoading();
+            
+            if (result.success) {
+                showMessage(result.message, 'success');
+                setTimeout(function() {
+                    redirectToGameSelect();
+                }, 1000);
+            } else {
+                showMessage(result.message, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('❌ Errore login:', error);
+            showMessage('Errore durante il login. Riprova più tardi.', 'error');
+        });
 }
 
 function handleRegister(e) {
@@ -120,11 +125,12 @@ function handleRegister(e) {
     
     const formData = new FormData(e.target);
     const email = formData.get('email').trim();
+    const companyName = formData.get('companyName').trim();
     const password = formData.get('password');
     const confirmPassword = formData.get('confirmPassword');
     
     // Validazione
-    if (!email || !password || !confirmPassword) {
+    if (!email || !companyName || !password || !confirmPassword) {
         showMessage('Tutti i campi sono obbligatori', 'error');
         return;
     }
@@ -139,24 +145,34 @@ function handleRegister(e) {
         return;
     }
     
+    if (companyName.length < 3) {
+        showMessage('Il nome compagnia deve essere di almeno 3 caratteri', 'error');
+        return;
+    }
+    
     showLoading('Registrazione in corso...');
     
-    // Simula delay di rete
-    setTimeout(function() {
-        const result = authManager.register(email, password);
-        hideLoading();
-        
-        if (result.success) {
-            showMessage(result.message, 'success');
-            setTimeout(function() {
-                switchToLogin();
-                // Pre-compila email nel form di login
-                document.getElementById('login-email').value = email;
-            }, 2000);
-        } else {
-            showMessage(result.message, 'error');
-        }
-    }, 1500);
+    // Chiamata asincrona alla registrazione
+    authManager.register(email, password, companyName)
+        .then(result => {
+            hideLoading();
+            
+            if (result.success) {
+                showMessage(result.message, 'success');
+                setTimeout(function() {
+                    switchToLogin();
+                    // Pre-compila email nel form di login
+                    document.getElementById('login-email').value = email;
+                }, 2000);
+            } else {
+                showMessage(result.message, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('❌ Errore registrazione:', error);
+            showMessage('Errore durante la registrazione. Riprova più tardi.', 'error');
+        });
 }
 
 function showLoading(message) {

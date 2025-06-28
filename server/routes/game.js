@@ -233,6 +233,38 @@ router.get('/save/:id', async (req, res) => {
     }
 });
 
+// GET /api/game/companies/:id/latest-save - Ottieni ultimo salvataggio compagnia
+router.get('/companies/:id/latest-save', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const latestSave = await db.query(`
+            SELECT * FROM game_saves 
+            WHERE company_id = $1 
+            ORDER BY updated_at DESC 
+            LIMIT 1
+        `, [id]);
+        
+        if (latestSave.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Nessun salvataggio trovato per questa compagnia'
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: latestSave.rows[0]
+        });
+    } catch (error) {
+        console.error('Error fetching latest save:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch latest save'
+        });
+    }
+});
+
 // POST /api/game/save - Salva partita
 router.post('/save', async (req, res) => {
     try {

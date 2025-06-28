@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const db = require('./database');
+const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/game');
 const fleetRoutes = require('./routes/fleet');
 const routeRoutes = require('./routes/routes');
@@ -82,6 +83,7 @@ app.get('/api', (req, res) => {
         status: 'Running',
         endpoints: {
             health: '/health',
+            auth: '/api/auth/*',
             game: '/api/game/*',
             fleet: '/api/fleet/*',
             routes: '/api/routes/*',
@@ -96,6 +98,7 @@ app.get('/api', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/fleet', fleetRoutes);
 app.use('/api/routes', routeRoutes);

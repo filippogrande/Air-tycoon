@@ -1,106 +1,184 @@
-// AuthManager - Gestione autenticazione utenti
+// AuthManager - Gestione autenticazione con SERVER-FIRST
 console.log('📂 Caricamento AuthManager.js...');
 
 function AuthManager() {
     this.currentUser = null;
-    this.users = this.loadUsers();
+    this.users = {}; // Cache utenti (non usato per auth, solo cache)
 }
 
-// Carica utenti dal localStorage
+// NON carica utenti dal localStorage per auth - solo cache
 AuthManager.prototype.loadUsers = function() {
     try {
-        var usersData = localStorage.getItem('airTycoon_users');
+        var usersData = localStorage.getItem('airTycoon_users_cache');
         return usersData ? JSON.parse(usersData) : {};
     } catch (error) {
-        console.error('Errore caricamento utenti:', error);
+        console.error('Errore caricamento cache utenti:', error);
         return {};
     }
 };
 
-// Salva utenti nel localStorage
+// Salva utenti nel localStorage SOLO come cache
 AuthManager.prototype.saveUsers = function() {
     try {
-        localStorage.setItem('airTycoon_users', JSON.stringify(this.users));
+        localStorage.setItem('airTycoon_users_cache', JSON.stringify(this.users));
         return true;
     } catch (error) {
-        console.error('Errore salvataggio utenti:', error);
+        console.error('Errore salvataggio cache utenti:', error);
         return false;
     }
 };
 
-// Registra nuovo utente
-AuthManager.prototype.register = function(email, password) {
+// Registra nuovo utente (SOLO SERVER - mai localStorage per auth)
+AuthManager.prototype.register = function(email, password, companyName) {
     // Validazione input
-    if (!email || !password) {
-        return { success: false, message: 'Email e password sono obbligatori' };
+    if (!email || !password || !companyName) {
+        return Promise.reject(new Error('Email, password e nome compagnia sono obbligatori'));
     }
     
     if (password.length < 6) {
-        return { success: false, message: 'La password deve essere di almeno 6 caratteri' };
+        return Promise.reject(new Error('La password deve essere di almeno 6 caratteri'));
     }
     
     if (!this.isValidEmail(email)) {
-        return { success: false, message: 'Email non valida' };
+        return Promise.reject(new Error('Email non valida'));
     }
     
-    // Controlla se utente esiste già
-    if (this.users[email]) {
-        return { success: false, message: 'Un utente con questa email esiste già' };
-    }
-    
-    // Crea nuovo utente
-    var userId = this.generateUserId();
-    var newUser = {
-        id: userId,
-        email: email,
-        passwordHash: this.hashPassword(password),
-        createdAt: new Date().toISOString(),
-        lastLogin: null,
-        saves: {}
-    };
-    
-    this.users[email] = newUser;
-    
-    if (this.saveUsers()) {
-        console.log('✅ Utente registrato:', email);
-        return { success: true, message: 'Registrazione completata con successo!' };
-    } else {
-        return { success: false, message: 'Errore durante la registrazione' };
-    }
+    // SEMPRE al server - mai localStorage
+    return this._registerOnServer(email, password, companyName)
+        .then(serverResult => {
+            if (serverResult.success) {
+                console.log('✅ Utente registrato su server:', email);
+                
+                // Aggiorna SOLO la cache localStorage (NON per auth)
+                this._updateUserCache(email, serverResult.data);
+                
+                return { 
+                    success: true, 
+                    message: 'Registrazione completata con successo!',
+                    data: serverResult.data
+                };
+            } else {
+                throw new Error(serverResult.error || 'Errore di registrazione');
+            }
+        });
 };
 
-// Login utente
+// Registrazione su server (asincrona)
+AuthManager.prototype._registerOnServer = function(email, password, companyName) {
+    return fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            email: email,
+            password: password,
+            companyName: companyName
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.error || 'Errore del server');
+            });
+        }
+        return response.json();
+    });
+};
+
+// Login utente (SOLO SERVER - mai localStorage per auth) 
 AuthManager.prototype.login = function(email, password) {
     if (!email || !password) {
-        return { success: false, message: 'Email e password sono obbligatori' };
+        return Promise.reject(new Error('Email e password sono obbligatori'));
     }
     
-    var user = this.users[email];
-    if (!user) {
-        return { success: false, message: 'Utente non trovato' };
-    }
-    
-    if (!this.verifyPassword(password, user.passwordHash)) {
-        return { success: false, message: 'Password non corretta' };
-    }
-    
-    // Aggiorna ultimo login
-    user.lastLogin = new Date().toISOString();
-    this.saveUsers();
-    
-    // Imposta utente corrente
-    this.currentUser = user;
-    this.saveCurrentUser();
-    
-    console.log('✅ Login effettuato:', email);
-    return { success: true, message: 'Login effettuato con successo!' };
+    // SEMPRE al server - mai localStorage per auth
+    return this._loginOnServer(email, password)
+        .then(serverResult => {
+            if (serverResult.success) {
+                var userData = serverResult.data;
+                
+                // Imposta utente corrente
+                this.currentUser = {
+                    id: userData.userId,
+                    email: userData.email,
+                    companyId: userData.companyId,
+                    companyName: userData.companyName,
+                    money: userData.money,
+                    reputation: userData.reputation,
+                    lastLogin: userData.lastLogin
+                };
+                
+                // Salva utente corrente in localStorage
+                this.saveCurrentUser();
+                
+                // Aggiorna cache utenti 
+                this._updateUserCache(email, userData);
+                
+                console.log('✅ Login server effettuato:', email);
+                return { 
+                    success: true, 
+                    message: 'Login effettuato con successo!',
+                    data: userData
+                };
+            } else {
+                throw new Error(serverResult.error || 'Errore di login');
+            }
+        });
 };
 
-// Logout
+// Login su server (asincrono)
+AuthManager.prototype._loginOnServer = function(email, password) {
+    return fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            email: email,
+            password: password
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.error || 'Errore del server');
+            });
+        }
+        return response.json();
+    });
+};
+
+// Aggiorna cache utente (solo cache, non per auth)
+AuthManager.prototype._updateUserCache = function(email, userData) {
+    this.users[email] = {
+        id: userData.userId,
+        email: email,
+        companyId: userData.companyId,
+        companyName: userData.companyName,
+        money: userData.money,
+        reputation: userData.reputation,
+        lastLogin: userData.lastLogin,
+        cachedAt: new Date().toISOString()
+    };
+    this.saveUsers();
+};
+
+// Logout COMPLETO - cancella tutto localStorage
 AuthManager.prototype.logout = function() {
     this.currentUser = null;
+    
+    // CANCELLA TUTTO il localStorage relativo al gioco
     localStorage.removeItem('airTycoon_currentUser');
-    console.log('👋 Logout effettuato');
+    localStorage.removeItem('airTycoon_users_cache');
+    localStorage.removeItem('air-tycoon-2-save');
+    localStorage.removeItem('air-tycoon-cache');
+    localStorage.removeItem('air-tycoon-company-id');
+    
+    // Pulisci anche la cache interna
+    this.users = {};
+    
+    console.log('👋 Logout completo - localStorage pulito');
 };
 
 // Controlla se utente è loggato

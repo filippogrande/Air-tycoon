@@ -112,27 +112,50 @@ WorldMap.prototype.initializeRouteUI = function() {
     }
 };
 
-// Carica aeroporti sulla mappa
+// Carica aeroporti sulla mappa (DATABASE-FIRST con DataLoader)
 WorldMap.prototype.loadAirports = function() {
-    console.log('✈️ Caricamento aeroporti sulla mappa...');
+    console.log('✈️ Caricamento aeroporti sulla mappa con DataLoader...');
     
-    if (!AirportData) {
-        console.error('❌ AirportData non definito');
-        return;
+    // Verifica che DataLoader sia disponibile
+    if (!window.DataLoader) {
+        console.error('❌ DataLoader non disponibile, uso fallback statico');
+        return this._loadAirportsStaticFallback();
     }
     
-    if (!AirportData.airports) {
-        console.error('❌ AirportData.airports non definito');
+    // Carica aeroporti con DataLoader (asincrono)
+    DataLoader.loadAirports()
+        .then(airports => {
+            console.log('📊 Aeroporti caricati:', airports.length);
+            
+            if (airports.length === 0) {
+                console.warn('⚠️ Nessun aeroporto nei dati');
+                return;
+            }
+            
+            this._renderAirportsOnMap(airports);
+        })
+        .catch(error => {
+            console.error('❌ Errore caricamento aeroporti:', error);
+            this._loadAirportsStaticFallback();
+        });
+};
+
+// Fallback statico per aeroporti
+WorldMap.prototype._loadAirportsStaticFallback = function() {
+    console.log('💾 Fallback: caricamento aeroporti statici');
+    
+    if (!AirportData || !AirportData.airports) {
+        console.error('❌ Dati aeroporti statici non disponibili');
         return;
     }
     
     var airports = AirportData.airports;
-    console.log('📊 Aeroporti disponibili:', airports.length);
-    
-    if (airports.length === 0) {
-        console.warn('⚠️ Nessun aeroporto nei dati');
-        return;
-    }
+    this._renderAirportsOnMap(airports);
+};
+
+// Renderizza aeroporti sulla mappa
+WorldMap.prototype._renderAirportsOnMap = function(airports) {
+    console.log('🗺️ Rendering aeroporti sulla mappa:', airports.length);
     
     for (var i = 0; i < airports.length; i++) {
         var airport = airports[i];

@@ -9,7 +9,7 @@ BEGIN;
 INSERT INTO airports (name, iata_code, icao_code, city, country, latitude, longitude, elevation, timezone, 
                      opened_date, runways_count, runway_length_meters, airport_size, business_level, tourist_level) VALUES
 -- Italia
-('Leonardo da Vinci International Airport', 'FCO', 'LIRF', 'Rome', 'Italy', 41.8003, 12.2389, 13, 'Europe/Rome', '1961-01-01', 3, 3902, 'hub', 80, 90),
+('Roma Fiumicino Airport', 'FCO', 'LIRF', 'Rome', 'Italy', 41.8003, 12.2389, 13, 'Europe/Rome', '1961-01-01', 3, 3902, 'hub', 80, 90),
 ('Milano Malpensa Airport', 'MXP', 'LIMC', 'Milan', 'Italy', 45.6306, 8.7281, 234, 'Europe/Rome', '1998-10-25', 2, 3920, 'large', 85, 75),
 ('Venice Marco Polo Airport', 'VCE', 'LIPZ', 'Venice', 'Italy', 45.5053, 12.3519, 2, 'Europe/Rome', '1960-05-05', 1, 3300, 'medium', 70, 95),
 ('Naples International Airport', 'NAP', 'LIRN', 'Naples', 'Italy', 40.8860, 14.2908, 90, 'Europe/Rome', '1910-01-01', 1, 2628, 'medium', 60, 85),
