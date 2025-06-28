@@ -339,6 +339,7 @@ var RouteUIManager = {
     initializeRoutePanels: function() {
         console.log('🔧 Inizializzazione pannelli UI rotte...');
         
+        var self = this;
         return fetch('templates/route-panels.html')
             .then(function(response) {
                 if (!response.ok) {
@@ -361,6 +362,9 @@ var RouteUIManager = {
                 while (tempDiv.firstChild) {
                     worldTab.appendChild(tempDiv.firstChild);
                 }
+                
+                // Inizializza event listeners dopo aver caricato il template
+                self.setupRoutePanelEventListeners();
                 
                 console.log('✅ Pannelli UI rotte caricati dinamicamente');
                 return true;
@@ -524,6 +528,12 @@ var RouteUIManager = {
         
         // Setup event listener per miglioramento analisi
         this.setupDemandAnalysisButton(origin, destination);
+        
+        // Setup event listener per analisi di mercato
+        this.setupMarketAnalysisButton(origin, destination);
+        
+        // Popola informazioni aeroporti
+        this.populateAirportInfo(origin, destination);
         
         // Calcola dati rotta
         if (typeof RouteCalculator !== 'undefined') {
@@ -1005,6 +1015,653 @@ var RouteUIManager = {
             }, i * 200);
         }
     },
+    
+    // Setup event listener per pulsante analisi di mercato
+    setupMarketAnalysisButton: function(origin, destination) {
+        var marketBtn = document.getElementById('market-analysis-btn');
+        var self = this;
+        
+        if (!marketBtn) return;
+        
+        // Rimuovi listener precedenti
+        var newBtn = marketBtn.cloneNode(true);
+        marketBtn.parentNode.replaceChild(newBtn, marketBtn);
+        marketBtn = newBtn;
+        
+        // Controlla stato del pulsante
+        this.updateMarketAnalysisButton(origin, destination);
+        
+        // Aggiungi nuovo listener
+        marketBtn.addEventListener('click', function() {
+            self.performMarketAnalysis(origin, destination);
+        });
+    },
+    
+    // Aggiorna stato pulsante analisi di mercato
+    updateMarketAnalysisButton: function(origin, destination) {
+        console.log('🔄 Aggiornamento pulsante analisi di mercato per:', origin.code, '→', destination.code);
+        
+        var marketBtn = document.getElementById('market-analysis-btn');
+        var marketLocked = document.getElementById('market-locked');
+        var marketUnlocked = document.getElementById('market-unlocked');
+        
+        if (!marketBtn) {
+            console.error('❌ Pulsante market-analysis-btn non trovato');
+            return;
+        }
+        if (!marketLocked) {
+            console.error('❌ Elemento market-locked non trovato');
+            return;
+        }
+        if (!marketUnlocked) {
+            console.error('❌ Elemento market-unlocked non trovato');
+            return;
+        }
+        
+        var self = this;
+        var marketAnalysisCost = 15000; // €15,000 come nel template
+        
+        // Controlla se l'analisi è già stata fatta usando le API
+        if (typeof MarketAnalysisAPI !== 'undefined') {
+            var companyId = MarketAnalysisAPI.getCurrentCompanyId();
+            if (!companyId) {
+                console.warn('⚠️ Company ID non trovato, uso fallback localStorage');
+                this.updateMarketAnalysisButtonFallback(origin, destination, marketBtn, marketLocked, marketUnlocked, marketAnalysisCost);
+                return;
+            }
+            
+            console.log('🔍 Controllo analisi esistente tramite API...');
+            MarketAnalysisAPI.checkMarketAnalysis(origin.code, destination.code, companyId)
+                .then(function(response) {
+                    if (response.has_analysis && response.analysis) {
+                        console.log('✅ Analisi trovata, mostrando risultati');
+                        // Analisi già completata - mostra risultati
+                        marketLocked.style.display = 'none';
+                        marketUnlocked.style.display = 'block';
+                        self.populateMarketAnalysisResults(response.analysis.results);
+                    } else {
+                        console.log('🔒 Nessuna analisi trovata, mostrando pulsante acquisto');
+                        // Analisi non ancora fatta
+                        marketLocked.style.display = 'block';
+                        marketUnlocked.style.display = 'none';
+                        
+                        // Controlla fondi
+                        var fundsCheck = MarketAnalysisAPI.checkFunds(marketAnalysisCost);
+                        var btnPrice = marketBtn.querySelector('.btn-price');
+                        
+                        if (!fundsCheck.sufficient) {
+                            console.log('❌ Fondi insufficienti, disabilitando pulsante');
+                            marketBtn.disabled = true;
+                            marketBtn.classList.add('insufficient-funds');
+                            if (btnPrice) btnPrice.textContent = '💰 Fondi insufficienti';
+                        } else {
+                            console.log('✅ Fondi sufficienti, abilitando pulsante');
+                            marketBtn.disabled = false;
+                            marketBtn.classList.remove('insufficient-funds');
+                            if (btnPrice) btnPrice.textContent = '€' + marketAnalysisCost.toLocaleString();
+                        }
+                    }
+                })
+                .catch(function(error) {
+                    console.error('❌ Errore controllo analisi via API:', error);
+                    console.log('🔄 Fallback a localStorage...');
+                    self.updateMarketAnalysisButtonFallback(origin, destination, marketBtn, marketLocked, marketUnlocked, marketAnalysisCost);
+                });
+        } else {
+            console.warn('⚠️ MarketAnalysisAPI non disponibile, uso localStorage');
+            this.updateMarketAnalysisButtonFallback(origin, destination, marketBtn, marketLocked, marketUnlocked, marketAnalysisCost);
+        }
+        
+        console.log('✅ Aggiornamento pulsante analisi di mercato completato');
+    },
+    
+    // Fallback per aggiornamento pulsante usando localStorage
+    updateMarketAnalysisButtonFallback: function(origin, destination, marketBtn, marketLocked, marketUnlocked, marketAnalysisCost) {
+        var routeKey = origin.code + '-' + destination.code;
+        
+        // Controlla se l'analisi è già stata fatta (stored in localStorage per compatibility)
+        var marketData = localStorage.getItem('marketAnalysis_' + routeKey);
+        var hasMarketAnalysis = marketData !== null;
+        
+        console.log('📊 Controllo analisi localStorage per chiave:', 'marketAnalysis_' + routeKey);
+        console.log('📊 Analisi trovata:', hasMarketAnalysis);
+        
+        if (hasMarketAnalysis) {
+            // Analisi già completata - mostra risultati
+            console.log('✅ Mostrando risultati analisi localStorage');
+            marketLocked.style.display = 'none';
+            marketUnlocked.style.display = 'block';
+            
+            try {
+                var data = JSON.parse(marketData);
+                console.log('📊 Dati analisi localStorage parsati:', data);
+                this.populateMarketAnalysisResults(data);
+            } catch (e) {
+                console.error('❌ Errore parsing market analysis localStorage:', e);
+            }
+            
+        } else {
+            // Analisi non ancora fatta
+            console.log('🔒 Mostrando pulsante per acquistare analisi');
+            marketLocked.style.display = 'block';
+            marketUnlocked.style.display = 'none';
+            
+            var btnPrice = marketBtn.querySelector('.btn-price');
+            
+            // Controlla se il giocatore ha abbastanza denaro
+            var currentMoney = 0;
+            if (typeof game !== 'undefined' && game.state) {
+                if (game.state.money !== undefined) {
+                    currentMoney = game.state.money;
+                } else if (game.state.company && game.state.company.money !== undefined) {
+                    currentMoney = game.state.company.money;
+                }
+            }
+            
+            console.log('💰 Denaro disponibile (localStorage check):', currentMoney);
+            console.log('💰 Costo analisi:', marketAnalysisCost);
+            
+            if (currentMoney < marketAnalysisCost) {
+                console.log('❌ Fondi insufficienti, disabilitando pulsante');
+                marketBtn.disabled = true;
+                marketBtn.classList.add('insufficient-funds');
+                if (btnPrice) btnPrice.textContent = '💰 Fondi insufficienti';
+            } else {
+                console.log('✅ Fondi sufficienti, abilitando pulsante');
+                marketBtn.disabled = false;
+                marketBtn.classList.remove('insufficient-funds');
+                if (btnPrice) btnPrice.textContent = '€' + marketAnalysisCost.toLocaleString();
+            }
+        }
+    },
+    
+    // Esegui analisi di mercato
+    performMarketAnalysis: function(origin, destination) {
+        console.log('🔍 Tentativo analisi di mercato per:', origin.code, '→', destination.code);
+        
+        var marketAnalysisCost = 15000;
+        var self = this;
+        
+        // Usa API se disponibili
+        if (typeof MarketAnalysisAPI !== 'undefined') {
+            var companyId = MarketAnalysisAPI.getCurrentCompanyId();
+            if (!companyId) {
+                console.error('❌ Company ID non trovato');
+                if (game.uiManager && game.uiManager.showNotification) {
+                    game.uiManager.showNotification('❌ Errore: compagnia non identificata', 'error');
+                } else {
+                    alert('❌ Errore: compagnia non identificata');
+                }
+                return;
+            }
+            
+            // Verifica fondi
+            var fundsCheck = MarketAnalysisAPI.checkFunds(marketAnalysisCost);
+            if (!fundsCheck.sufficient) {
+                console.log('❌ Fondi insufficienti via API:', fundsCheck);
+                if (game.uiManager && game.uiManager.showNotification) {
+                    game.uiManager.showNotification(
+                        `💰 Fondi insufficienti. Hai €${fundsCheck.current.toLocaleString()}, servono €${fundsCheck.required.toLocaleString()}`,
+                        'error'
+                    );
+                } else {
+                    alert('💰 Fondi insufficienti per l\'analisi di mercato');
+                }
+                return;
+            }
+            
+            console.log('📊 Acquisto analisi di mercato tramite API...');
+            
+            // Acquista analisi tramite API
+            MarketAnalysisAPI.purchaseMarketAnalysis({
+                company_id: companyId,
+                origin_airport_code: origin.code,
+                destination_airport_code: destination.code,
+                analysis_type: 'standard',
+                cost: marketAnalysisCost
+            }).then(function(response) {
+                console.log('✅ Analisi di mercato acquistata via API:', response);
+                
+                // Aggiorna denaro locale
+                MarketAnalysisAPI.updateLocalMoney(marketAnalysisCost);
+                
+                // Aggiorna UI pulsante
+                self.updateMarketAnalysisButton(origin, destination);
+                
+                // Mostra notifica
+                if (game.uiManager && game.uiManager.showNotification) {
+                    game.uiManager.showNotification(
+                        '📊 Analisi di mercato completata! -€' + marketAnalysisCost.toLocaleString(),
+                        'success'
+                    );
+                } else {
+                    alert('📊 Analisi di mercato completata! -€' + marketAnalysisCost.toLocaleString());
+                }
+                
+            }).catch(function(error) {
+                console.error('❌ Errore acquisto analisi via API:', error);
+                
+                // Fallback a localStorage per compatibilità
+                console.log('🔄 Fallback a localStorage...');
+                self.performMarketAnalysisFallback(origin, destination);
+            });
+            
+        } else {
+            console.warn('⚠️ MarketAnalysisAPI non disponibile, uso localStorage');
+            this.performMarketAnalysisFallback(origin, destination);
+        }
+    },
+    
+    // Fallback per analisi di mercato usando localStorage
+    performMarketAnalysisFallback: function(origin, destination) {
+        console.log('🔍 Analisi di mercato fallback per:', origin.code, '→', destination.code);
+        
+        var routeKey = origin.code + '-' + destination.code;
+        var marketAnalysisCost = 15000;
+        
+        // Debug: verifica oggetto game
+        if (typeof game === 'undefined') {
+            console.error('❌ Oggetto game non definito');
+            alert('⚠️ Sistema di gioco non inizializzato correttamente');
+            return;
+        }
+        
+        console.log('🎮 Game object found:', game);
+        console.log('💰 Game state:', game.state);
+        
+        var currentMoney = 0;
+        if (game.state && game.state.money !== undefined) {
+            currentMoney = game.state.money;
+        } else if (game.state && game.state.company && game.state.company.money !== undefined) {
+            currentMoney = game.state.company.money;
+        } else {
+            console.warn('⚠️ Denaro non trovato nel game state, uso valore di default');
+            currentMoney = 100000; // Valore di default per debug
+        }
+        
+        console.log('💰 Denaro attuale:', currentMoney);
+        
+        if (currentMoney < marketAnalysisCost) {
+            console.log('❌ Fondi insufficienti:', currentMoney, '<', marketAnalysisCost);
+            if (game.uiManager && game.uiManager.showNotification) {
+                game.uiManager.showNotification('💰 Fondi insufficienti per l\'analisi di mercato', 'error');
+            } else {
+                alert('💰 Fondi insufficienti per l\'analisi di mercato');
+            }
+            return;
+        }
+        
+        console.log('📊 Esecuzione analisi di mercato fallback per rotta:', origin.code, '→', destination.code);
+        
+        // Sottrai il costo
+        if (game.state && game.state.money !== undefined) {
+            game.state.money -= marketAnalysisCost;
+            console.log('💰 Denaro sottratto da game.state.money, nuovo valore:', game.state.money);
+        } else if (game.state && game.state.company && game.state.company.money !== undefined) {
+            game.state.company.money -= marketAnalysisCost;
+            console.log('💰 Denaro sottratto da game.state.company.money, nuovo valore:', game.state.company.money);
+        }
+        
+        // Calcola risultati analisi di mercato
+        var distance = 0;
+        if (typeof RouteCalculator !== 'undefined') {
+            var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+            distance = estimates.distance;
+            console.log('📏 Distanza calcolata:', distance);
+        } else {
+            console.warn('⚠️ RouteCalculator non disponibile, uso distanza di default');
+            distance = 1000; // Distanza di default per debug
+        }
+        
+        // Genera dati realistici per l'analisi di mercato
+        var marketData = this.generateMarketAnalysisData(origin, destination, distance);
+        console.log('📊 Dati analisi generati:', marketData);
+        
+        // Salva risultati in localStorage per compatibilità
+        localStorage.setItem('marketAnalysis_' + routeKey, JSON.stringify(marketData));
+        console.log('💾 Dati salvati in localStorage con chiave:', 'marketAnalysis_' + routeKey);
+        
+        // Aggiorna UI
+        this.updateMarketAnalysisButton(origin, destination);
+        
+        // Aggiorna denaro nel header
+        if (game.uiManager && game.uiManager.updateUI) {
+            game.uiManager.updateUI();
+        }
+        
+        // Mostra notifica
+        if (game.uiManager && game.uiManager.showNotification) {
+            game.uiManager.showNotification(
+                '📊 Analisi di mercato completata! -€' + marketAnalysisCost.toLocaleString(),
+                'success'
+            );
+        } else {
+            alert('📊 Analisi di mercato completata! -€' + marketAnalysisCost.toLocaleString());
+        }
+        
+        console.log('✅ Analisi di mercato fallback completata');
+    },
+    
+    // Genera dati di analisi di mercato
+    generateMarketAnalysisData: function(origin, destination, distance) {
+        // Calcola costo per volo basato su distanza e tipo aeroporto
+        var baseCostPerKm = 2.5; // €2.5 per km
+        var costPerFlight = Math.round(distance * baseCostPerKm);
+        
+        // Aggiusta per dimensione aeroporti
+        var originMultiplier = this.getAirportCostMultiplier(origin);
+        var destinationMultiplier = this.getAirportCostMultiplier(destination);
+        costPerFlight = Math.round(costPerFlight * (originMultiplier + destinationMultiplier) / 2);
+        
+        // Stima ricavi mensili
+        var avgPassengersPerDay = 150 + Math.random() * 200; // Base 150-350 passeggeri al giorno
+        var avgTicketPrice = Math.max(50, distance * 0.08 + Math.random() * 50); // Prezzo ticket basato su distanza
+        var monthlyRevenue = Math.round(avgPassengersPerDay * avgTicketPrice * 30);
+        
+        // Calcola profitto stimato
+        var flightsPerMonth = 60; // 2 voli al giorno
+        var monthlyCosts = costPerFlight * flightsPerMonth;
+        var estimatedProfit = monthlyRevenue - monthlyCosts;
+        
+        return {
+            costPerFlight: costPerFlight,
+            monthlyRevenue: monthlyRevenue,
+            estimatedProfit: estimatedProfit,
+            timestamp: Date.now()
+        };
+    },
+    
+    // Ottieni moltiplicatore costo per aeroporto
+    getAirportCostMultiplier: function(airport) {
+        // Moltiplicatori basati sulla dimensione dell'aeroporto
+        switch (airport.size || 'medium') {
+            case 'small': return 0.8;
+            case 'medium': return 1.0;
+            case 'large': return 1.3;
+            case 'hub': return 1.6;
+            default: return 1.0;
+        }
+    },
+    
+    // Popola risultati analisi di mercato
+    populateMarketAnalysisResults: function(data) {
+        var costPerFlightSpan = document.getElementById('cost-per-flight');
+        var monthlyRevenueSpan = document.getElementById('config-monthly-revenue');
+        var estimatedProfitSpan = document.getElementById('estimated-profit');
+        
+        if (costPerFlightSpan) {
+            costPerFlightSpan.textContent = data.costPerFlight.toLocaleString();
+        }
+        
+        if (monthlyRevenueSpan) {
+            monthlyRevenueSpan.textContent = data.monthlyRevenue.toLocaleString();
+        }
+        
+        if (estimatedProfitSpan) {
+            estimatedProfitSpan.textContent = data.estimatedProfit.toLocaleString();
+            
+            // Colora il profitto
+            var profitElement = estimatedProfitSpan.parentElement;
+            if (profitElement) {
+                profitElement.classList.remove('profit-positive', 'profit-negative');
+                if (data.estimatedProfit > 0) {
+                    profitElement.classList.add('profit-positive');
+                } else {
+                    profitElement.classList.add('profit-negative');
+                }
+            }
+        }
+    },
+    
+    // Popola informazioni aeroporti
+    populateAirportInfo: function(origin, destination) {
+        // Informazioni aeroporto origine
+        this.updateAirportDisplay('origin', origin);
+        this.updateAirportDisplay('destination', destination);
+    },
+    
+    // Aggiorna display informazioni aeroporto
+    updateAirportDisplay: function(type, airport) {
+        var runwayLengthSpan = document.getElementById(type + '-runway-length');
+        var runwayCountSpan = document.getElementById(type + '-runway-count');
+        var airportSizeSpan = document.getElementById(type + '-airport-size');
+        var businessLevelSpan = document.getElementById(type + '-business-level');
+        var touristLevelSpan = document.getElementById(type + '-tourist-level');
+        
+        if (runwayLengthSpan) {
+            runwayLengthSpan.textContent = airport.runway_length || airport.runwayLength || '2500';
+        }
+        
+        if (runwayCountSpan) {
+            runwayCountSpan.textContent = airport.runways_count || airport.runwaysCount || '2';
+        }
+        
+        if (airportSizeSpan) {
+            var size = airport.airport_size || airport.size || 'medium';
+            var sizeDisplayMap = {
+                'small': 'Piccolo',
+                'medium': 'Medio', 
+                'large': 'Grande',
+                'hub': 'Hub'
+            };
+            airportSizeSpan.textContent = sizeDisplayMap[size] || size;
+        }
+        
+        if (businessLevelSpan) {
+            businessLevelSpan.textContent = airport.business_level || airport.businessLevel || '50';
+        }
+        
+        if (touristLevelSpan) {
+            touristLevelSpan.textContent = airport.tourist_level || airport.touristLevel || '50';
+        }
+    },
+    
+    // Inizializza event listeners per i pannelli rotte
+    setupRoutePanelEventListeners: function() {
+        console.log('🔧 Setup event listeners pannelli rotte...');
+        
+        // Event listener per bottone cancella rotta
+        var cancelBtn = document.getElementById('cancel-route-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                this.closeRouteCreationPanel();
+            });
+        }
+        
+        // Event listener per bottone torna indietro
+        var backBtn = document.getElementById('back-to-selection');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.goBackToSelection();
+            });
+        }
+        
+        // Event listener per bottone blocca origine
+        var lockBtn = document.getElementById('lock-origin-btn');
+        if (lockBtn) {
+            lockBtn.addEventListener('click', () => {
+                this.toggleOriginLock();
+            });
+        }
+        
+        // Event listener per bottone pulisci destinazione
+        var clearBtn = document.getElementById('clear-destination-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                this.clearDestination();
+            });
+        }
+        
+        // Event listener per bottone configura rotta
+        var createBtn = document.getElementById('create-route-btn');
+        if (createBtn) {
+            createBtn.addEventListener('click', () => {
+                this.openRouteConfigPanel();
+            });
+        }
+        
+        // Event listener per bottone conferma creazione rotta
+        var confirmBtn = document.getElementById('confirm-create-route');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                this.confirmRouteCreation();
+            });
+        }
+        
+        // Event listener per selezione tipo rotta
+        var passengerBtn = document.getElementById('route-type-passenger');
+        var cargoBtn = document.getElementById('route-type-cargo');
+        
+        if (passengerBtn) {
+            passengerBtn.addEventListener('click', () => {
+                this.selectRouteType('passenger');
+            });
+        }
+        
+        if (cargoBtn) {
+            cargoBtn.addEventListener('click', () => {
+                this.selectRouteType('cargo');
+            });
+        }
+        
+        console.log('✅ Event listeners pannelli rotte configurati');
+    },
+    
+    // Torna alla selezione degli aeroporti dal pannello configurazione
+    goBackToSelection: function() {
+        console.log('← Ritorno alla selezione aeroporti...');
+        
+        var configPanel = document.getElementById('route-config-panel');
+        var selectionPanel = document.getElementById('route-creation-panel');
+        
+        if (configPanel) {
+            configPanel.classList.remove('active');
+        }
+        
+        if (selectionPanel) {
+            selectionPanel.classList.add('active');
+        }
+        
+        console.log('✅ Ritornato alla selezione aeroporti');
+    },
+    
+    // Seleziona tipo di rotta (passeggeri o cargo)
+    selectRouteType: function(type) {
+        console.log('🎯 Selezione tipo rotta:', type);
+        
+        this.routeCreationState.selectedRouteType = type;
+        
+        // Aggiorna UI bottoni
+        var passengerBtn = document.getElementById('route-type-passenger');
+        var cargoBtn = document.getElementById('route-type-cargo');
+        
+        if (passengerBtn && cargoBtn) {
+            passengerBtn.classList.remove('active');
+            cargoBtn.classList.remove('active');
+            
+            if (type === 'passenger') {
+                passengerBtn.classList.add('active');
+            } else {
+                cargoBtn.classList.add('active');
+            }
+        }
+        
+        // Aggiorna stime in base al tipo
+        this.updateDemandEstimatesForType(type);
+        
+        console.log('✅ Tipo rotta selezionato:', type);
+    },
+    
+    // Aggiorna stime domanda per tipo di rotta
+    updateDemandEstimatesForType: function(type) {
+        var origin = this.routeCreationState.originAirport;
+        var destination = this.routeCreationState.destinationAirport;
+        
+        if (!origin || !destination) return;
+        
+        // Popola stime domanda usando DemandEstimationManager se disponibile
+        if (typeof DemandEstimationManager !== 'undefined') {
+            this.populateDemandEstimates(origin, destination);
+        }
+    },
+    
+    // Conferma e crea la rotta
+    confirmRouteCreation: function() {
+        console.log('✅ Conferma creazione rotta...');
+        
+        var origin = this.routeCreationState.originAirport;
+        var destination = this.routeCreationState.destinationAirport;
+        var routeType = this.routeCreationState.selectedRouteType;
+        
+        if (!origin || !destination) {
+            console.warn('⚠️ Aeroporti mancanti per la creazione della rotta');
+            return false;
+        }
+        
+        // Verifica fondi
+        var routeCost = 50000; // Costo base
+        var currentMoney = game.state.money || game.state.company.money || 0;
+        
+        if (currentMoney < routeCost) {
+            if (game.uiManager && game.uiManager.showNotification) {
+                game.uiManager.showNotification('💰 Fondi insufficienti per creare la rotta', 'error');
+            }
+            return false;
+        }
+        
+        // Crea la rotta usando RouteManager se disponibile
+        if (typeof RouteManager !== 'undefined' && RouteManager.createRoute) {
+            var routeData = {
+                origin: origin.code,
+                destination: destination.code,
+                type: routeType,
+                aircraftId: this.routeCreationState.selectedAircraftId
+            };
+            
+            var result = RouteManager.createRoute(routeData);
+            
+            if (result.success) {
+                // Sottrai costo
+                if (game.state.money !== undefined) {
+                    game.state.money -= routeCost;
+                } else if (game.state.company && game.state.company.money !== undefined) {
+                    game.state.company.money -= routeCost;
+                }
+                
+                // Aggiorna UI
+                if (game.uiManager && game.uiManager.updateUI) {
+                    game.uiManager.updateUI();
+                }
+                
+                // Notifica successo
+                if (game.uiManager && game.uiManager.showNotification) {
+                    game.uiManager.showNotification(
+                        '✅ Rotta ' + origin.code + ' → ' + destination.code + ' creata! -€' + routeCost.toLocaleString(),
+                        'success'
+                    );
+                }
+                
+                // Chiudi pannello
+                this.closeRouteCreationPanel();
+                
+                console.log('✅ Rotta creata con successo');
+                return true;
+            } else {
+                if (game.uiManager && game.uiManager.showNotification) {
+                    game.uiManager.showNotification('❌ Errore nella creazione della rotta: ' + result.message, 'error');
+                }
+                return false;
+            }
+        } else {
+            console.warn('⚠️ RouteManager non disponibile');
+            if (game.uiManager && game.uiManager.showNotification) {
+                game.uiManager.showNotification('❌ Sistema di gestione rotte non disponibile', 'error');
+            }
+            return false;
+        }
+    },
+
+    // ...existing code...
 };
 
 // Export per uso globale

@@ -39,6 +39,10 @@ function Game() {
         this.uiManager = new UIManager(this);
         console.log('✅ UIManager creato');
         
+        // Riferimento al RouteUIManager globale per coerenza
+        this.routeUIManager = window.RouteUIManager;
+        console.log('✅ RouteUIManager collegato');
+        
         this.worldMap = new WorldMap(this);
         console.log('✅ WorldMap creato');
         
