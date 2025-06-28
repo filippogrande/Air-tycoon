@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
         let query = `
             SELECT id, name, iata_code, icao_code, city, country, 
                    latitude, longitude, elevation, timezone,
-                   opened_date, closed_date, runways_count, runway_length_meters, airport_size, business_level, tourist_level
+                   opened_date, closure_date, runways_count, runway_length_meters, airport_size, business_level, tourist_level
             FROM airports 
             WHERE 1=1
         `;
@@ -38,8 +38,7 @@ router.get('/', async (req, res) => {
         if (before) {
             query += ` AND (opened_date IS NULL OR opened_date <= $${params.length + 1})`;
             params.push(before);
-            query += ` AND (closed_date IS NULL OR closed_date > $${params.length})`;
-            // closed_date usa lo stesso indice di before
+            query += ` AND (closure_date IS NULL OR closure_date > $${params.length})`;
         }
         
         query += ` ORDER BY name LIMIT $${params.length + 1}`;
