@@ -10,14 +10,16 @@
 -- INIZIO MIGRAZIONE
 -- ==================================================
 
+-- Rimuovi il constraint UNIQUE su username prima di modificarlo
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key;
+
 -- Rimuovi il constraint NOT NULL dal campo username per renderlo opzionale
 ALTER TABLE users ALTER COLUMN username DROP NOT NULL;
 
 -- Aggiungi un valore di default per username se è NULL
 UPDATE users SET username = split_part(email, '@', 1) WHERE username IS NULL;
 
--- Assicurati che i future username siano univoci ma opzionali
-DROP INDEX IF EXISTS users_username_key;
+-- Ricrea un indice UNIQUE parziale che permette NULL ma richiede unicità per valori non-NULL
 CREATE UNIQUE INDEX users_username_unique ON users(username) WHERE username IS NOT NULL;
 
 -- ==================================================
