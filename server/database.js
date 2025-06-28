@@ -245,6 +245,28 @@ async function cleanupOldData() {
     }
 }
 
+// Crea una compagnia e il suo hub principale atomico
+async function createCompanyWithHub({ name, headquarters_airport_id, initial_money }) {
+    return await transaction(async (client) => {
+        // 1. Crea la compagnia
+        const companyRes = await client.query(
+            `INSERT INTO companies (name, headquarters_airport_id, money, reputation)
+             VALUES ($1, $2, $3, 50)
+             RETURNING *`,
+            [name, headquarters_airport_id, initial_money || 1000000]
+        );
+        const company = companyRes.rows[0];
+        // 2. Crea l'hub principale (headquarters)
+        const hubRes = await client.query(
+            `INSERT INTO company_hubs (company_id, airport_id, hub_type, hub_level)
+             VALUES ($1, $2, 'headquarters', 1)
+             RETURNING *`,
+            [company.id, headquarters_airport_id]
+        );
+        return { company, hub: hubRes.rows[0] };
+    });
+}
+
 // =====================================================
 // EXPORT
 // =====================================================
@@ -260,5 +282,6 @@ module.exports = {
     buildUpdateQuery,
     getDatabaseStats,
     getTableSizes,
-    cleanupOldData
+    cleanupOldData,
+    createCompanyWithHub,
 };

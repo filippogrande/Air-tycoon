@@ -2,11 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 
-// GET /api/airports - Ottieni lista aeroporti
+// GET /api/airports - Ottieni lista aeroporti (filtrabile per scenario, continente, nazione, size)
 router.get('/', async (req, res) => {
     try {
-        const { search, country, limit = 100, size, before } = req.query;
-        
+        const { search, country, continent, limit = 100, size, before } = req.query;
         let query = `
             SELECT id, name, iata_code, icao_code, city, country, 
                    latitude, longitude, elevation, timezone,
@@ -30,9 +29,33 @@ router.get('/', async (req, res) => {
             params.push(`%${country}%`);
         }
 
+        if (continent) {
+            // Semplice mapping continente -> lista paesi (da migliorare con tabella dedicata)
+            const continentCountries = {
+                Europe: ['Italy','France','Germany','Spain','United Kingdom','Netherlands','Switzerland','Austria','Belgium','Portugal','Greece','Turkey','Russia','Poland','Czech Republic','Hungary','Romania','Sweden','Norway','Denmark','Finland','Ireland'],
+                Asia: ['Japan','China','Singapore','Hong Kong','UAE','India','South Korea','Thailand','Malaysia','Indonesia','Israel','Qatar','Saudi Arabia'],
+                NorthAmerica: ['United States','Canada','Mexico'],
+                SouthAmerica: ['Brazil','Argentina','Chile','Colombia','Peru'],
+                Africa: ['South Africa','Egypt','Morocco','Kenya','Nigeria'],
+                Oceania: ['Australia','New Zealand']
+            };
+            const countries = continentCountries[continent] || [];
+            if (countries.length > 0) {
+                query += ` AND country = ANY($${params.length + 1})`;
+                params.push(countries);
+            }
+        }
+
         if (size) {
-            query += ` AND airport_size = $${params.length + 1}`;
-            params.push(size);
+            // Supporta size=large,medium oppure solo uno dei due
+            const sizes = size.split(',').map(s => s.trim());
+            if (sizes.length === 1) {
+                query += ` AND airport_size = $${params.length + 1}`;
+                params.push(sizes[0]);
+            } else {
+                query += ` AND airport_size = ANY($${params.length + 1})`;
+                params.push(sizes);
+            }
         }
 
         if (before) {
@@ -41,11 +64,10 @@ router.get('/', async (req, res) => {
             query += ` AND (closure_date IS NULL OR closure_date > $${params.length})`;
         }
         
-        query += ` ORDER BY name LIMIT $${params.length + 1}`;
+        query += ` ORDER BY country, city, name LIMIT $${params.length + 1}`;
         params.push(parseInt(limit));
         
         const airports = await db.query(query, params);
-        
         res.json(airports.rows);
     } catch (error) {
         console.error('Error fetching airports:', error);

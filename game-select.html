@@ -137,6 +137,41 @@
             </div>
         </div>
         
+        <!-- Modal selezione hub di partenza step-by-step -->
+        <div id="select-hub-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🌍 Scegli il tuo Hub di Partenza</h3>
+                    <button id="close-hub-modal" class="close-btn">×</button>
+                </div>
+                <form id="select-hub-form" class="modal-body">
+                    <div class="input-group">
+                        <label for="continent-select">Continente</label>
+                        <select id="continent-select" required>
+                            <option value="">Seleziona continente...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="country-select">Nazione</label>
+                        <select id="country-select" required disabled>
+                            <option value="">Seleziona nazione...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="airport-select">Aeroporto</label>
+                        <select id="airport-select" name="startingAirport" required disabled>
+                            <option value="">Seleziona aeroporto...</option>
+                        </select>
+                        <small class="input-help">Sono disponibili aeroporti di tipo <b>large</b> e <b>medium</b>. La dimensione è indicata tra parentesi.</small>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-hub-select" class="action-btn secondary">❌ Annulla</button>
+                        <button type="submit" class="action-btn primary" disabled id="confirm-hub-btn">✅ Conferma Hub</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
         <!-- Loading overlay -->
         <div id="loading-overlay" class="loading-overlay hidden">
             <div class="loading-content">
@@ -200,6 +235,128 @@
       scenarioSelect.addEventListener('change', function(e) {
         populateStartingAirports(e.target.value);
       });
+    }
+  });
+  // === LOGICA MODALE SELEZIONE HUB ===
+  const continents = [
+    { code: 'Europe', label: 'Europa' },
+    { code: 'Asia', label: 'Asia' },
+    { code: 'NorthAmerica', label: 'Nord America' },
+    { code: 'SouthAmerica', label: 'Sud America' },
+    { code: 'Africa', label: 'Africa' },
+    { code: 'Oceania', label: 'Oceania' }
+  ];
+
+  let selectedScenario = null;
+
+  function openSelectHubModal(scenario) {
+    selectedScenario = scenario;
+    document.getElementById('select-hub-modal').classList.remove('hidden');
+    populateContinents();
+    resetSelect('country-select');
+    resetSelect('airport-select');
+    document.getElementById('country-select').disabled = true;
+    document.getElementById('airport-select').disabled = true;
+    document.getElementById('confirm-hub-btn').disabled = true;
+  }
+
+  function closeSelectHubModal() {
+    document.getElementById('select-hub-modal').classList.add('hidden');
+  }
+
+  function resetSelect(id) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = `<option value="">Seleziona ${id.split('-')[0]}...</option>`;
+  }
+
+  function populateContinents() {
+    const select = document.getElementById('continent-select');
+    select.innerHTML = '<option value="">Seleziona continente...</option>';
+    continents.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.code;
+      opt.textContent = c.label;
+      select.appendChild(opt);
+    });
+  }
+
+  async function populateCountries(continent) {
+    const scenarioDate = getScenarioDate(selectedScenario);
+    const select = document.getElementById('country-select');
+    resetSelect('country-select');
+    resetSelect('airport-select');
+    document.getElementById('airport-select').disabled = true;
+    document.getElementById('confirm-hub-btn').disabled = true;
+    if (!continent) {
+      select.disabled = true;
+      return;
+    }
+    select.disabled = false;
+    select.innerHTML = '<option value="">Caricamento nazioni...</option>';
+    const res = await fetch(`/api/airports?continent=${continent}&before=${scenarioDate}`);
+    const airports = await res.json();
+    const countries = [...new Set(airports.map(a => a.country))].sort();
+    select.innerHTML = '<option value="">Seleziona nazione...</option>';
+    countries.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      select.appendChild(opt);
+    });
+  }
+
+  async function populateAirports(country) {
+    const scenarioDate = getScenarioDate(selectedScenario);
+    const select = document.getElementById('airport-select');
+    resetSelect('airport-select');
+    document.getElementById('confirm-hub-btn').disabled = true;
+    if (!country) {
+      select.disabled = true;
+      return;
+    }
+    select.disabled = false;
+    select.innerHTML = '<option value="">Caricamento aeroporti...</option>';
+    const res = await fetch(`/api/airports?country=${encodeURIComponent(country)}&size=large,medium&before=${scenarioDate}`);
+    const airports = await res.json();
+    select.innerHTML = '<option value="">Seleziona aeroporto...</option>';
+    airports.forEach(a => {
+      const label = `${a.name} (${a.iata_code}) - ${a.city} <span style=\'color:#888\'>(${a.airport_size})</span>`;
+      const opt = document.createElement('option');
+      opt.value = a.iata_code;
+      opt.innerHTML = label;
+      select.appendChild(opt);
+    });
+  }
+
+  // Eventi modale
+  document.getElementById('continent-select').addEventListener('change', function(e) {
+    populateCountries(e.target.value);
+  });
+  document.getElementById('country-select').addEventListener('change', function(e) {
+    populateAirports(e.target.value);
+  });
+  document.getElementById('airport-select').addEventListener('change', function(e) {
+    document.getElementById('confirm-hub-btn').disabled = !e.target.value;
+  });
+  document.getElementById('close-hub-modal').addEventListener('click', closeSelectHubModal);
+  document.getElementById('cancel-hub-select').addEventListener('click', closeSelectHubModal);
+
+  document.getElementById('select-hub-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const airport = document.getElementById('airport-select').value;
+    if (airport) {
+      // Imposta il valore selezionato nella select nascosta del form principale
+      document.getElementById('starting-airport').value = airport;
+      closeSelectHubModal();
+    }
+  });
+
+  // Mostra la modale dopo la selezione scenario nella modale Nuovo Gioco
+  document.getElementById('new-game-form').addEventListener('submit', function(e) {
+    const scenario = document.getElementById('scenario').value;
+    if (!document.getElementById('starting-airport').value) {
+      e.preventDefault();
+      openSelectHubModal(scenario);
     }
   });
 </script>

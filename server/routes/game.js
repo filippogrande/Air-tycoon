@@ -96,33 +96,27 @@ router.get('/companies/:id', async (req, res) => {
     }
 });
 
-// POST /api/game/companies - Crea nuova compagnia
+// POST /api/game/companies - Crea nuova compagnia e hub principale
 router.post('/companies', async (req, res) => {
     try {
         const { name, headquarters_airport_id, initial_money } = req.body;
-        
         if (!name || !headquarters_airport_id) {
             return res.status(400).json({
                 success: false,
                 error: 'Name and headquarters airport are required'
             });
         }
-        
-        const result = await db.query(`
-            INSERT INTO companies (name, headquarters_airport_id, money, reputation)
-            VALUES ($1, $2, $3, 50)
-            RETURNING *
-        `, [name, headquarters_airport_id, initial_money || 1000000]);
-        
+        // Usa la funzione atomica
+        const { company, hub } = await db.createCompanyWithHub({ name, headquarters_airport_id, initial_money });
         res.status(201).json({
             success: true,
-            data: result.rows[0]
+            data: { company, hub }
         });
     } catch (error) {
-        console.error('Error creating company:', error);
+        console.error('Error creating company and hub:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create company'
+            error: 'Failed to create company and hub'
         });
     }
 });
