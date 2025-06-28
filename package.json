@@ -25,6 +25,7 @@
     "migrate:create": "node database/migrate.js create",
     "migrate:init": "node database/migrate.js init",
     "db:reset-new": "bash database/reset_database.sh",
+    "db:status": "node database/check-status.js",
     "test": "jest",
     "lint": "eslint server/"
   },

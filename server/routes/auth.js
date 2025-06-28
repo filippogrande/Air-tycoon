@@ -60,7 +60,28 @@ router.post('/register', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Errore registrazione utente:', error);
+        console.error('❌ Errore registrazione utente:', error);
+        console.error('📋 Dettagli errore:', {
+            code: error.code,
+            message: error.message,
+            detail: error.detail
+        });
+        
+        // Errori specifici del database
+        if (error.code === '42P01') {
+            return res.status(500).json({
+                success: false,
+                error: 'Database non inizializzato. Contattare l\'amministratore.'
+            });
+        }
+        
+        if (error.code === '23505') {
+            return res.status(400).json({
+                success: false,
+                error: 'Un utente con questa email esiste già'
+            });
+        }
+        
         res.status(500).json({
             success: false,
             error: 'Errore interno del server durante la registrazione'

@@ -27,30 +27,46 @@ class MigrationSystem {
 
     // Crea la tabella per tracciare le migrazioni
     async createMigrationTable() {
-        const sql = `
-            CREATE TABLE IF NOT EXISTS ${this.tableName} (
-                id SERIAL PRIMARY KEY,
-                version VARCHAR(20) NOT NULL UNIQUE,
-                name VARCHAR(255) NOT NULL,
-                executed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                execution_time_ms INTEGER,
-                checksum VARCHAR(64),
-                status VARCHAR(20) DEFAULT 'completed' CHECK (status IN ('completed', 'failed'))
-            );
+        try {
+            const sql = `
+                CREATE TABLE IF NOT EXISTS ${this.tableName} (
+                    id SERIAL PRIMARY KEY,
+                    version VARCHAR(10) NOT NULL UNIQUE,
+                    name VARCHAR(255) NOT NULL,
+                    executed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    execution_time_ms INTEGER,
+                    checksum VARCHAR(64),
+                    status VARCHAR(20) DEFAULT 'completed' CHECK (status IN ('completed', 'failed'))
+                );
+                
+                CREATE INDEX IF NOT EXISTS idx_migration_history_version ON ${this.tableName}(version);
+                CREATE INDEX IF NOT EXISTS idx_migration_history_executed_at ON ${this.tableName}(executed_at);
+            `;
             
-            CREATE INDEX IF NOT EXISTS idx_migration_history_version ON ${this.tableName}(version);
-            CREATE INDEX IF NOT EXISTS idx_migration_history_executed_at ON ${this.tableName}(executed_at);
-        `;
-        
-        await db.query(sql);
+            await db.query(sql);
+            console.log('✅ Tabella migration_history creata/verificata');
+        } catch (error) {
+            console.error('❌ Errore creazione tabella migration_history:', error.message);
+            throw error;
+        }
     }
 
     // Ottiene lista delle migrazioni eseguite
     async getExecutedMigrations() {
-        const result = await db.query(
-            `SELECT version FROM ${this.tableName} WHERE status = 'completed' ORDER BY version`
-        );
-        return result.rows.map(row => row.version);
+        try {
+            const result = await db.query(
+                `SELECT version FROM ${this.tableName} WHERE status = 'completed' ORDER BY version`
+            );
+            return result.rows.map(row => row.version);
+        } catch (error) {
+            console.error('❌ Errore recupero migrazioni eseguite:', error.message);
+            // Se la tabella non esiste, ritorna array vuoto
+            if (error.code === '42P01') {
+                console.log('📋 Tabella migration_history non esiste, inizializzazione necessaria');
+                return [];
+            }
+            throw error;
+        }
     }
 
     // Ottiene lista delle migrazioni disponibili
@@ -79,10 +95,20 @@ class MigrationSystem {
     async runPendingMigrations() {
         await this.initialize();
         
+        // Verifica schema base prima delle migrazioni
+        const hasBaseSchema = await this.checkBaseSchema();
+        if (!hasBaseSchema) {
+            throw new Error('Schema base mancante. Esegui prima il reset del database.');
+        }
+        
         const executed = await this.getExecutedMigrations();
         const available = this.getAvailableMigrations();
         
-        const pending = available.filter(migration => !executed.includes(migration.version));
+        // Confronta solo le versioni numeriche
+        const pending = available.filter(migration => {
+            const versionNumber = migration.version.split('_')[0];
+            return !executed.includes(versionNumber);
+        });
         
         if (pending.length === 0) {
             console.log('✅ Nessuna migrazione pendente');
@@ -109,6 +135,9 @@ class MigrationSystem {
             const sql = fs.readFileSync(migration.path, 'utf8');
             const checksum = this.calculateChecksum(sql);
             
+            // Estrai solo la versione numerica (es: "0001" da "0001_add_user_preferences")
+            const versionNumber = migration.version.split('_')[0];
+            
             // Esegui in transazione
             await db.query('BEGIN');
             
@@ -120,7 +149,7 @@ class MigrationSystem {
             await db.query(`
                 INSERT INTO ${this.tableName} (version, name, execution_time_ms, checksum, status)
                 VALUES ($1, $2, $3, $4, 'completed')
-            `, [migration.version, migration.filename, executionTime, checksum]);
+            `, [versionNumber, migration.filename, executionTime, checksum]);
             
             await db.query('COMMIT');
             
@@ -131,10 +160,11 @@ class MigrationSystem {
             
             // Registra l'errore
             const executionTime = Date.now() - startTime;
+            const versionNumber = migration.version.split('_')[0];
             await db.query(`
                 INSERT INTO ${this.tableName} (version, name, execution_time_ms, status)
                 VALUES ($1, $2, $3, 'failed')
-            `, [migration.version, migration.filename, executionTime]);
+            `, [versionNumber, migration.filename, executionTime]);
             
             console.error(`❌ Migrazione ${migration.version} fallita:`, error.message);
             throw error;
@@ -243,6 +273,32 @@ SELECT 'Migrazione ${version} - ${name} - COMPLETATA' as status;
         }
         
         return { executed: executed.length, pending: pending.length, total: available.length };
+    }
+
+    // Verifica se lo schema base esiste
+    async checkBaseSchema() {
+        try {
+            const result = await db.query(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name IN ('users', 'companies')
+            `);
+            
+            const existingTables = result.rows.map(row => row.table_name);
+            
+            if (existingTables.length === 0) {
+                console.log('⚠️ Schema base non trovato!');
+                console.log('📋 Esegui prima: bash database/reset_database.sh');
+                return false;
+            } else {
+                console.log(`✅ Schema base verificato: ${existingTables.join(', ')}`);
+                return true;
+            }
+        } catch (error) {
+            console.error('❌ Errore verifica schema base:', error.message);
+            return false;
+        }
     }
 }
 

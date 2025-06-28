@@ -61,13 +61,22 @@ echo "🔄 Inizializzazione sistema migrazioni..."
 psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "
     CREATE TABLE IF NOT EXISTS migration_history (
         id SERIAL PRIMARY KEY,
-        version VARCHAR(20) NOT NULL UNIQUE,
+        version VARCHAR(10) NOT NULL UNIQUE,
         name VARCHAR(255) NOT NULL,
         executed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         execution_time_ms INTEGER,
         checksum VARCHAR(64),
         status VARCHAR(20) DEFAULT 'completed' CHECK (status IN ('completed', 'failed'))
     );
+    
+    -- Modifica il campo version se esiste già
+    DO \$\$
+    BEGIN
+        ALTER TABLE migration_history ALTER COLUMN version TYPE VARCHAR(10);
+    EXCEPTION
+        WHEN others THEN NULL;
+    END
+    \$\$;
     
     CREATE INDEX IF NOT EXISTS idx_migration_history_version ON migration_history(version);
     CREATE INDEX IF NOT EXISTS idx_migration_history_executed_at ON migration_history(executed_at);

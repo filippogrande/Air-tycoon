@@ -167,10 +167,14 @@ db.testConnection()
         console.log('🔧 Controllo migrazioni pendenti...');
         try {
             const migrations = new MigrationSystem();
+            console.log('🔧 Inizializzazione sistema migrazioni...');
+            await migrations.initialize();
+            console.log('🔧 Esecuzione migrazioni pendenti...');
             await migrations.runPendingMigrations();
             console.log('✅ Migrazioni completate');
         } catch (error) {
             console.error('❌ Errore durante migrazioni:', error.message);
+            console.error('📋 Stack trace:', error.stack);
             console.log('⚠️ Il server continuerà comunque...');
         }
         
