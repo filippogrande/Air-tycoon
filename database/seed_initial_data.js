@@ -94,9 +94,16 @@ async function runSqlFile(client, filePath) {
 
   let totalChanged = 0;
   for (let stmt of statements) {
-    // Logga ogni statement sugli aeroporti
-    if (stmt.startsWith('INSERT INTO airports')) {
-      console.log('[DEBUG] Statement airports:', stmt.substring(0, 120));
+    // Log dettagliato di ogni statement
+    const preview = stmt.substring(0, 200).replace(/\n/g, ' ');
+    if (stmt.startsWith('INSERT INTO')) {
+      console.log(`[DEBUG] Eseguo INSERT: ${preview}`);
+    } else if (stmt.startsWith('UPDATE')) {
+      console.log(`[DEBUG] Eseguo UPDATE: ${preview}`);
+    } else if (stmt.startsWith('DELETE')) {
+      console.log(`[DEBUG] Eseguo DELETE: ${preview}`);
+    } else {
+      console.log(`[DEBUG] Eseguo statement: ${preview}`);
     }
     // Trasforma INSERT in upsert se necessario
     if (stmt.startsWith('INSERT INTO')) {
@@ -106,52 +113,51 @@ async function runSqlFile(client, filePath) {
       const res = await client.query(stmt);
       if (typeof res.rowCount === 'number') {
         totalChanged += res.rowCount;
-        console.log(`[seed] Query: ${stmt.substring(0, 60).replace(/\n/g, ' ')}... => ${res.rowCount} righe modificate`);
+        console.log(`[DEBUG] Risultato: ${res.rowCount} righe modificate`);
       } else {
-        console.log(`[seed] Query: ${stmt.substring(0, 60).replace(/\n/g, ' ')}...`);
+        console.log(`[DEBUG] Risultato: nessun rowCount`);
       }
     } catch (err) {
-      console.error(`[seed] Errore statement: ${stmt.substring(0, 60)}...`, err.message);
+      console.error(`[DEBUG] Errore statement: ${preview}`, err.message);
     }
   }
 
   // Log: conta aeroporti dopo
+  let afterAirports = 0;
   try {
     const res = await client.query('SELECT COUNT(*) FROM airports');
-    const afterAirports = parseInt(res.rows[0].count, 10);
+    afterAirports = parseInt(res.rows[0].count, 10);
     console.log(`[DEBUG] Aeroporti DOPO il seeding: ${afterAirports}`);
   } catch (e) {
-    console.log('[DEBUG] Impossibile contare aeroporti dopo il seeding:', e.message);
+    console.log('[DEBUG] Impossibile contare aeroporti dopo del seeding:', e.message);
   }
 
-  return totalChanged;
+  console.log(`[INFO] Seeding completato: ${totalChanged} righe modificate`);
 }
 
 async function main() {
-  const fileName = path.basename(SQL_FILE);
-  const fileHash = await getFileHash(SQL_FILE);
-
   const client = new Client(DB_CONFIG);
   await client.connect();
 
   try {
     await ensureSeedHistoryTable(client);
-    // Esegui SEMPRE il seeding, anche se l'hash non cambia
-    console.log(`[seed] Applico sempre ${fileName} (forzato)...`);
-    const changed = await runSqlFile(client, SQL_FILE);
-    await saveSeedHash(client, fileName, fileHash);
-    if (changed > 0) {
-      console.log(`[seed] ${fileName} applicato con successo. Righe modificate: ${changed}`);
+
+    const fileHash = await getFileHash(SQL_FILE);
+    const lastHash = await getLastSeedHash(client, 'initial_data.sql');
+
+    if (fileHash !== lastHash) {
+      console.log('[INFO] Nuovo seeding necessario, eseguo il seeding...');
+      await runSqlFile(client, SQL_FILE);
+      await saveSeedHash(client, 'initial_data.sql', fileHash);
+      console.log('[INFO] Seeding completato e hash salvato');
     } else {
-      console.log(`[seed] ${fileName} applicato. Nessuna modifica necessaria.`);
+      console.log('[INFO] Nessun seeding necessario, il file è invariato');
     }
   } catch (err) {
-    console.error('[seed] Errore durante il seeding:', err);
-    process.exit(1);
+    console.error('[ERROR] Errore durante il seeding:', err.message);
   } finally {
     await client.end();
   }
 }
 
-// Esegui sempre il seeding anche se importato come modulo
-main();
+main().catch(err => console.error('[ERROR] Errore non gestito:', err.message));
