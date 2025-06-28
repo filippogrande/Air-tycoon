@@ -734,6 +734,15 @@ body {
     border: none !important;
 }
 
+/* Rimuovi TUTTE le bolle dagli span nella configurazione rotte */
+.route-config-panel span {
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
 .config-actions {
     grid-column: 1 / -1; /* Occupa entrambe le colonne */
     display: flex;
