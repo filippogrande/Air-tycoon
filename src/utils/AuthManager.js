@@ -3,7 +3,7 @@ console.log('📂 Caricamento AuthManager.js...');
 
 function AuthManager() {
     this.currentUser = null;
-    this.users = {}; // Cache utenti (non usato per auth, solo cache)
+    this.users = this.loadUsers(); // Carica cache utenti (per compatibilità)
 }
 
 // NON carica utenti dal localStorage per auth - solo cache
@@ -196,9 +196,24 @@ AuthManager.prototype.loadCurrentUser = function() {
     try {
         var userData = localStorage.getItem('airTycoon_currentUser');
         if (userData) {
-            var userEmail = JSON.parse(userData);
-            this.currentUser = this.users[userEmail];
-            return this.currentUser !== null;
+            // Nuovo formato: oggetto utente completo
+            if (userData.startsWith('{')) {
+                this.currentUser = JSON.parse(userData);
+                return this.currentUser !== null;
+            } 
+            // Formato legacy: solo email
+            else {
+                var userEmail = JSON.parse(userData);
+                // Carica dalla cache utenti se disponibile
+                if (this.users[userEmail]) {
+                    this.currentUser = this.users[userEmail];
+                    return true;
+                } else {
+                    // Se non c'è nella cache, l'utente dovrà rifare il login
+                    console.warn('⚠️ Sessione utente scaduta, richiesto nuovo login');
+                    return false;
+                }
+            }
         }
     } catch (error) {
         console.error('Errore caricamento sessione:', error);
@@ -206,10 +221,10 @@ AuthManager.prototype.loadCurrentUser = function() {
     return false;
 };
 
-// Salva sessione utente corrente
+// Salva sessione utente corrente (formato completo)
 AuthManager.prototype.saveCurrentUser = function() {
     if (this.currentUser) {
-        localStorage.setItem('airTycoon_currentUser', JSON.stringify(this.currentUser.email));
+        localStorage.setItem('airTycoon_currentUser', JSON.stringify(this.currentUser));
     }
 };
 
