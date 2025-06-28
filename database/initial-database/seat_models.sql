@@ -46,10 +46,10 @@ INSERT INTO seat_models (manufacturer_id, model_name, model_code, seat_class, wi
 
 
 -- Zodiac First Class (specialist luxury)
-(3, 'Optima', 'OPT-800', 'first', 68.0, 203.0, 140.0, 203, 220, 65.0, 10, 180, TRUE, 24.0, TRUE, TRUE, TRUE, 2019, 55000, 27500, 25000, 2000),
+(3, 'Optima', 'OPT-800', 'first', 68.0, 203.0, 140.0, 203, 220, 65.0, 10, 180, TRUE, 24.0, TRUE, TRUE, 2019, 55000, 27500, 25000, 2000),
 
 -- Collins First Class
-(2, 'Pinnacle', 'PIN-900', 'first', 71.0, 208.0, 145.0, 208, 225, 68.5, 10, 180, TRUE, 26.0, TRUE, TRUE, TRUE, 2020, 58000, 29000, 32000, 2200),
+(2, 'Pinnacle', 'PIN-900', 'first', 71.0, 208.0, 145.0, 208, 225, 68.5, 10, 180, TRUE, 26.0, TRUE, TRUE, 2020, 58000, 29000, 32000, 2200),
 
 -- Thompson First Class
-(6, 'Elite', 'ELI-1000', 'first', 75.0, 215.0, 150.0, 215, 235, 75.0, 10, 180, TRUE, 27.0, TRUE, TRUE, TRUE, 2018, 52000, 26000, 37000, 2500);
+(6, 'Elite', 'ELI-1000', 'first', 75.0, 215.0, 150.0, 215, 235, 75.0, 10, 180, TRUE, 27.0, TRUE, TRUE, 2018, 52000, 26000, 37000, 2500);
