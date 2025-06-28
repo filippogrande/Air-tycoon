@@ -799,18 +799,11 @@
     border-left-color: #e74c3c;
 }
 
-.airport-label {
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 8px;
-    font-size: 14px;
-}
-
 .airport-data {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .airport-data span {

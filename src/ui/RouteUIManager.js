@@ -100,8 +100,7 @@ var RouteUIManager = {
         var content = '<div class="airport-info">' +
                      '<div class="airport-name">' + airport.name + '</div>' +
                      '<div class="airport-code">' + airport.code + '</div>' +
-                     '</div>' +
-                     '<div class="airport-details">' + airport.city + ', ' + airport.country + '</div>';
+                     '</div>';
         
         slotElement.innerHTML = content;
         slotElement.classList.add('selected');

@@ -166,10 +166,10 @@ Risultati dei test appariranno qui...
                                 // Simula selezione aeroporti
                                 setTimeout(function() {
                                     RouteUIManager.selectAirportForSlot(testAirports.FCO, 'origin');
-                                    updateTestResults('✅ Aeroporto origine selezionato: ' + testAirports.FCO.code);
+                                    updateTestResults('✅ Aeroporto origine selezionato: ' + testAirports.FCO.name + ' (' + testAirports.FCO.code + ')');
                                     
                                     RouteUIManager.selectAirportForSlot(testAirports.MXP, 'destination');
-                                    updateTestResults('✅ Aeroporto destinazione selezionato: ' + testAirports.MXP.code);
+                                    updateTestResults('✅ Aeroporto destinazione selezionato: ' + testAirports.MXP.name + ' (' + testAirports.MXP.code + ')');
                                     
                                     // Apri pannello configurazione
                                     RouteUIManager.openRouteConfigPanel();
