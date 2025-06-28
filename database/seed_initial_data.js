@@ -141,18 +141,13 @@ async function main() {
 
   try {
     await ensureSeedHistoryTable(client);
-
+    // Esegui SEMPRE il seeding, anche se il file è invariato
+    console.log('[INFO] Eseguo sempre il seeding, anche se il file non cambia...');
+    await runSqlFile(client, SQL_FILE);
+    // Salva comunque l'hash per tracciare la storia
     const fileHash = await getFileHash(SQL_FILE);
-    const lastHash = await getLastSeedHash(client, 'initial_data.sql');
-
-    if (fileHash !== lastHash) {
-      console.log('[INFO] Nuovo seeding necessario, eseguo il seeding...');
-      await runSqlFile(client, SQL_FILE);
-      await saveSeedHash(client, 'initial_data.sql', fileHash);
-      console.log('[INFO] Seeding completato e hash salvato');
-    } else {
-      console.log('[INFO] Nessun seeding necessario, il file è invariato');
-    }
+    await saveSeedHash(client, 'initial_data.sql', fileHash);
+    console.log('[INFO] Seeding completato e hash salvato');
   } catch (err) {
     console.error('[ERROR] Errore durante il seeding:', err.message);
   } finally {
