@@ -99,12 +99,23 @@ router.get('/companies/:id', async (req, res) => {
 // POST /api/game/companies - Crea nuova compagnia e hub principale
 router.post('/companies', async (req, res) => {
     try {
-        const { name, headquarters_airport_id, initial_money } = req.body;
-        if (!name || !headquarters_airport_id) {
+        let { name, headquarters_airport_id, headquarters_airport_code, initial_money } = req.body;
+        if (!name || (!headquarters_airport_id && !headquarters_airport_code)) {
             return res.status(400).json({
                 success: false,
-                error: 'Name and headquarters airport are required'
+                error: 'Name and headquarters airport (id or code) are required'
             });
+        }
+        // Se arriva solo il codice IATA, cerca l'id numerico
+        if (!headquarters_airport_id && headquarters_airport_code) {
+            const airportRes = await db.query('SELECT id FROM airports WHERE iata_code = $1', [headquarters_airport_code]);
+            if (!airportRes.rows.length) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid headquarters airport code'
+                });
+            }
+            headquarters_airport_id = airportRes.rows[0].id;
         }
         // Usa la funzione atomica
         const { company, hub } = await db.createCompanyWithHub({ name, headquarters_airport_id, initial_money });
@@ -160,13 +171,23 @@ router.put('/companies/:id', async (req, res) => {
 // POST /api/game/companies/create-or-update - Crea o aggiorna una compagnia
 router.post('/companies/create-or-update', async (req, res) => {
     try {
-        const { id, name, money, reputation, founded, base_airport } = req.body;
-        
+        let { id, name, money, reputation, founded, base_airport, base_airport_code } = req.body;
         if (!name) {
             return res.status(400).json({
                 success: false,
                 error: 'Name is required'
             });
+        }
+        // Se arriva solo il codice IATA, cerca l'id numerico
+        if (!base_airport && base_airport_code) {
+            const airportRes = await db.query('SELECT id FROM airports WHERE iata_code = $1', [base_airport_code]);
+            if (!airportRes.rows.length) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid base airport code'
+                });
+            }
+            base_airport = airportRes.rows[0].id;
         }
         let result;
         if (!id) {
