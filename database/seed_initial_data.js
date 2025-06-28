@@ -61,8 +61,10 @@ async function runSqlFile(client, filePath) {
   }
 
   const sql = fs.readFileSync(filePath, 'utf8');
-  // Divide in statement (più robusto: split su ogni punto e virgola)
-  const statements = sql
+  // Rimuovi tutte le righe di commento prima di splittare
+  const sqlNoComments = sql.split('\n').filter(line => !line.trim().startsWith('--')).join('\n');
+  // Divide in statement (split su ogni punto e virgola)
+  const statements = sqlNoComments
     .split(/;/)
     .map(s => s.trim())
     .filter(s => s.length > 0); // Non scartare statement che iniziano con commenti
