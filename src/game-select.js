@@ -471,7 +471,7 @@ async function syncGameWithServer(saveName, gameData) {
         
         // Prima crea o aggiorna la compagnia
         const companyPayload = {
-            id: `${user.id}_${saveName}`, // ID univoco basato su user + save
+            // id: `${user.id}_${saveName}`, // RIMOSSO: lascia generazione id al backend
             name: gameData.company.name,
             money: gameData.company.money,
             reputation: gameData.company.reputation,
