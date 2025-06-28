@@ -461,21 +461,34 @@ body {
     font-style: italic;
 }
 
-.modal-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 25px;
+/* Stili specifici per il campo scenario */
+.input-group select#scenario {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #17a2b8;
+    font-weight: 500;
 }
 
-.modal-actions .action-btn {
-    flex: 1;
+.input-group select#scenario:focus {
+    border-color: #138496;
+    box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
 }
 
-.warning-text {
-    color: #e74c3c;
-    font-size: 0.9rem;
-    margin-top: 10px;
-    text-align: center;
+.input-group select#scenario option {
+    padding: 10px;
+    font-weight: 500;
+}
+
+/* Evidenziare il campo scenario come importante */
+.input-group:has(select#scenario) {
+    background: linear-gradient(135deg, rgba(23, 162, 184, 0.05) 0%, rgba(19, 132, 150, 0.1) 100%);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(23, 162, 184, 0.2);
+}
+
+.input-group:has(select#scenario) label {
+    color: #0c5460;
+    font-size: 1rem;
 }
 
 /* Loading overlay */

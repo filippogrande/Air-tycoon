@@ -235,9 +235,10 @@ function handleNewGame(e) {
     const companyName = formData.get('companyName').trim();
     const startingAirport = formData.get('startingAirport');
     const difficulty = formData.get('difficulty');
+    const scenario = formData.get('scenario');
     
     // Validazione
-    if (!saveName || !companyName || !startingAirport || !difficulty) {
+    if (!saveName || !companyName || !startingAirport || !difficulty || !scenario) {
         showToast('Tutti i campi sono obbligatori', 'error');
         return;
     }
@@ -253,11 +254,47 @@ function handleNewGame(e) {
     
     // Simula creazione gioco
     setTimeout(function() {
-        createNewGame(saveName, companyName, startingAirport, difficulty);
+        createNewGame(saveName, companyName, startingAirport, difficulty, scenario);
     }, 1500);
 }
 
-function createNewGame(saveName, companyName, startingAirport, difficulty) {
+function createNewGame(saveName, companyName, startingAirport, difficulty, scenario) {
+    // Configurazioni scenario
+    const scenarioSettings = {
+        aviation_dawn: {
+            year: 1950,
+            description: "Inizio epoca del trasporto aereo",
+            availableAircraft: ["DC-3", "Lockheed L-049"],
+            technology: "basic",
+            fuelCost: 0.3,
+            regulations: "minimal"
+        },
+        jet_age: {
+            year: 1970,
+            description: "Era dei jet commerciali",
+            availableAircraft: ["Boeing 707", "DC-8", "Sud Caravelle"],
+            technology: "jet_early",
+            fuelCost: 0.4,
+            regulations: "moderate"
+        },
+        deregulation: {
+            year: 1990,
+            description: "Deregolamentazione globale",
+            availableAircraft: ["Boeing 737", "A320", "MD-80"],
+            technology: "modern",
+            fuelCost: 0.5,
+            regulations: "competitive"
+        },
+        modern_era: {
+            year: 2020,
+            description: "Era moderna",
+            availableAircraft: ["A350", "Boeing 787", "A320neo"],
+            technology: "advanced",
+            fuelCost: 0.8,
+            regulations: "strict"
+        }
+    };
+    
     // Crea dati iniziali del gioco
     const difficultySettings = {
         easy: { money: 5000000, reputation: 60 },
@@ -266,6 +303,7 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
     };
     
     const settings = difficultySettings[difficulty];
+    const scenarioData = scenarioSettings[scenario];
     
     const gameData = {
         company: {
@@ -274,11 +312,16 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
             reputation: settings.reputation,
             headquarters: startingAirport
         },
+        scenario: {
+            id: scenario,
+            ...scenarioData
+        },
         homeAirport: startingAirport,
         difficulty: difficulty,
         gameTime: {
-            currentDate: new Date().toISOString(),
-            gameSpeed: 1
+            currentDate: new Date(scenarioData.year, 0, 1).toISOString(),
+            gameSpeed: 1,
+            startYear: scenarioData.year
         },
         fleet: [],
         routes: [],
