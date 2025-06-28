@@ -1,0 +1,1 @@
+-- Inserisci qui i dati iniziali per la tabella aircraft_configurations

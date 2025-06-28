@@ -17,6 +17,7 @@ const DB_CONFIG = {
 };
 
 const SQL_FILE = path.join(__dirname, 'initial_data.sql');
+const INITIAL_DB_DIR = path.join(__dirname, 'initial-database');
 
 async function getFileHash(filePath) {
   const data = fs.readFileSync(filePath);
@@ -49,45 +50,41 @@ async function saveSeedHash(client, fileName, fileHash) {
   );
 }
 
-async function runSqlFile(client, filePath) {
-  // Log: conta aeroporti prima
+async function runSqlFile(client, filePath, fileLabel) {
+  // Log: conta aeroporti prima (solo se tabella airports)
   let beforeAirports = 0;
-  try {
-    const res = await client.query('SELECT COUNT(*) FROM airports');
-    beforeAirports = parseInt(res.rows[0].count, 10);
-    console.log(`[DEBUG] Aeroporti PRIMA del seeding: ${beforeAirports}`);
-  } catch (e) {
-    console.log('[DEBUG] Impossibile contare aeroporti prima del seeding:', e.message);
+  if (fileLabel === 'airports.sql') {
+    try {
+      const res = await client.query('SELECT COUNT(*) FROM airports');
+      beforeAirports = parseInt(res.rows[0].count, 10);
+      console.log(`[DEBUG] Aeroporti PRIMA del seeding: ${beforeAirports}`);
+    } catch (e) {
+      console.log('[DEBUG] Impossibile contare aeroporti prima del seeding:', e.message);
+    }
   }
 
   const sql = fs.readFileSync(filePath, 'utf8');
-  // Rimuovi tutte le righe di commento prima di splittare
   const sqlNoComments = sql.split('\n').filter(line => !line.trim().startsWith('--')).join('\n');
-  // Divide in statement (split su ogni punto e virgola)
   const statements = sqlNoComments
     .split(/;/)
     .map(s => s.trim())
-    .filter(s => s.length > 0); // Non scartare statement che iniziano con commenti
+    .filter(s => s.length > 0);
 
-  // Mappa tabella => chiave unica (puoi estendere qui)
   const upsertConfig = {
     airports: 'iata_code',
-    companies: 'id', // Sostituisci con la chiave unica reale se diversa
-    // Aggiungi altre tabelle e chiavi se necessario
+    companies: 'id',
+    // Estendi qui per altre tabelle
   };
 
   function transformInsertToUpsert(stmt) {
-    // Match base: INSERT INTO <table> (<fields>) VALUES (<values>)
     const insertRegex = /^INSERT INTO ([a-zA-Z0-9_]+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i;
     const match = stmt.match(insertRegex);
     if (!match) return stmt;
     const [_, table, fields, values] = match;
     const key = upsertConfig[table];
-    if (!key) return stmt; // Tabella non supportata
+    if (!key) return stmt;
     const fieldList = fields.split(',').map(f => f.trim());
-    // Se la chiave non è tra i campi, non trasformare
     if (!fieldList.includes(key)) return stmt;
-    // Costruisci la parte DO UPDATE per tutti i campi tranne la chiave
     const updateFields = fieldList.filter(f => f !== key)
       .map(f => `${f} = EXCLUDED.${f}`)
       .join(', ');
@@ -96,10 +93,8 @@ async function runSqlFile(client, filePath) {
 
   let totalChanged = 0;
   for (let stmt of statements) {
-    // Logga sempre ogni statement, anche se non è INSERT/UPDATE/DELETE
     const preview = stmt.substring(0, 200).replace(/\n/g, ' ');
-    console.log(`[DEBUG] Statement: ${preview}`);
-    // Trasforma INSERT in upsert se necessario
+    console.log(`[DEBUG][${fileLabel}] Statement: ${preview}`);
     if (stmt.startsWith('INSERT INTO')) {
       stmt = transformInsertToUpsert(stmt);
     }
@@ -107,26 +102,27 @@ async function runSqlFile(client, filePath) {
       const res = await client.query(stmt);
       if (typeof res.rowCount === 'number') {
         totalChanged += res.rowCount;
-        console.log(`[DEBUG] Risultato: ${res.rowCount} righe modificate`);
+        console.log(`[DEBUG][${fileLabel}] Risultato: ${res.rowCount} righe modificate`);
       } else {
-        console.log(`[DEBUG] Risultato: nessun rowCount`);
+        console.log(`[DEBUG][${fileLabel}] Risultato: nessun rowCount`);
       }
     } catch (err) {
-      console.error(`[DEBUG] Errore statement: ${preview}`, err.message);
+      console.error(`[DEBUG][${fileLabel}] Errore statement: ${preview}`, err.message);
     }
   }
 
-  // Log: conta aeroporti dopo
-  let afterAirports = 0;
-  try {
-    const res = await client.query('SELECT COUNT(*) FROM airports');
-    afterAirports = parseInt(res.rows[0].count, 10);
-    console.log(`[DEBUG] Aeroporti DOPO il seeding: ${afterAirports}`);
-  } catch (e) {
-    console.log('[DEBUG] Impossibile contare aeroporti dopo del seeding:', e.message);
+  if (fileLabel === 'airports.sql') {
+    let afterAirports = 0;
+    try {
+      const res = await client.query('SELECT COUNT(*) FROM airports');
+      afterAirports = parseInt(res.rows[0].count, 10);
+      console.log(`[DEBUG] Aeroporti DOPO il seeding: ${afterAirports}`);
+    } catch (e) {
+      console.log('[DEBUG] Impossibile contare aeroporti dopo del seeding:', e.message);
+    }
   }
 
-  console.log(`[INFO] Seeding completato: ${totalChanged} righe modificate`);
+  console.log(`[INFO][${fileLabel}] Seeding completato: ${totalChanged} righe modificate`);
 }
 
 async function main() {
@@ -135,13 +131,20 @@ async function main() {
 
   try {
     await ensureSeedHistoryTable(client);
-    // Esegui SEMPRE il seeding, anche se il file è invariato
-    console.log('[INFO] Eseguo sempre il seeding, anche se il file non cambia...');
-    await runSqlFile(client, SQL_FILE);
-    // Salva comunque l'hash per tracciare la storia
-    const fileHash = await getFileHash(SQL_FILE);
-    await saveSeedHash(client, 'initial_data.sql', fileHash);
-    console.log('[INFO] Seeding completato e hash salvato');
+    // Leggi tutti i file .sql in initial-database/ in ordine alfabetico
+    const files = fs.readdirSync(INITIAL_DB_DIR)
+      .filter(f => f.endsWith('.sql'))
+      .sort();
+    for (const file of files) {
+      const filePath = path.join(INITIAL_DB_DIR, file);
+      console.log(`[INFO] Eseguo seeding per ${file}...`);
+      await runSqlFile(client, filePath, file);
+      // Salva hash per ogni file
+      const fileHash = await getFileHash(filePath);
+      await saveSeedHash(client, file, fileHash);
+      console.log(`[INFO] Seeding completato e hash salvato per ${file}`);
+    }
+    console.log('[INFO] Seeding COMPLETATO per tutti i file.');
   } catch (err) {
     console.error('[ERROR] Errore durante il seeding:', err.message);
   } finally {
