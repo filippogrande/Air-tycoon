@@ -178,8 +178,7 @@ db.testConnection()
             console.log('⚠️ Il server continuerà comunque...');
         }
 
-        // Seeding automatico dati iniziali (solo in sviluppo/test)
-        if (process.env.NODE_ENV !== 'production') {
+        
             try {
                 console.log('🌱 Seeding automatico initial_data.sql...');
                 await require('../database/seed_initial_data');
@@ -187,7 +186,7 @@ db.testConnection()
                 console.error('❌ Errore durante il seeding automatico:', err.message);
                 console.error('📋 Stack trace:', err.stack);
             }
-        }
+        
         
         // Avvia server
         app.listen(PORT, () => {
