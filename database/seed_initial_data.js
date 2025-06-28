@@ -62,15 +62,11 @@ async function main() {
 
   try {
     await ensureSeedHistoryTable(client);
-    const lastHash = await getLastSeedHash(client, fileName);
-    if (lastHash === fileHash) {
-      console.log(`[seed] ${fileName} già applicato, nessuna azione necessaria.`);
-    } else {
-      console.log(`[seed] Applico ${fileName}...`);
-      await runSqlFile(client, SQL_FILE);
-      await saveSeedHash(client, fileName, fileHash);
-      console.log(`[seed] ${fileName} applicato con successo.`);
-    }
+    // Esegui SEMPRE il seeding, anche se l'hash non cambia
+    console.log(`[seed] Applico sempre ${fileName} (forzato)...`);
+    await runSqlFile(client, SQL_FILE);
+    await saveSeedHash(client, fileName, fileHash);
+    console.log(`[seed] ${fileName} applicato con successo.`);
   } catch (err) {
     console.error('[seed] Errore durante il seeding:', err);
     process.exit(1);
