@@ -1,0 +1,25 @@
+-- Migrazione 0003: Aggiunta campi storici e operativi agli aeroporti
+-- Aggiunge campi per date operative, dimensioni, livelli di traffico e dati storici
+
+ALTER TABLE airports 
+ADD COLUMN opened_date DATE,
+ADD COLUMN closure_date DATE,
+ADD COLUMN runways_count INTEGER DEFAULT 1 CHECK (runways_count >= 1),
+ADD COLUMN runway_length_meters INTEGER DEFAULT 1000 CHECK (runway_length_meters >= 500),
+ADD COLUMN airport_size VARCHAR(20) DEFAULT 'medium' CHECK (airport_size IN ('small', 'medium', 'large', 'hub')),
+ADD COLUMN business_level INTEGER DEFAULT 50 CHECK (business_level >= 0 AND business_level <= 100),
+ADD COLUMN tourist_level INTEGER DEFAULT 50 CHECK (tourist_level >= 0 AND tourist_level <= 100);
+
+-- Indici per migliorare le performance delle query sui nuovi campi
+CREATE INDEX idx_airports_opened_date ON airports(opened_date);
+CREATE INDEX idx_airports_closure_date ON airports(closure_date);
+CREATE INDEX idx_airports_size ON airports(airport_size);
+
+-- Commenti per documentare i nuovi campi
+COMMENT ON COLUMN airports.opened_date IS 'Data di apertura dell aeroporto al traffico commerciale';
+COMMENT ON COLUMN airports.closure_date IS 'Data di chiusura dell aeroporto (NULL se ancora operativo)';
+COMMENT ON COLUMN airports.runways_count IS 'Numero di piste operative';
+COMMENT ON COLUMN airports.runway_length_meters IS 'Lunghezza della pista principale in metri';
+COMMENT ON COLUMN airports.airport_size IS 'Classificazione dimensionale: small, medium, large, hub';
+COMMENT ON COLUMN airports.business_level IS 'Livello di traffico business (0-100)';
+COMMENT ON COLUMN airports.tourist_level IS 'Livello di traffico turistico (0-100)';

@@ -76,7 +76,9 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 85,
             touristLevel: 75,
-            passengerTraffic: 28846000
+            passengerTraffic: 28846000,
+            openedYear: 1998,
+            closedYear: null
         },
         {
             code: 'FCO',
@@ -91,7 +93,43 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 80,
             touristLevel: 90,
-            passengerTraffic: 43532573
+            passengerTraffic: 43532573,
+            openedYear: 1961,
+            closedYear: null
+        },
+        {
+            code: 'CIA',
+            name: 'Roma Ciampino',
+            city: 'Roma',
+            country: 'Italia',
+            continent: 'Europa',
+            latitude: 41.7994,
+            longitude: 12.5949,
+            size: 'medium',
+            runwayLength: 2207,
+            maxAircraftSize: 'medium',
+            businessLevel: 45,
+            touristLevel: 75,
+            passengerTraffic: 5900000,
+            openedYear: 1916,
+            closedYear: null
+        },
+        {
+            code: 'LIN',
+            name: 'Milano Linate',
+            city: 'Milano',
+            country: 'Italia',
+            continent: 'Europa',
+            latitude: 45.4454,
+            longitude: 9.2767,
+            size: 'medium',
+            runwayLength: 2442,
+            maxAircraftSize: 'medium',
+            businessLevel: 70,
+            touristLevel: 60,
+            passengerTraffic: 9233475,
+            openedYear: 1937,
+            closedYear: null
         },
         {
             code: 'LHR',
@@ -106,7 +144,9 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 95,
             touristLevel: 70,
-            passengerTraffic: 80884310
+            passengerTraffic: 80884310,
+            openedYear: 1946,
+            closedYear: null
         },
         {
             code: 'CDG',
@@ -121,7 +161,9 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 90,
             touristLevel: 80,
-            passengerTraffic: 76150007
+            passengerTraffic: 76150007,
+            openedYear: 1974,
+            closedYear: null
         },
         {
             code: 'JFK',
@@ -136,7 +178,9 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 98,
             touristLevel: 85,
-            passengerTraffic: 62551253
+            passengerTraffic: 62551253,
+            openedYear: 1948,
+            closedYear: null
         },
         {
             code: 'FRA',
@@ -151,7 +195,9 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 92,
             touristLevel: 65,
-            passengerTraffic: 70556072
+            passengerTraffic: 70556072,
+            openedYear: 1936,
+            closedYear: null
         },
         {
             code: 'AMS',
@@ -166,7 +212,9 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 88,
             touristLevel: 78,
-            passengerTraffic: 71706999
+            passengerTraffic: 71706999,
+            openedYear: 1967,
+            closedYear: null
         },
         {
             code: 'MAD',
@@ -181,7 +229,9 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 83,
             touristLevel: 85,
-            passengerTraffic: 61734944
+            passengerTraffic: 61734944,
+            openedYear: 1928,
+            closedYear: null
         },
         {
             code: 'BCN',
@@ -196,7 +246,9 @@ function createAirportData() {
             maxAircraftSize: 'large',
             businessLevel: 78,
             touristLevel: 92,
-            passengerTraffic: 52686314
+            passengerTraffic: 52686314,
+            openedYear: 1963,
+            closedYear: null
         },
         {
             code: 'MUC',

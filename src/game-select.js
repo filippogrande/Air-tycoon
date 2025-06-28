@@ -132,7 +132,7 @@ function createSaveCard(saveKey, save) {
     return card;
 }
 
-function populateStartingAirports() {
+function populateStartingAirports(selectedScenario = null) {
     const select = document.getElementById('starting-airport');
     
     if (!window.AirportData || !window.AirportData.airports) {
@@ -140,23 +140,56 @@ function populateStartingAirports() {
         return;
     }
     
-    // Filtra solo aeroporti grandi per la partenza e ordina per traffico passeggeri
-    const largeAirports = window.AirportData.airports
-        .filter(airport => airport.size === 'large')
+    // Se non c'è uno scenario selezionato, prova a prenderlo dal form
+    if (!selectedScenario) {
+        const scenarioSelect = document.getElementById('scenario');
+        selectedScenario = scenarioSelect ? scenarioSelect.value : 'aviation_dawn';
+    }
+    
+    // Mappatura scenario -> anno
+    const scenarioYears = {
+        aviation_dawn: 1950,
+        jet_age: 1970,
+        deregulation: 1990,
+        modern_era: 2024
+    };
+    
+    const targetYear = scenarioYears[selectedScenario] || 1950;
+    
+    // Filtra aeroporti disponibili nell'anno dello scenario
+    // (aperti prima o nell'anno target, e non ancora chiusi)
+    const availableAirports = window.AirportData.airports.filter(airport => {
+        const openedYear = airport.openedYear || 1900; // Default se non specificato
+        const closedYear = airport.closedYear;
+        
+        // Deve essere aperto nell'anno target
+        const isOpen = openedYear <= targetYear;
+        const notClosed = !closedYear || closedYear >= targetYear;
+        
+        return isOpen && notClosed;
+    });
+    
+    // Filtra solo aeroporti grandi/hub per la partenza e ordina per traffico
+    const suitableAirports = availableAirports
+        .filter(airport => airport.size === 'large' || airport.size === 'hub')
         .sort((a, b) => (b.passengerTraffic || 0) - (a.passengerTraffic || 0));
     
     select.innerHTML = '<option value="">Seleziona hub di partenza...</option>';
     
-    largeAirports.forEach(airport => {
+    suitableAirports.forEach(airport => {
         const option = document.createElement('option');
         option.value = airport.code;
         
-        // Formato migliorato con traffico passeggeri
+        // Formato con informazioni storiche
+        const eraInfo = airport.openedYear ? `(dal ${airport.openedYear})` : '';
         const trafficFormatted = airport.passengerTraffic 
             ? `${(airport.passengerTraffic / 1000000).toFixed(1)}M pax/anno`
             : '';
         
         option.textContent = `${airport.name} (${airport.code}) - ${airport.city}, ${airport.country}`;
+        if (eraInfo) {
+            option.textContent += ` ${eraInfo}`;
+        }
         if (trafficFormatted) {
             option.textContent += ` • ${trafficFormatted}`;
         }
@@ -164,7 +197,13 @@ function populateStartingAirports() {
         select.appendChild(option);
     });
     
-    console.log('🏢 Caricati', largeAirports.length, 'aeroporti grandi disponibili per la partenza');
+    console.log(`🏢 Caricati ${suitableAirports.length} aeroporti disponibili per l'anno ${targetYear} (scenario: ${selectedScenario})`);
+    
+    // Evidenzia aeroporti italiani se disponibili
+    const italianAirports = suitableAirports.filter(airport => airport.country === 'Italia');
+    if (italianAirports.length > 0) {
+        console.log(`🇮🇹 ${italianAirports.length} aeroporti italiani disponibili:`, italianAirports.map(a => a.code).join(', '));
+    }
 }
 
 function setupEventListeners() {
@@ -180,6 +219,15 @@ function setupEventListeners() {
     // New game buttons
     document.getElementById('new-game-btn').addEventListener('click', showNewGameModal);
     document.getElementById('start-first-game').addEventListener('click', showNewGameModal);
+    
+    // Scenario change listener - ricarica aeroporti quando cambia lo scenario
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'scenario') {
+            const selectedScenario = e.target.value;
+            console.log('📅 Scenario cambiato:', selectedScenario);
+            populateStartingAirports(selectedScenario);
+        }
+    });
     
     // Modal controls
     document.getElementById('close-modal').addEventListener('click', hideNewGameModal);
@@ -207,6 +255,7 @@ function setupEventListeners() {
 function showNewGameModal() {
     const modal = document.getElementById('new-game-modal');
     const companyNameInput = document.getElementById('company-name-input');
+    const scenarioSelect = document.getElementById('scenario');
     
     // Pre-popola nome compagnia con suggerimento
     if (!companyNameInput.value) {
@@ -218,6 +267,10 @@ function showNewGameModal() {
         const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
         companyNameInput.value = randomSuggestion;
     }
+    
+    // Popola aeroporti in base allo scenario di default
+    const defaultScenario = scenarioSelect ? scenarioSelect.value : 'aviation_dawn';
+    populateStartingAirports(defaultScenario);
     
     modal.classList.remove('hidden');
 }
