@@ -476,7 +476,8 @@ async function syncGameWithServer(saveName, gameData) {
             money: gameData.company.money,
             reputation: gameData.company.reputation,
             founded: gameData.gameTime.currentDate,
-            base_airport: gameData.homeAirport
+            base_airport: gameData.homeAirport,
+            user_id: user.id // <--- AGGIUNTO
         };
         
         console.log('📊 Creazione compagnia sul server...', companyPayload);

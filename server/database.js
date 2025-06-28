@@ -246,14 +246,14 @@ async function cleanupOldData() {
 }
 
 // Crea una compagnia e il suo hub principale atomico
-async function createCompanyWithHub({ name, headquarters_airport_id, initial_money }) {
+async function createCompanyWithHub({ name, headquarters_airport_id, initial_money, user_id }) {
     return await transaction(async (client) => {
         // 1. Crea la compagnia
         const companyRes = await client.query(
-            `INSERT INTO companies (name, headquarters_airport_id, money, reputation)
-             VALUES ($1, $2, $3, 50)
+            `INSERT INTO companies (name, headquarters_airport_id, money, reputation, user_id)
+             VALUES ($1, $2, $3, 50, $4)
              RETURNING *`,
-            [name, headquarters_airport_id, initial_money || 1000000]
+            [name, headquarters_airport_id, initial_money || 1000000, user_id]
         );
         const company = companyRes.rows[0];
         // 2. Crea l'hub principale (headquarters)

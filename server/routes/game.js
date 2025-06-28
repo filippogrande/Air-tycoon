@@ -99,7 +99,7 @@ router.get('/companies/:id', async (req, res) => {
 // POST /api/game/companies - Crea nuova compagnia e hub principale
 router.post('/companies', async (req, res) => {
     try {
-        let { name, headquarters_airport_id, headquarters_airport_code, initial_money } = req.body;
+        let { name, headquarters_airport_id, headquarters_airport_code, initial_money, user_id } = req.body;
         if (!name || (!headquarters_airport_id && !headquarters_airport_code)) {
             return res.status(400).json({
                 success: false,
@@ -117,8 +117,18 @@ router.post('/companies', async (req, res) => {
             }
             headquarters_airport_id = airportRes.rows[0].id;
         }
+        // Recupera user_id da JWT/sessione o dal body
+        if (!user_id && req.user && req.user.id) {
+            user_id = req.user.id;
+        }
+        if (!user_id) {
+            return res.status(400).json({
+                success: false,
+                error: 'User ID is required'
+            });
+        }
         // Usa la funzione atomica
-        const { company, hub } = await db.createCompanyWithHub({ name, headquarters_airport_id, initial_money });
+        const { company, hub } = await db.createCompanyWithHub({ name, headquarters_airport_id, initial_money, user_id });
         res.status(201).json({
             success: true,
             data: { company, hub }
