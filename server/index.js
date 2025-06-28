@@ -9,7 +9,6 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const db = require('./database');
-const { runPendingMigrations } = require('./auto-migrations');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/game');
 const fleetRoutes = require('./routes/fleet');
@@ -18,6 +17,9 @@ const airportRoutes = require('./routes/airports');
 const financeRoutes = require('./routes/finance');
 const marketAnalysisRoutes = require('./routes/market-analysis');
 const adminRoutes = require('./routes/admin');
+
+// Sistema migrazioni
+const MigrationSystem = require('../database/migration-system');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -158,14 +160,19 @@ app.use((err, req, res, next) => {
 
 // Test connessione database
 db.testConnection()
-    .then(() => {
+    .then(async () => {
         console.log('✅ Connessione database stabilita');
         
-        // Esegui migrazioni automatiche
-        return runPendingMigrations();
-    })
-    .then(() => {
-        console.log('✅ Migrazioni database completate');
+        // Esegui migrazioni automaticamente
+        console.log('🔧 Controllo migrazioni pendenti...');
+        try {
+            const migrations = new MigrationSystem();
+            await migrations.runPendingMigrations();
+            console.log('✅ Migrazioni completate');
+        } catch (error) {
+            console.error('❌ Errore durante migrazioni:', error.message);
+            console.log('⚠️ Il server continuerà comunque...');
+        }
         
         // Avvia server
         app.listen(PORT, () => {
@@ -175,7 +182,7 @@ db.testConnection()
         });
     })
     .catch(err => {
-        console.error('❌ Errore durante l\'avvio:', err);
+        console.error('❌ Errore connessione database:', err);
         process.exit(1);
     });
 

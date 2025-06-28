@@ -1,19 +1,33 @@
--- Air Tycoon 2 Clone - Schema Base (Versione 1.0.0)
--- Solo creazione tabelle principali senza dati
+-- Schema base Air Tycoon 2 - Versione corretta con autenticazione email
+-- Data: 28 giugno 2025
 
 -- Abilita l'estensione UUID per generare ID univoci
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
--- TABELLE PRINCIPALI
+-- TABELLE UTENTI E AUTENTICAZIONE
 -- =====================================================
 
--- Tabella versioni per tracking migrazioni
-CREATE TABLE IF NOT EXISTS schema_versions (
-    version VARCHAR(20) PRIMARY KEY,
-    applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    description TEXT
+-- Tabella utenti (con email come chiave principale)
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(50), -- Opzionale, solo per display
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP WITH TIME ZONE,
+    settings JSONB DEFAULT '{}' -- Preferenze audio/grafica/interfaccia
 );
+
+-- Indici per performance
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_last_login ON users(last_login);
+
+-- Commenti per chiarire l'uso
+COMMENT ON TABLE users IS 'Utenti del sistema con autenticazione via email';
+COMMENT ON COLUMN users.email IS 'Email principale usata per autenticazione e identificazione utente';
+COMMENT ON COLUMN users.username IS 'Username opzionale per display, non usato per autenticazione';
+COMMENT ON COLUMN users.password_hash IS 'Hash SHA256 della password utente';
 
 -- Tabella aeroporti
 CREATE TABLE IF NOT EXISTS airports (
@@ -45,17 +59,6 @@ CREATE TABLE IF NOT EXISTS aircraft_types (
     maintenance_cost_per_hour INTEGER NOT NULL CHECK (maintenance_cost_per_hour >= 0),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tabella utenti
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE,
-    password_hash VARCHAR(255),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP WITH TIME ZONE,
-    is_active BOOLEAN DEFAULT TRUE
 );
 
 -- Tabella compagnie aeree

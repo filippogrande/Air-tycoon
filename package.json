@@ -20,6 +20,11 @@
     "db:reset": "node database/migrations.js --reset",
     "db:migrate": "node database/migrations.js",
     "db:inspect": "node database/inspect.js",
+    "migrate:status": "node database/migrate.js status",
+    "migrate:run": "node database/migrate.js run",
+    "migrate:create": "node database/migrate.js create",
+    "migrate:init": "node database/migrate.js init",
+    "db:reset-new": "bash database/reset_database.sh",
     "test": "jest",
     "lint": "eslint server/"
   },
