@@ -6,13 +6,13 @@ const crypto = require('crypto');
 // POST /api/auth/register - Registra nuovo utente
 router.post('/register', async (req, res) => {
     try {
-        const { email, password, companyName } = req.body;
+        const { email, password } = req.body;
         
         // Validazione input
-        if (!email || !password || !companyName) {
+        if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                error: 'Email, password e nome compagnia sono obbligatori'
+                error: 'Email e password sono obbligatori'
             });
         }
         
@@ -42,43 +42,22 @@ router.post('/register', async (req, res) => {
         // Genera ID utente
         const userId = crypto.randomUUID();
         
-        // Inizia transazione
-        await db.query('BEGIN');
+        // Crea solo l'utente (la compagnia verrà creata quando inizia una partita)
+        await db.query(`
+            INSERT INTO users (id, email, password_hash, created_at)
+            VALUES ($1, $2, $3, NOW())
+        `, [userId, email, passwordHash]);
         
-        try {
-            // Crea utente
-            await db.query(`
-                INSERT INTO users (id, email, password_hash, created_at)
-                VALUES ($1, $2, $3, NOW())
-            `, [userId, email, passwordHash]);
-            
-            // Crea compagnia associata
-            const companyId = crypto.randomUUID();
-            await db.query(`
-                INSERT INTO companies (id, name, money, reputation, founded, base_airport, user_id)
-                VALUES ($1, $2, $3, $4, NOW(), $5, $6)
-            `, [companyId, companyName, 1000000, 50, null, userId]);
-            
-            // Commit transazione
-            await db.query('COMMIT');
-            
-            console.log('✅ Utente registrato nel database:', email, 'con compagnia:', companyName);
-            
-            res.json({
-                success: true,
-                message: 'Registrazione completata con successo!',
-                data: {
-                    userId: userId,
-                    companyId: companyId,
-                    email: email,
-                    companyName: companyName
-                }
-            });
-            
-        } catch (innerError) {
-            await db.query('ROLLBACK');
-            throw innerError;
-        }
+        console.log('✅ Utente registrato nel database:', email);
+        
+        res.json({
+            success: true,
+            message: 'Registrazione completata con successo!',
+            data: {
+                userId: userId,
+                email: email
+            }
+        });
         
     } catch (error) {
         console.error('Errore registrazione utente:', error);
@@ -104,11 +83,10 @@ router.post('/login', async (req, res) => {
         // Hash password per confronto
         const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
         
-        // Cerca utente nel database
+        // Cerca utente nel database (senza compagnia per ora)
         const userResult = await db.query(`
-            SELECT u.*, c.id as company_id, c.name as company_name, c.money, c.reputation
+            SELECT u.id, u.email, u.created_at, u.last_login
             FROM users u
-            LEFT JOIN companies c ON u.id = c.user_id
             WHERE u.email = $1 AND u.password_hash = $2
         `, [email, passwordHash]);
         
@@ -135,11 +113,8 @@ router.post('/login', async (req, res) => {
             data: {
                 userId: user.id,
                 email: user.email,
-                companyId: user.company_id,
-                companyName: user.company_name,
-                money: user.money,
-                reputation: user.reputation,
-                lastLogin: user.last_login
+                createdAt: user.created_at,
+                lastLogin: new Date().toISOString() // Appena aggiornato
             }
         });
         

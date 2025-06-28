@@ -125,12 +125,11 @@ function handleRegister(e) {
     
     const formData = new FormData(e.target);
     const email = formData.get('email').trim();
-    const companyName = formData.get('companyName').trim();
     const password = formData.get('password');
     const confirmPassword = formData.get('confirmPassword');
     
     // Validazione
-    if (!email || !companyName || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
         showMessage('Tutti i campi sono obbligatori', 'error');
         return;
     }
@@ -145,20 +144,15 @@ function handleRegister(e) {
         return;
     }
     
-    if (companyName.length < 3) {
-        showMessage('Il nome compagnia deve essere di almeno 3 caratteri', 'error');
-        return;
-    }
-    
     showLoading('Registrazione in corso...');
     
-    // Chiamata asincrona alla registrazione
-    authManager.register(email, password, companyName)
+    // Chiamata asincrona alla registrazione (solo email e password)
+    authManager.register(email, password)
         .then(result => {
             hideLoading();
             
             if (result.success) {
-                showMessage(result.message, 'success');
+                showMessage('Account creato con successo! Ora puoi accedere.', 'success');
                 setTimeout(function() {
                     switchToLogin();
                     // Pre-compila email nel form di login

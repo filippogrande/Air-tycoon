@@ -29,10 +29,10 @@ AuthManager.prototype.saveUsers = function() {
 };
 
 // Registra nuovo utente (SOLO SERVER - mai localStorage per auth)
-AuthManager.prototype.register = function(email, password, companyName) {
+AuthManager.prototype.register = function(email, password) {
     // Validazione input
-    if (!email || !password || !companyName) {
-        return Promise.reject(new Error('Email, password e nome compagnia sono obbligatori'));
+    if (!email || !password) {
+        return Promise.reject(new Error('Email e password sono obbligatori'));
     }
     
     if (password.length < 6) {
@@ -44,7 +44,7 @@ AuthManager.prototype.register = function(email, password, companyName) {
     }
     
     // SEMPRE al server - mai localStorage
-    return this._registerOnServer(email, password, companyName)
+    return this._registerOnServer(email, password)
         .then(serverResult => {
             if (serverResult.success) {
                 console.log('✅ Utente registrato su server:', email);
@@ -64,7 +64,7 @@ AuthManager.prototype.register = function(email, password, companyName) {
 };
 
 // Registrazione su server (asincrona)
-AuthManager.prototype._registerOnServer = function(email, password, companyName) {
+AuthManager.prototype._registerOnServer = function(email, password) {
     return fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -72,8 +72,7 @@ AuthManager.prototype._registerOnServer = function(email, password, companyName)
         },
         body: JSON.stringify({
             email: email,
-            password: password,
-            companyName: companyName
+            password: password
         })
     })
     .then(response => {
@@ -98,14 +97,11 @@ AuthManager.prototype.login = function(email, password) {
             if (serverResult.success) {
                 var userData = serverResult.data;
                 
-                // Imposta utente corrente
+                // Imposta utente corrente (senza dati compagnia)
                 this.currentUser = {
                     id: userData.userId,
                     email: userData.email,
-                    companyId: userData.companyId,
-                    companyName: userData.companyName,
-                    money: userData.money,
-                    reputation: userData.reputation,
+                    createdAt: userData.createdAt,
                     lastLogin: userData.lastLogin
                 };
                 

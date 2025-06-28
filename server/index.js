@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const db = require('./database');
+const { runPendingMigrations } = require('./auto-migrations');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/game');
 const fleetRoutes = require('./routes/fleet');
@@ -158,6 +159,12 @@ db.testConnection()
     .then(() => {
         console.log('✅ Connessione database stabilita');
         
+        // Esegui migrazioni automatiche
+        return runPendingMigrations();
+    })
+    .then(() => {
+        console.log('✅ Migrazioni database completate');
+        
         // Avvia server
         app.listen(PORT, () => {
             console.log(`🚀 Server Air Tycoon 2 avviato su porta ${PORT}`);
@@ -166,7 +173,7 @@ db.testConnection()
         });
     })
     .catch(err => {
-        console.error('❌ Errore connessione database:', err);
+        console.error('❌ Errore durante l\'avvio:', err);
         process.exit(1);
     });
 
