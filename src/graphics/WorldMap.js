@@ -112,45 +112,26 @@ WorldMap.prototype.initializeRouteUI = function() {
     }
 };
 
-// Carica aeroporti sulla mappa (DATABASE-FIRST con DataLoader)
+// Carica aeroporti sulla mappa (sempre dal backend)
 WorldMap.prototype.loadAirports = function() {
-    console.log('✈️ Caricamento aeroporti sulla mappa con DataLoader...');
-    
-    // Verifica che DataLoader sia disponibile
-    if (!window.DataLoader) {
-        console.error('❌ DataLoader non disponibile, uso fallback statico');
-        return this._loadAirportsStaticFallback();
-    }
-    
-    // Carica aeroporti con DataLoader (asincrono)
-    DataLoader.loadAirports()
+    console.log('✈️ Caricamento aeroporti dalla API backend...');
+    fetch('/api/airports?limit=2000')
+        .then(res => res.json())
         .then(airports => {
-            console.log('📊 Aeroporti caricati:', airports.length);
-            
-            if (airports.length === 0) {
-                console.warn('⚠️ Nessun aeroporto nei dati');
+            if (!Array.isArray(airports) || airports.length === 0) {
+                console.warn('⚠️ Nessun aeroporto ricevuto dal backend');
                 return;
             }
-            
             this._renderAirportsOnMap(airports);
         })
         .catch(error => {
-            console.error('❌ Errore caricamento aeroporti:', error);
-            this._loadAirportsStaticFallback();
+            console.error('❌ Errore caricamento aeroporti dal backend:', error);
         });
 };
 
-// Fallback statico per aeroporti
+// Fallback statico rimosso: ora sempre da backend
 WorldMap.prototype._loadAirportsStaticFallback = function() {
-    console.log('💾 Fallback: caricamento aeroporti statici');
-    
-    if (!AirportData || !AirportData.airports) {
-        console.error('❌ Dati aeroporti statici non disponibili');
-        return;
-    }
-    
-    var airports = AirportData.airports;
-    this._renderAirportsOnMap(airports);
+    console.error('❌ Fallback statico aeroporti disabilitato: usa solo backend');
 };
 
 // Renderizza aeroporti sulla mappa
