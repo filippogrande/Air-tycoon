@@ -14,14 +14,19 @@ window.SaveLoad = {
     
     // Inizializza il sistema di salvataggio con l'ID della compagnia
     initialize: function(companyId, forceLocalStorageOnly = false) {
+        // Se l'id non è un UUID valido, fallback solo localStorage
+        if (!companyId || /^company_/.test(companyId)) {
+            this._companyId = null;
+            this._useDatabase = false;
+            console.warn('⚠️ ID compagnia non valido per il database, uso solo localStorage:', companyId);
+            return;
+        }
         this._companyId = companyId;
-        
         if (forceLocalStorageOnly) {
             this._useDatabase = false;
             console.log('🔧 SaveLoad inizializzato in modalità solo localStorage');
             return;
         }
-        
         this._useDatabase = true;
         console.log('🔧 SaveLoad inizializzato con compagnia ID:', companyId);
         this._testDatabaseConnection();

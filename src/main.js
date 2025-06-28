@@ -35,7 +35,6 @@ let game;
 // Inizializzazione del gioco quando la pagina è caricata
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🛫 Air Tycoon 2 Clone - Avvio in corso...');
-    
     // Aspetta che Leaflet sia caricato
     function waitForLeaflet(callback) {
         if (typeof L !== 'undefined') {
@@ -48,12 +47,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     waitForLeaflet(function() {
         console.log('✅ Leaflet caricato');
-        initializeGame();
+        // Recupera il companyId UUID dalla variabile globale (impostata da game-select.js)
+        const companyId = window.selectedCompanyId;
+        if (!companyId) {
+            showError('Errore: companyId non trovato. Seleziona una compagnia valida dalla schermata di selezione partita.');
+            return;
+        }
+        initializeGame(companyId);
     });
 });
 
-function initializeGame() {
-    
+function initializeGame(companyId) {
     // Debug: verifica che tutte le classi siano caricate
     const requiredClasses = [
         'GameState', 'Aircraft', 'Airport', 'Route', 
@@ -61,32 +65,30 @@ function initializeGame() {
         'UIManager', 'WorldMap', 'AircraftData', 'AirportData',
         'SaveLoad', 'Game'
     ];
-    
     const missingClasses = requiredClasses.filter(className => !window[className]);
     if (missingClasses.length > 0) {
         console.error('❌ Classi mancanti:', missingClasses);
         showError(`Errore: classi non caricate: ${missingClasses.join(', ')}`);
         return;
     }
-    
     console.log('✅ Tutte le classi sono caricate');
-    
     // Verifica compatibilità browser
     if (!checkBrowserCompatibility()) {
         showError('Il tuo browser non supporta tutte le funzionalità richieste dal gioco.');
         return;
     }
-    
     console.log('✅ Browser compatibile');
-    
+    // Verifica presenza companyId
+    if (!companyId) {
+        showError('Errore: companyId mancante. Impossibile avviare il gioco senza un identificativo compagnia valido.');
+        return;
+    }
     // Inizializza il gioco
     try {
         console.log('🎮 Creazione istanza Game...');
-        game = new Game();
-        
+        game = new Game(companyId);
         // Rendi il gioco disponibile globalmente per l'UI
         window.game = game;
-        
         console.log('✅ Game creato');
         
         // Gestione errori globali

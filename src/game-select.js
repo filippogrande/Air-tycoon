@@ -518,6 +518,12 @@ async function syncGameWithServer(saveName, gameData) {
             save_name: saveName,
             game_data: gameData
         };
+        // Aggiorna localStorage per retrocompatibilità (legacy)
+        localStorage.setItem('air-tycoon-company-id', companyData.data.id);
+        // Avvia il gioco passando l'UUID corretto
+        if (typeof initializeGame === 'function') {
+            initializeGame(companyData.data.id);
+        }
         
         console.log('💾 Salvataggio gioco sul server...', {
             company_id: savePayload.company_id,
@@ -584,10 +590,26 @@ function loadSave(saveKey) {
 
 function startGame(saveKey) {
     console.log('🎮 Avvio gioco con salvataggio:', saveKey);
-    
     // Salva il salvataggio corrente nel sessionStorage per il gioco
     sessionStorage.setItem('currentSave', saveKey);
-    
+    // Recupera il companyId UUID dal salvataggio
+    const saves = authManager.getUserSaves();
+    const save = saves[saveKey];
+    let companyId = null;
+    if (save && save.data && save.data.company && save.data.company.id) {
+        companyId = save.data.company.id;
+    } else if (save && save.data && save.data.company_id) {
+        companyId = save.data.company_id;
+    } else if (save && save.company_id) {
+        companyId = save.company_id;
+    }
+    if (!companyId) {
+        showToast('Errore: companyId non trovato nel salvataggio selezionato', 'error');
+        return;
+    }
+    // Propaga il companyId UUID per il main.js
+    window.selectedCompanyId = companyId;
+    sessionStorage.setItem('selectedCompanyId', companyId);
     // Reindirizza al gioco
     window.location.href = 'index.html';
 }

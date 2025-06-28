@@ -72,10 +72,11 @@ GameTime.prototype.formatTime = function() {
 };
 
 // Ora definiamo GameState
-function GameState() {
-    // Genera o recupera l'ID della compagnia
-    this.companyId = this._getOrCreateCompanyId();
-    
+function GameState(companyId) {
+    if (!companyId) {
+        throw new Error('GameState richiede un companyId UUID valido!');
+    }
+    this.companyId = companyId;
     this.company = {
         id: this.companyId,
         name: "Air Express",
@@ -84,12 +85,10 @@ function GameState() {
         founded: new Date(),
         baseAirport: null
     };
-    
     // Inizializza il sistema di salvataggio con l'ID della compagnia
     if (typeof SaveLoad !== 'undefined' && SaveLoad.initialize) {
         SaveLoad.initialize(this.companyId);
     }
-    
     this.gameTime = new GameTime();
     this.fleet = []; // Array di aeromobili
     this.routes = []; // Array di rotte
@@ -149,14 +148,12 @@ GameState.prototype.toSaveData = function() {
 
 GameState.prototype.loadFromData = function(data) {
     try {
-        // Carica o genera ID compagnia
+        // Carica solo se companyId presente
         if (data.companyId) {
             this.companyId = data.companyId;
-            // Salva l'ID nel localStorage per persistenza
             localStorage.setItem('air-tycoon-company-id', this.companyId);
         } else {
-            // Se non c'è ID nel salvataggio, usa quello esistente o genera nuovo
-            this.companyId = this._getOrCreateCompanyId();
+            throw new Error('Il salvataggio non contiene un companyId valido!');
         }
         
         // Carica dati compagnia
@@ -319,28 +316,6 @@ GameState.prototype.spendMoney = function(amount) {
 GameState.prototype.earnMoney = function(amount) {
     this.company.money += amount;
     this.money = this.company.money;
-};
-
-// Metodo per ottenere o creare l'ID della compagnia
-GameState.prototype._getOrCreateCompanyId = function() {
-    try {
-        // Prova a recuperare l'ID esistente dal localStorage
-        var existingId = localStorage.getItem('air-tycoon-company-id');
-        if (existingId) {
-            console.log('🏢 ID compagnia esistente:', existingId);
-            return existingId;
-        }
-        
-        // Se non esiste, genera un nuovo ID
-        var newId = 'company_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('air-tycoon-company-id', newId);
-        console.log('🏢 Nuovo ID compagnia generato:', newId);
-        return newId;
-    } catch (error) {
-        console.error('❌ Errore gestione ID compagnia:', error);
-        // Fallback ID temporaneo
-        return 'company_temp_' + Date.now();
-    }
 };
 
 // Rendi disponibili globalmente
