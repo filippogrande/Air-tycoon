@@ -308,12 +308,34 @@
         // Lista delle tabelle/categorie da visualizzare
         const DATA_CATEGORIES = {
             localStorage: [
-                'userSaves', 'userData', 'authData', 'gameState', 'settings'
+                'userSaves', 'userData', 'authData', 'gameState', 'allLocalStorage'
             ],
             server: [
                 'users', 'companies', 'game_saves', 'airports', 'fleet', 'routes', 
-                'financial_records', 'user_preferences'
+                'financial_records', 'user_preferences', 'migration_history'
             ]
+        };
+
+        // Descrizioni delle categorie
+        const CATEGORY_DESCRIPTIONS = {
+            localStorage: {
+                userSaves: 'Salvataggi gioco locali (equivalente a game_saves sul server)',
+                userData: 'Dati utente corrente autenticato',
+                authData: 'Token e credenziali di autenticazione',
+                gameState: 'Stato del gioco attualmente caricato',
+                allLocalStorage: 'Tutte le chiavi localStorage di Air Tycoon'
+            },
+            server: {
+                users: 'Utenti registrati (email, username, password hash)',
+                companies: 'Compagnie aeree create (dati operativi live)',
+                game_saves: 'Salvataggi completi (JSON con tutto lo stato)',
+                airports: 'Database aeroporti mondiali',
+                fleet: 'Aeromobili acquistati dalle compagnie',
+                routes: 'Rotte aeree attive',
+                financial_records: 'Transazioni finanziarie',
+                user_preferences: 'Preferenze utente personalizzate',
+                migration_history: 'Cronologia migrazioni database'
+            }
         };
 
         // Inizializzazione
@@ -358,6 +380,10 @@
             categories.forEach((category, index) => {
                 const tab = document.createElement('div');
                 tab.className = 'table-tab';
+                
+                // Aggiungi descrizione tooltip
+                const description = CATEGORY_DESCRIPTIONS[currentDataSource]?.[category] || '';
+                tab.title = description;
                 tab.textContent = category;
                 tab.onclick = () => selectTable(category);
                 
@@ -442,7 +468,7 @@
                     }
                     return [];
                     
-                case 'settings':
+                case 'allLocalStorage':
                     const allLocalStorage = {};
                     for (let i = 0; i < localStorage.length; i++) {
                         const key = localStorage.key(i);

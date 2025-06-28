@@ -294,32 +294,63 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
         }
     };
     
-    // Salva il nuovo gioco localmente
-    const saveResult = authManager.saveGame(saveName, gameData);
-    
-    hideLoading();
-    
-    if (saveResult) {
-        // Sincronizza con il server se l'utente è autenticato
-        if (!currentUser.isGuest) {
-            syncGameWithServer(saveName, gameData).then(() => {
-                console.log('✅ Gioco sincronizzato con il server');
-            }).catch(error => {
-                console.warn('⚠️ Errore sincronizzazione server:', error);
-                // Non blocca il gioco, continua in modalità offline
-            });
-        }
-        
-        showToast('Nuovo gioco creato con successo!', 'success');
-        hideNewGameModal();
-        
-        // Ricarica i salvataggi e avvia il gioco
-        setTimeout(function() {
-            loadUserSaves();
-            startGame(saveName);
-        }, 1000);
+    // FLUSSO CORRETTO: Prima sincronizza con server, poi localStorage
+    if (!currentUser.isGuest) {
+        // Utente autenticato: sincronizza prima col server
+        syncGameWithServer(saveName, gameData).then((serverData) => {
+            console.log('✅ Gioco sincronizzato con il server');
+            
+            // Solo dopo il successo server, salva in localStorage
+            const saveResult = authManager.saveGame(saveName, gameData);
+            hideLoading();
+            
+            if (saveResult) {
+                showToast('Nuovo gioco creato e sincronizzato!', 'success');
+                hideNewGameModal();
+                
+                setTimeout(function() {
+                    loadUserSaves();
+                    startGame(saveName);
+                }, 1000);
+            } else {
+                showToast('Gioco creato sul server ma errore localStorage', 'warning');
+                hideNewGameModal();
+                setTimeout(() => startGame(saveName), 1000);
+            }
+            
+        }).catch(error => {
+            console.error('❌ Errore sincronizzazione server:', error);
+            hideLoading();
+            
+            // Fallback: salva solo in localStorage se il server fallisce
+            const saveResult = authManager.saveGame(saveName, gameData);
+            if (saveResult) {
+                showToast('Gioco creato offline (errore server)', 'warning');
+                hideNewGameModal();
+                setTimeout(function() {
+                    loadUserSaves();
+                    startGame(saveName);
+                }, 1000);
+            } else {
+                showToast('Errore durante la creazione del gioco', 'error');
+            }
+        });
     } else {
-        showToast('Errore durante la creazione del gioco', 'error');
+        // Utente guest: solo localStorage
+        const saveResult = authManager.saveGame(saveName, gameData);
+        hideLoading();
+        
+        if (saveResult) {
+            showToast('Nuovo gioco creato (modalità offline)!', 'success');
+            hideNewGameModal();
+            
+            setTimeout(function() {
+                loadUserSaves();
+                startGame(saveName);
+            }, 1000);
+        } else {
+            showToast('Errore durante la creazione del gioco', 'error');
+        }
     }
 }
 
@@ -328,55 +359,86 @@ async function syncGameWithServer(saveName, gameData) {
     try {
         const user = authManager.getCurrentUser();
         
+        if (!user || !user.id) {
+            throw new Error('Utente non valido per la sincronizzazione');
+        }
+        
+        console.log('🔄 Inizio sincronizzazione con server...', {
+            userId: user.id,
+            saveName: saveName,
+            companyName: gameData.company.name
+        });
+        
         // Prima crea o aggiorna la compagnia
+        const companyPayload = {
+            id: `${user.id}_${saveName}`, // ID univoco basato su user + save
+            name: gameData.company.name,
+            money: gameData.company.money,
+            reputation: gameData.company.reputation,
+            founded: gameData.gameTime.currentDate,
+            base_airport: gameData.homeAirport
+        };
+        
+        console.log('📊 Creazione compagnia sul server...', companyPayload);
+        
         const companyResponse = await fetch('/api/game/companies/create-or-update', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${user.token}`
+                'Authorization': `Bearer ${user.token || 'no-token'}`
             },
-            body: JSON.stringify({
-                id: `${user.id}_${saveName}`, // ID univoco basato su user + save
-                name: gameData.company.name,
-                money: gameData.company.money,
-                reputation: gameData.company.reputation,
-                founded: gameData.gameTime.currentDate,
-                base_airport: gameData.homeAirport
-            })
+            body: JSON.stringify(companyPayload)
         });
         
+        console.log('📊 Risposta server compagnia:', companyResponse.status, companyResponse.statusText);
+        
         if (!companyResponse.ok) {
-            throw new Error(`Errore creazione compagnia: ${companyResponse.status}`);
+            const errorData = await companyResponse.text();
+            throw new Error(`Errore creazione compagnia (${companyResponse.status}): ${errorData}`);
         }
         
         const companyData = await companyResponse.json();
-        console.log('✅ Compagnia creata/aggiornata:', companyData.data.name);
+        console.log('✅ Compagnia creata/aggiornata:', companyData.data?.name || 'Nome non disponibile');
         
         // Poi salva il gioco
+        const savePayload = {
+            company_id: companyData.data.id,
+            save_name: saveName,
+            game_data: gameData
+        };
+        
+        console.log('💾 Salvataggio gioco sul server...', {
+            company_id: savePayload.company_id,
+            save_name: savePayload.save_name
+        });
+        
         const saveResponse = await fetch('/api/game/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${user.token}`
+                'Authorization': `Bearer ${user.token || 'no-token'}`
             },
-            body: JSON.stringify({
-                company_id: companyData.data.id,
-                save_name: saveName,
-                game_data: gameData
-            })
+            body: JSON.stringify(savePayload)
         });
         
+        console.log('💾 Risposta server salvataggio:', saveResponse.status, saveResponse.statusText);
+        
         if (!saveResponse.ok) {
-            throw new Error(`Errore salvataggio: ${saveResponse.status}`);
+            const errorData = await saveResponse.text();
+            throw new Error(`Errore salvataggio (${saveResponse.status}): ${errorData}`);
         }
         
         const saveData = await saveResponse.json();
-        console.log('✅ Gioco salvato sul server:', saveData.data.save_name);
+        console.log('✅ Gioco salvato sul server:', saveData.data?.save_name || 'Nome non disponibile');
         
-        return saveData;
+        return {
+            company: companyData,
+            save: saveData
+        };
         
     } catch (error) {
         console.error('❌ Errore sincronizzazione server:', error);
+        console.error('Stack trace:', error.stack);
         throw error;
     }
 }
