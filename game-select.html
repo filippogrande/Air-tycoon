@@ -155,5 +155,19 @@
     <script src="src/utils/AuthManager.js"></script>
     <script src="src/data/SimpleData.js"></script>
     <script src="src/game-select.js"></script>
-</body>
+    <script>
+      // Aggiorna subito la lista hub di partenza in base allo scenario selezionato di default
+      document.addEventListener('DOMContentLoaded', function() {
+        var scenarioSelect = document.getElementById('scenario');
+        if (scenarioSelect) {
+          // Popola subito la lista aeroporti in base al valore selezionato
+          populateStartingAirports(scenarioSelect.value);
+          // Aggiorna la lista ogni volta che cambia scenario
+          scenarioSelect.addEventListener('change', function(e) {
+            populateStartingAirports(e.target.value);
+          });
+        }
+      });
+    </script>
+  </body>
 </html>
