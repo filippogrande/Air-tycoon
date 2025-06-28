@@ -13,7 +13,7 @@
 -- Creazione tabella preferenze utente per salvare impostazioni UI e gioco
 CREATE TABLE IF NOT EXISTS user_preferences (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     preference_key VARCHAR(255) NOT NULL,
     preference_value TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

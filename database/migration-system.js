@@ -158,13 +158,23 @@ class MigrationSystem {
         } catch (error) {
             await db.query('ROLLBACK');
             
-            // Registra l'errore
+            // Registra l'errore solo se non esiste già un record per questa versione
             const executionTime = Date.now() - startTime;
             const versionNumber = migration.version.split('_')[0];
-            await db.query(`
-                INSERT INTO ${this.tableName} (version, name, execution_time_ms, status)
-                VALUES ($1, $2, $3, 'failed')
-            `, [versionNumber, migration.filename, executionTime]);
+            
+            try {
+                await db.query(`
+                    INSERT INTO ${this.tableName} (version, name, execution_time_ms, status)
+                    VALUES ($1, $2, $3, 'failed')
+                    ON CONFLICT (version) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        execution_time_ms = EXCLUDED.execution_time_ms,
+                        status = 'failed',
+                        executed_at = CURRENT_TIMESTAMP
+                `, [versionNumber, migration.filename, executionTime]);
+            } catch (insertError) {
+                console.error(`⚠️ Errore registrazione fallimento migrazione: ${insertError.message}`);
+            }
             
             console.error(`❌ Migrazione ${migration.version} fallita:`, error.message);
             throw error;
