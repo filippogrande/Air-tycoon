@@ -91,9 +91,27 @@ class MigrationSystem {
         return crypto.createHash('sha256').update(content).digest('hex');
     }
 
+    // Rimuove l'ultima riga failed dalla migration_history (se presente)
+    async cleanupFailedMigration() {
+        try {
+            const res = await db.query(`
+                SELECT id FROM ${this.tableName} WHERE status = 'failed' ORDER BY executed_at DESC, id DESC LIMIT 1
+            `);
+            if (res.rows.length > 0) {
+                const failedId = res.rows[0].id;
+                await db.query(`DELETE FROM ${this.tableName} WHERE id = $1`, [failedId]);
+                console.log('🧹 Rimossa riga failed da migration_history (id=' + failedId + ')');
+            }
+        } catch (error) {
+            console.error('⚠️ Errore pulizia migration_history:', error.message);
+        }
+    }
+
     // Esegue tutte le migrazioni pendenti
     async runPendingMigrations() {
         await this.initialize();
+        // Pulizia automatica di eventuali migration failed
+        await this.cleanupFailedMigration();
         
         // Verifica schema base prima delle migrazioni
         const hasBaseSchema = await this.checkBaseSchema();
@@ -149,6 +167,12 @@ class MigrationSystem {
             await db.query(`
                 INSERT INTO ${this.tableName} (version, name, execution_time_ms, checksum, status)
                 VALUES ($1, $2, $3, $4, 'completed')
+                ON CONFLICT (version) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    execution_time_ms = EXCLUDED.execution_time_ms,
+                    checksum = EXCLUDED.checksum,
+                    status = 'completed',
+                    executed_at = CURRENT_TIMESTAMP
             `, [versionNumber, migration.filename, executionTime, checksum]);
             
             await db.query('COMMIT');
