@@ -193,6 +193,68 @@
             color: #6c757d;
             font-style: italic;
         }
+
+        .source-btn {
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+
+        .source-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .comparison-side {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-side h3 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4a90e2;
+            color: #2c3e50;
+        }
+
+        .diff-highlight {
+            background: #fff3cd !important;
+            border-left: 4px solid #ffc107;
+        }
+
+        .data-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .data-tab {
+            padding: 6px 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .data-tab:hover {
+            background: #e9ecef;
+        }
+
+        .data-tab.active {
+            background: #17a2b8;
+            color: white;
+            border-color: #17a2b8;
+        }
     </style>
 </head>
 <body>
@@ -202,6 +264,25 @@
             <div class="buttons">
                 <button class="btn btn-primary" onclick="refreshCurrentTable()">🔄 Aggiorna</button>
                 <a href="index.html" class="btn btn-secondary">← Torna al Gioco</a>
+            </div>
+        </div>
+
+        <!-- Selettore fonte dati -->
+        <div class="data-source-selector" style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                <span style="font-weight: 600; color: #2c3e50;">Fonte dati:</span>
+                <button id="source-localStorage" class="btn btn-primary source-btn active" onclick="switchDataSource('localStorage')">
+                    💾 LocalStorage
+                </button>
+                <button id="source-server" class="btn btn-secondary source-btn" onclick="switchDataSource('server')">
+                    🌐 Server Database
+                </button>
+                <button id="compare-btn" class="btn" style="background: #17a2b8; color: white;" onclick="showComparison()">
+                    🔍 Confronta
+                </button>
+            </div>
+            <div id="data-source-info" style="padding: 10px; background: #e3f2fd; border-radius: 5px; font-size: 14px;">
+                Visualizzando dati da: <strong>LocalStorage</strong>
             </div>
         </div>
 
@@ -218,55 +299,79 @@
         </div>
     </div>
 
+    <script src="src/utils/AuthManager.js"></script>
     <script>
         let currentTable = null;
-        let tables = [];
+        let currentDataSource = 'localStorage'; // 'localStorage' o 'server'
+        let authManager;
 
-        // Lista delle tabelle da visualizzare
-        const TABLES_TO_SHOW = [
-            'companies',
-            'game_saves',
-            'airports',
-            'fleet',
-            'routes',
-            'financial_records',
-            'airport_infrastructure',
-            'demand_data'
-        ];
+        // Lista delle tabelle/categorie da visualizzare
+        const DATA_CATEGORIES = {
+            localStorage: [
+                'userSaves', 'userData', 'authData', 'gameState', 'settings'
+            ],
+            server: [
+                'users', 'companies', 'game_saves', 'airports', 'fleet', 'routes', 
+                'financial_records', 'user_preferences'
+            ]
+        };
 
         // Inizializzazione
         document.addEventListener('DOMContentLoaded', function() {
-            loadTablesList();
+            authManager = new AuthManager();
+            loadDataCategories();
         });
 
-        // Carica la lista delle tabelle
-        async function loadTablesList() {
-            try {
-                // Crea le tab per le tabelle predefinite
-                const tabsContainer = document.getElementById('table-tabs');
-                tabsContainer.innerHTML = '';
-
-                TABLES_TO_SHOW.forEach((tableName, index) => {
-                    const tab = document.createElement('div');
-                    tab.className = 'table-tab';
-                    tab.textContent = tableName;
-                    tab.onclick = () => selectTable(tableName);
-                    
-                    if (index === 0) {
-                        tab.classList.add('active');
-                        currentTable = tableName;
-                    }
-                    
-                    tabsContainer.appendChild(tab);
-                });
-
-                // Carica la prima tabella
-                if (TABLES_TO_SHOW.length > 0) {
-                    loadTableData(TABLES_TO_SHOW[0]);
+        // Cambia fonte dati
+        function switchDataSource(source) {
+            currentDataSource = source;
+            
+            // Aggiorna UI
+            document.querySelectorAll('.source-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (source === 'localStorage') {
+                    btn.classList.remove('btn-primary', 'btn-secondary');
+                    btn.classList.add('btn-primary');
+                } else {
+                    btn.classList.remove('btn-primary', 'btn-secondary');
+                    btn.classList.add('btn-secondary');
                 }
+            });
+            
+            document.getElementById(`source-${source}`).classList.add('active');
+            
+            const infoText = source === 'localStorage' ? 'LocalStorage' : 'Server Database';
+            document.getElementById('data-source-info').innerHTML = 
+                `Visualizzando dati da: <strong>${infoText}</strong>`;
+            
+            // Ricarica le categorie
+            loadDataCategories();
+        }
 
-            } catch (error) {
-                showError('Errore nel caricamento delle tabelle: ' + error.message);
+        // Carica le categorie di dati
+        function loadDataCategories() {
+            const tabsContainer = document.getElementById('table-tabs');
+            tabsContainer.innerHTML = '';
+            
+            const categories = DATA_CATEGORIES[currentDataSource];
+            
+            categories.forEach((category, index) => {
+                const tab = document.createElement('div');
+                tab.className = 'table-tab';
+                tab.textContent = category;
+                tab.onclick = () => selectTable(category);
+                
+                if (index === 0) {
+                    tab.classList.add('active');
+                    currentTable = category;
+                }
+                
+                tabsContainer.appendChild(tab);
+            });
+
+            // Carica la prima categoria
+            if (categories.length > 0) {
+                loadTableData(categories[0]);
             }
         }
 
@@ -287,52 +392,218 @@
         // Carica i dati di una tabella
         async function loadTableData(tableName) {
             const container = document.getElementById('table-container');
-            container.innerHTML = '<div class="loading">Caricamento dati della tabella ' + tableName + '...</div>';
+            container.innerHTML = `<div class="loading">Caricamento dati: ${tableName} (${currentDataSource})...</div>`;
 
             try {
-                // Costruisci l'endpoint in base alla tabella
-                let endpoint = '';
-                switch(tableName) {
-                    case 'companies':
-                        endpoint = '/api/game/companies';
-                        break;
-                    case 'game_saves':
-                        endpoint = '/api/admin/tables/game_saves';
-                        break;
-                    case 'airports':
-                        endpoint = '/api/airports';
-                        break;
-                    case 'fleet':
-                        endpoint = '/api/admin/tables/fleet';
-                        break;
-                    case 'routes':
-                        endpoint = '/api/admin/tables/routes';
-                        break;
-                    case 'financial_records':
-                        endpoint = '/api/admin/tables/financial_records';
-                        break;
-                    case 'airport_infrastructure':
-                        endpoint = '/api/admin/tables/airport_infrastructure';
-                        break;
-                    case 'demand_data':
-                        endpoint = '/api/admin/tables/demand_data';
-                        break;
-                    default:
-                        endpoint = '/api/admin/tables/' + tableName;
-                }
-
-                const response = await fetch(endpoint);
-                const result = await response.json();
-
-                if (result.success) {
-                    displayTableData(tableName, result.data);
+                let data;
+                
+                if (currentDataSource === 'localStorage') {
+                    data = await loadLocalStorageData(tableName);
                 } else {
-                    throw new Error(result.error || 'Errore sconosciuto');
+                    data = await loadServerData(tableName);
                 }
+
+                displayTableData(tableName, data);
 
             } catch (error) {
-                showError('Errore nel caricamento della tabella ' + tableName + ': ' + error.message);
+                showError(`Errore nel caricamento di ${tableName} da ${currentDataSource}: ${error.message}`);
             }
+        }
+
+        // Carica dati da localStorage
+        async function loadLocalStorageData(category) {
+            const user = authManager.getCurrentUser();
+            
+            switch(category) {
+                case 'userSaves':
+                    const saves = authManager.getUserSaves();
+                    return Object.keys(saves).map(saveKey => ({
+                        saveKey: saveKey,
+                        companyName: saves[saveKey].data?.company?.name || 'N/A',
+                        homeAirport: saves[saveKey].data?.homeAirport || 'N/A',
+                        money: saves[saveKey].data?.company?.money || 0,
+                        reputation: saves[saveKey].data?.company?.reputation || 0,
+                        savedAt: saves[saveKey].savedAt,
+                        difficulty: saves[saveKey].data?.difficulty || 'N/A'
+                    }));
+                    
+                case 'userData':
+                    return user ? [user] : [];
+                    
+                case 'authData':
+                    const authData = localStorage.getItem('airTycoon_currentUser');
+                    return authData ? [JSON.parse(authData)] : [];
+                    
+                case 'gameState':
+                    const gameState = sessionStorage.getItem('currentSave');
+                    const saves2 = authManager.getUserSaves();
+                    if (gameState && saves2[gameState]) {
+                        return [saves2[gameState].data];
+                    }
+                    return [];
+                    
+                case 'settings':
+                    const allLocalStorage = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key.startsWith('airTycoon_')) {
+                            allLocalStorage[key] = localStorage.getItem(key);
+                        }
+                    }
+                    return Object.keys(allLocalStorage).map(key => ({
+                        key: key,
+                        value: allLocalStorage[key],
+                        size: (allLocalStorage[key].length / 1024).toFixed(2) + ' KB'
+                    }));
+                    
+                default:
+                    return [];
+            }
+        }
+
+        // Carica dati dal server
+        async function loadServerData(tableName) {
+            let endpoint = '';
+            
+            switch(tableName) {
+                case 'users':
+                    endpoint = '/api/admin/tables/users';
+                    break;
+                case 'companies':
+                    endpoint = '/api/game/companies';
+                    break;
+                case 'game_saves':
+                    endpoint = '/api/admin/tables/game_saves';
+                    break;
+                case 'airports':
+                    endpoint = '/api/airports';
+                    break;
+                case 'fleet':
+                    endpoint = '/api/admin/tables/fleet';
+                    break;
+                case 'routes':
+                    endpoint = '/api/admin/tables/routes';
+                    break;
+                case 'financial_records':
+                    endpoint = '/api/admin/tables/financial_records';
+                    break;
+                case 'user_preferences':
+                    endpoint = '/api/admin/tables/user_preferences';
+                    break;
+                default:
+                    endpoint = '/api/admin/tables/' + tableName;
+            }
+
+            const response = await fetch(endpoint);
+            const result = await response.json();
+
+            if (result.success) {
+                return result.data;
+            } else {
+                throw new Error(result.error || 'Errore sconosciuto');
+            }
+        }
+
+        // Mostra confronto side-by-side
+        async function showComparison() {
+            if (!currentTable) return;
+            
+            const container = document.getElementById('table-container');
+            container.innerHTML = '<div class="loading">Caricamento confronto...</div>';
+
+            try {
+                // Determina quale tabella confrontare
+                let localCategory = currentTable;
+                let serverTable = currentTable;
+                
+                // Mappatura per confronti sensati
+                if (currentDataSource === 'localStorage' && currentTable === 'userSaves') {
+                    serverTable = 'game_saves';
+                } else if (currentDataSource === 'server' && currentTable === 'game_saves') {
+                    localCategory = 'userSaves';
+                }
+
+                const [localData, serverData] = await Promise.all([
+                    loadLocalStorageData(localCategory).catch(() => []),
+                    loadServerData(serverTable).catch(() => [])
+                ]);
+
+                displayComparison(localCategory, serverTable, localData, serverData);
+
+            } catch (error) {
+                showError('Errore durante il confronto: ' + error.message);
+            }
+        }
+
+        // Visualizza confronto
+        function displayComparison(localCategory, serverTable, localData, serverData) {
+            const container = document.getElementById('table-container');
+            
+            let html = `
+                <div class="table-info">
+                    <strong>Confronto:</strong> ${localCategory} (localStorage) vs ${serverTable} (server)
+                </div>
+                <div class="comparison-container">
+                    <div class="comparison-side">
+                        <h3>💾 LocalStorage: ${localCategory}</h3>
+                        ${formatDataForComparison(localData, 'localStorage')}
+                    </div>
+                    <div class="comparison-side">
+                        <h3>🌐 Server: ${serverTable}</h3>
+                        ${formatDataForComparison(serverData, 'server')}
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Formatta dati per il confronto
+        function formatDataForComparison(data, source) {
+            if (!data || data.length === 0) {
+                return '<div class="no-data">Nessun dato</div>';
+            }
+            
+            const count = data.length;
+            const columns = Object.keys(data[0]);
+            
+            let html = `
+                <div style="font-size: 12px; color: #6c757d; margin-bottom: 10px;">
+                    ${count} record${count !== 1 ? 's' : ''}
+                </div>
+                <table style="font-size: 12px;">
+                    <thead>
+                        <tr>
+                            ${columns.slice(0, 4).map(col => `<th>${col}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.slice(0, 10).forEach(row => { // Mostra solo i primi 10 record
+                html += '<tr>';
+                columns.slice(0, 4).forEach(col => {
+                    let value = row[col];
+                    
+                    if (value === null || value === undefined) {
+                        value = '<em>null</em>';
+                    } else if (typeof value === 'object') {
+                        value = JSON.stringify(value).substring(0, 30) + '...';
+                    } else if (typeof value === 'string' && value.length > 30) {
+                        value = value.substring(0, 30) + '...';
+                    }
+                    
+                    html += `<td>${value}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            if (data.length > 10) {
+                html += `<tr><td colspan="${columns.slice(0, 4).length}"><em>... e altri ${data.length - 10} record</em></td></tr>`;
+            }
+
+            html += '</tbody></table>';
+            return html;
         }
 
         // Visualizza i dati della tabella
@@ -342,10 +613,10 @@
             if (!data || data.length === 0) {
                 container.innerHTML = `
                     <div class="table-info">
-                        <strong>Tabella:</strong> ${tableName}
+                        <strong>Categoria:</strong> ${tableName} (${currentDataSource})
                     </div>
                     <div class="no-data">
-                        Nessun dato presente nella tabella.
+                        Nessun dato presente.
                     </div>
                 `;
                 return;
@@ -356,7 +627,7 @@
 
             let html = `
                 <div class="table-info">
-                    <strong>Tabella:</strong> ${tableName} 
+                    <strong>Categoria:</strong> ${tableName} (${currentDataSource})
                     <span class="record-count">(${data.length} record${data.length !== 1 ? 's' : ''})</span>
                 </div>
                 <table>
@@ -375,11 +646,19 @@
                     
                     // Formatta valori speciali
                     if (value === null || value === undefined) {
-                        value = '<em>null</em>';
+                        value = '<em style="color: #6c757d;">null</em>';
                     } else if (typeof value === 'object') {
-                        value = JSON.stringify(value);
+                        const jsonStr = JSON.stringify(value, null, 2);
+                        if (jsonStr.length > 200) {
+                            value = `<details><summary>Oggetto (${Object.keys(value).length} proprietà)</summary><pre style="font-size: 11px; margin: 5px 0; white-space: pre-wrap;">${jsonStr}</pre></details>`;
+                        } else {
+                            value = `<code style="font-size: 11px; background: #f8f9fa; padding: 2px 4px; border-radius: 3px;">${jsonStr}</code>`;
+                        }
                     } else if (typeof value === 'string' && value.length > 100) {
-                        value = value.substring(0, 100) + '...';
+                        value = `<span title="${value}">${value.substring(0, 100)}...</span>`;
+                    } else if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/)) {
+                        // Formatta date ISO
+                        value = new Date(value).toLocaleString('it-IT');
                     }
                     
                     html += `<td>${value}</td>`;

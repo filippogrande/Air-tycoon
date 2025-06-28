@@ -9,6 +9,7 @@ router.get('/tables/:tableName', async (req, res) => {
         
         // Lista delle tabelle permesse per sicurezza
         const allowedTables = [
+            'users',
             'companies',
             'game_saves', 
             'fleet',
@@ -16,7 +17,9 @@ router.get('/tables/:tableName', async (req, res) => {
             'financial_records',
             'airport_infrastructure',
             'demand_data',
-            'airports'
+            'airports',
+            'user_preferences',
+            'migration_history'
         ];
         
         if (!allowedTables.includes(tableName)) {
