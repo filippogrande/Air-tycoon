@@ -21,7 +21,7 @@ INSERT INTO airports (name, iata_code, icao_code, city, country, latitude, longi
 -- Italia - Aeroporti Storici Chiusi (per realismo storico)
 ('Roma Urbe Airport', 'QRU', 'LIRU', 'Rome', 'Italy', 41.9519, 12.4994, 24, 'Europe/Rome', '1928-04-15', '1990-12-31', 1, 1100, 'small', 30, 40),
 ('Milano Bresso Airfield', 'MXB', 'LIMB', 'Milan', 'Italy', 45.5414, 9.2036, 140, 'Europe/Rome', '1912-05-01', '1985-10-15', 1, 900, 'campo_aviazione', 40, 20),
-('Napoli Capodichino (Storico)', 'NAX', 'LIRX', 'Naples', 'Italy', 40.8854, 14.2905, 90, 'Europe/Rome', '1910-01-01', '1995-06-30', 1, 1800, 'campo_aviazione', 35, 60),
+('Napoli Capodichino (Storico)', 'NAX', 'LIRY', 'Naples', 'Italy', 40.8854, 14.2905, 90, 'Europe/Rome', '1910-01-01', '1995-06-30', 1, 1800, 'campo_aviazione', 35, 60),
 
 -- Italia - Aeroporti Regionali Minori (attivi in epoche diverse)
 ('Catania Fontanarossa Airport', 'CTA', 'LICC', 'Catania', 'Italy', 37.4668, 15.0664, 11, 'Europe/Rome', '1924-05-15', NULL, 1, 2435, 'medium', 35, 85),
