@@ -8,11 +8,23 @@ window.SaveLoad = {
     _useDatabase: false,
     
     // Inizializza il sistema di salvataggio con l'ID della compagnia
-    initialize: function(companyId) {
+    initialize: function(companyId, forceLocalStorageOnly = false) {
         this._companyId = companyId;
+        
+        if (forceLocalStorageOnly) {
+            this._useDatabase = false;
+            console.log('🔧 SaveLoad inizializzato in modalità solo localStorage');
+            return;
+        }
+        
         this._useDatabase = true;
         console.log('🔧 SaveLoad inizializzato con compagnia ID:', companyId);
         this._testDatabaseConnection();
+        
+        // Dopo un piccolo delay, sincronizza la compagnia con il database
+        setTimeout(() => {
+            this._createOrUpdateCompanyInDatabase();
+        }, 1000);
     },
     
     // Test della connessione al database
@@ -23,14 +35,17 @@ window.SaveLoad = {
             .then(response => {
                 if (response.ok) {
                     console.log('🌐 Connessione database attiva');
+                    return true;
                 } else {
-                    console.warn('⚠️ Database non raggiungibile, uso solo localStorage');
+                    console.warn('⚠️ Database non raggiungibile (status:', response.status, '), uso solo localStorage');
                     this._useDatabase = false;
+                    return false;
                 }
             })
             .catch(error => {
                 console.warn('⚠️ Database non disponibile, uso solo localStorage:', error.message);
                 this._useDatabase = false;
+                return false;
             });
     },
     
@@ -50,7 +65,11 @@ window.SaveLoad = {
             
             // Salvataggio database (se disponibile)
             if (this._useDatabase && this._companyId) {
-                this._saveToDatabaseAsync(saveData, saveName);
+                // Prima sincronizza la compagnia, poi salva il gioco
+                this._createOrUpdateCompanyInDatabase();
+                setTimeout(() => {
+                    this._saveToDatabaseAsync(saveData, saveName);
+                }, 500); // Piccolo delay per permettere la sincronizzazione
             }
             
             return true;
@@ -62,30 +81,62 @@ window.SaveLoad = {
     
     // Salvataggio asincrono su database
     _saveToDatabaseAsync: function(saveData, saveName) {
+        // Verifica che i dati siano validi prima di inviarli
+        if (!this._companyId) {
+            console.warn('⚠️ ID compagnia mancante, skip salvataggio database');
+            return;
+        }
+        
+        // Prepara i dati per il database
+        const payload = {
+            company_id: this._companyId,
+            save_name: saveName,
+            game_data: saveData
+        };
+        
+        // Verifica che il payload sia serializzabile
+        try {
+            JSON.stringify(payload);
+        } catch (jsonError) {
+            console.error('❌ Errore serializzazione dati per database:', jsonError);
+            this._showSaveNotification('Salvato solo localmente (dati non serializzabili)', 'warning');
+            return;
+        }
+        
         fetch('/api/game/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                company_id: this._companyId,
-                save_name: saveName,
-                game_data: saveData
-            })
+            body: JSON.stringify(payload)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                // Log dell'errore HTTP
+                console.warn('⚠️ Errore HTTP salvataggio database:', response.status, response.statusText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(result => {
-            if (result.success) {
+            if (result && result.success) {
                 console.log('🌐 Gioco salvato su database');
                 this._showSaveNotification('Gioco salvato su database');
             } else {
-                console.warn('⚠️ Errore salvataggio database:', result.error);
+                console.warn('⚠️ Errore salvataggio database:', result ? result.error : 'Risposta non valida');
                 this._showSaveNotification('Salvato solo localmente (errore database)', 'warning');
+                this._useDatabase = false; // Disabilita database per questa sessione
             }
         })
         .catch(error => {
             console.warn('⚠️ Errore salvataggio database:', error.message);
             this._showSaveNotification('Salvato solo localmente (database non disponibile)', 'warning');
+            
+            // Se l'errore è un 500, disabilita temporaneamente il database
+            if (error.message.includes('500')) {
+                this._useDatabase = false;
+                console.warn('⚠️ Database disabilitato per questa sessione a causa di errori server');
+            }
         });
     },
     
@@ -227,6 +278,124 @@ window.SaveLoad = {
             console.error('❌ Errore durante auto-save triggered:', error);
         }
     },
+    
+    // Metodi di controllo per debug
+    enableDatabase: function() {
+        this._useDatabase = true;
+        console.log('🌐 Database riabilitato');
+        this._testDatabaseConnection();
+    },
+    
+    disableDatabase: function() {
+        this._useDatabase = false;
+        console.log('💾 Database disabilitato, solo localStorage');
+    },
+    
+    getDatabaseStatus: function() {
+        return {
+            enabled: this._useDatabase,
+            companyId: this._companyId
+        };
+    },
+    
+    // Crea o aggiorna la compagnia nel database
+    _createOrUpdateCompanyInDatabase: function() {
+        if (!this._useDatabase || !this._companyId) {
+            return;
+        }
+        
+        // Ottieni i dati della compagnia dal game state
+        var companyData = null;
+        if (window.game && window.game.state && window.game.state.company) {
+            companyData = window.game.state.company;
+        }
+        
+        if (!companyData) {
+            console.warn('⚠️ Dati compagnia non disponibili per sincronizzazione database');
+            return;
+        }
+        
+        var payload = {
+            id: this._companyId,
+            name: companyData.name || 'Air Express',
+            money: companyData.money || 1000000,
+            reputation: companyData.reputation || 50,
+            founded: companyData.founded ? companyData.founded.toISOString() : new Date().toISOString(),
+            base_airport: companyData.baseAirport || null
+        };
+        
+        fetch('/api/game/companies/create-or-update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result && result.success) {
+                console.log('🏢 Compagnia sincronizzata con database:', result.data.name);
+            } else {
+                console.warn('⚠️ Errore sincronizzazione compagnia:', result ? result.error : 'Risposta non valida');
+            }
+        })
+        .catch(error => {
+            console.warn('⚠️ Errore sincronizzazione compagnia database:', error.message);
+        });
+    },
 };
 
 console.log('✅ SaveLoad avanzato caricato');
+
+// Comandi debug per la console del browser
+window.SaveLoadDebug = {
+    status: function() {
+        console.log('📊 Stato SaveLoad:', SaveLoad.getDatabaseStatus());
+        console.log('💾 localStorage disponibile:', SaveLoad.hasSaveData());
+        console.log('🏢 Company ID:', SaveLoad._companyId);
+    },
+    
+    enableDatabase: function() {
+        SaveLoad.enableDatabase();
+    },
+    
+    disableDatabase: function() {
+        SaveLoad.disableDatabase();
+    },
+    
+    testSave: function() {
+        if (window.game) {
+            console.log('🧪 Test salvataggio...');
+            var result = window.game.saveGame();
+            console.log('🧪 Risultato:', result);
+        } else {
+            console.log('❌ Game non disponibile');
+        }
+    },
+    
+    clearLocalStorage: function() {
+        if (confirm('Vuoi cancellare tutti i dati localStorage del gioco?')) {
+            localStorage.removeItem(SaveLoad.SAVE_KEY);
+            localStorage.removeItem('air-tycoon-company-id');
+            console.log('🗑️ localStorage pulito');
+        }
+    },
+    
+    syncCompanyToDatabase: function() {
+        console.log('🔄 Forzando sincronizzazione compagnia...');
+        SaveLoad._createOrUpdateCompanyInDatabase();
+    }
+};
+
+console.log('🔧 Comandi debug disponibili in SaveLoadDebug:');
+console.log('  SaveLoadDebug.status() - Mostra stato sistema');
+console.log('  SaveLoadDebug.enableDatabase() - Riabilita database');
+console.log('  SaveLoadDebug.disableDatabase() - Disabilita database');
+console.log('  SaveLoadDebug.testSave() - Test salvataggio');
+console.log('  SaveLoadDebug.clearLocalStorage() - Pulisci localStorage');
+console.log('  SaveLoadDebug.syncCompanyToDatabase() - Forza sincronizzazione compagnia');
