@@ -75,9 +75,9 @@
                     
                     <div class="input-group">
                         <label for="starting-airport">🏢 Hub di Partenza</label>
-                        <select id="starting-airport" name="startingAirport" required>
-                            <option value="">Seleziona hub di partenza...</option>
-                        </select>
+                        <select id="starting-airport" name="startingAirport" required style="display:none;"></select>
+                        <div id="selected-hub-summary" class="selected-hub-summary">Nessun hub selezionato</div>
+                        <button type="button" id="open-hub-modal-btn" class="action-btn secondary">🌍 Scegli Hub di Partenza</button>
                         <small class="input-help">Scegli tra i principali aeroporti internazionali. Il tuo primo hub sarà gratuito e completamente attrezzato</small>
                     </div>
                     
@@ -359,6 +359,34 @@
       openSelectHubModal(scenario);
     }
   });
+  // Aggiorna il riassunto hub selezionato
+  function updateSelectedHubSummary() {
+    const val = document.getElementById('starting-airport').value;
+    const summary = document.getElementById('selected-hub-summary');
+    if (!val) {
+      summary.textContent = 'Nessun hub selezionato';
+      return;
+    }
+    // Recupera info aeroporto selezionato (dal select della modale)
+    const airportSel = document.getElementById('airport-select');
+    const opt = Array.from(airportSel.options).find(o => o.value === val);
+    if (opt) {
+      summary.innerHTML = `Hub selezionato: <b>${opt.textContent}</b>`;
+    } else {
+      summary.textContent = `Hub selezionato: ${val}`;
+    }
+  }
+  document.getElementById('starting-airport').addEventListener('change', updateSelectedHubSummary);
+  document.getElementById('open-hub-modal-btn').addEventListener('click', function() {
+    const scenario = document.getElementById('scenario').value;
+    openSelectHubModal(scenario);
+  });
+  // Aggiorna riassunto ogni volta che si conferma un hub
+  document.getElementById('select-hub-form').addEventListener('submit', function() {
+    updateSelectedHubSummary();
+  });
+  // Inizializza riassunto all'avvio
+  document.addEventListener('DOMContentLoaded', updateSelectedHubSummary);
 </script>
   </body>
 </html>
