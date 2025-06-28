@@ -162,31 +162,39 @@ router.post('/companies/create-or-update', async (req, res) => {
     try {
         const { id, name, money, reputation, founded, base_airport } = req.body;
         
-        if (!id || !name) {
+        if (!name) {
             return res.status(400).json({
                 success: false,
-                error: 'ID and name are required'
+                error: 'Name is required'
             });
         }
-        
-        // Prova prima a fare un update, se non esiste lo crea
-        const result = await db.query(`
-            INSERT INTO companies (id, name, money, reputation, founded, base_airport, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ON CONFLICT (id) 
-            DO UPDATE SET 
-                name = EXCLUDED.name,
-                money = EXCLUDED.money,
-                reputation = EXCLUDED.reputation,
-                base_airport = EXCLUDED.base_airport,
-                updated_at = CURRENT_TIMESTAMP
-            RETURNING *
-        `, [id, name, money || 1000000, reputation || 50, founded || new Date().toISOString(), base_airport]);
-        
+        let result;
+        if (!id) {
+            // Crea nuova compagnia con id generato dal DB
+            result = await db.query(`
+                INSERT INTO companies (name, money, reputation, founded, base_airport, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING *
+            `, [name, money || 1000000, reputation || 50, founded || new Date().toISOString(), base_airport]);
+        } else {
+            // Aggiorna compagnia esistente
+            result = await db.query(`
+                INSERT INTO companies (id, name, money, reputation, founded, base_airport, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT (id) 
+                DO UPDATE SET 
+                    name = EXCLUDED.name,
+                    money = EXCLUDED.money,
+                    reputation = EXCLUDED.reputation,
+                    base_airport = EXCLUDED.base_airport,
+                    updated_at = CURRENT_TIMESTAMP
+                RETURNING *
+            `, [id, name, money || 1000000, reputation || 50, founded || new Date().toISOString(), base_airport]);
+        }
         res.json({
             success: true,
             data: result.rows[0],
-            action: result.rows[0].created_at === result.rows[0].updated_at ? 'created' : 'updated'
+            action: !id ? 'created' : (result.rows[0].created_at === result.rows[0].updated_at ? 'created' : 'updated')
         });
         
     } catch (error) {
