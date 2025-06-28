@@ -50,7 +50,29 @@ async function saveSeedHash(client, fileName, fileHash) {
 
 async function runSqlFile(client, filePath) {
   const sql = fs.readFileSync(filePath, 'utf8');
-  await client.query(sql);
+  // Divide in statement (grezzo, ma funziona per la maggior parte dei casi)
+  const statements = sql
+    .split(/;\s*\n/)
+    .map(s => s.trim())
+    .filter(s => s && !s.startsWith('--'));
+
+  let totalChanged = 0;
+  for (const stmt of statements) {
+    try {
+      const res = await client.query(stmt);
+      // res.rowCount è definito solo per INSERT/UPDATE/DELETE
+      if (typeof res.rowCount === 'number') {
+        totalChanged += res.rowCount;
+        console.log(`[seed] Query: ${stmt.substring(0, 60).replace(/\n/g, ' ')}... => ${res.rowCount} righe modificate`);
+      } else {
+        console.log(`[seed] Query: ${stmt.substring(0, 60).replace(/\n/g, ' ')}...`);
+      }
+    } catch (err) {
+      console.error(`[seed] Errore statement: ${stmt.substring(0, 60)}...`, err.message);
+      throw err;
+    }
+  }
+  return totalChanged;
 }
 
 async function main() {
@@ -64,9 +86,13 @@ async function main() {
     await ensureSeedHistoryTable(client);
     // Esegui SEMPRE il seeding, anche se l'hash non cambia
     console.log(`[seed] Applico sempre ${fileName} (forzato)...`);
-    await runSqlFile(client, SQL_FILE);
+    const changed = await runSqlFile(client, SQL_FILE);
     await saveSeedHash(client, fileName, fileHash);
-    console.log(`[seed] ${fileName} applicato con successo.`);
+    if (changed > 0) {
+      console.log(`[seed] ${fileName} applicato con successo. Righe modificate: ${changed}`);
+    } else {
+      console.log(`[seed] ${fileName} applicato. Nessuna modifica necessaria.`);
+    }
   } catch (err) {
     console.error('[seed] Errore durante il seeding:', err);
     process.exit(1);
