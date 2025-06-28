@@ -192,12 +192,9 @@ var RouteUIManager = {
             estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
         }
 
-        // Calcola tempo di volo come range
-        var flightTimeRange = this.calculateFlightTimeRange(origin, destination);
-
         // Aggiorna display
         document.getElementById('route-distance').textContent = Math.round(estimates.distance);
-        document.getElementById('flight-time').textContent = flightTimeRange.formatted;
+        document.getElementById('flight-time').textContent = estimates.flightTime.formatted;
         document.getElementById('estimated-passengers').textContent = estimates.displayPassengers.toLocaleString();
         document.getElementById('estimated-cargo').textContent = estimates.displayCargo.toLocaleString();
 
@@ -1663,139 +1660,9 @@ var RouteUIManager = {
         }
     },
 
-    // Calcola range tempo di volo basato sulla flotta disponibile
-    calculateFlightTimeRange: function(origin, destination) {
-        var distance = RouteCalculator.calculateDistance(
-            origin.lat, origin.lng, 
-            destination.lat, destination.lng
-        );
-        
-        // Se abbiamo FleetManager, usa gli aerei reali
-        if (typeof FleetManager !== 'undefined' && game.fleetManager) {
-            var availableAircraft = game.fleetManager.getAvailableAircraft();
-            
-            if (availableAircraft.length > 0) {
-                var speeds = availableAircraft.map(aircraft => aircraft.speed || 800);
-                var minSpeed = Math.min(...speeds);
-                var maxSpeed = Math.max(...speeds);
-                
-                var maxTime = RouteCalculator.calculateFlightTime(distance, minSpeed);
-                var minTime = RouteCalculator.calculateFlightTime(distance, maxSpeed);
-                
-                return {
-                    min: minTime,
-                    max: maxTime,
-                    formatted: minTime.formatted + ' - ' + maxTime.formatted,
-                    hasAircraft: true
-                };
-            }
-        }
-        
-        // Fallback: usa velocità standard (da aerei comuni)
-        var slowSpeed = 650;  // Aereo regionale lento
-        var fastSpeed = 950;  // Jet veloce
-        
-        var maxTime = RouteCalculator.calculateFlightTime(distance, slowSpeed);
-        var minTime = RouteCalculator.calculateFlightTime(distance, fastSpeed);
-        
-        return {
-            min: minTime,
-            max: maxTime,
-            formatted: minTime.formatted + ' - ' + maxTime.formatted,
-            hasAircraft: false
-        };
-    },
-    
-    // Calcola tempo di volo specifico per un aereo
-    calculateSpecificFlightTime: function(origin, destination, aircraft) {
-        var distance = RouteCalculator.calculateDistance(
-            origin.lat, origin.lng, 
-            destination.lat, destination.lng
-        );
-        
-        // Velocità di crociera dell'aereo
-        var cruiseSpeed = aircraft.speed || 800;
-        
-        // Aggiungi tempo per decollo/atterraggio (circa 15 min ciascuno)
-        var taxiAndClimbTime = 0.5; // 30 minuti totali in ore
-        var cruiseTime = distance / cruiseSpeed;
-        var totalTime = cruiseTime + taxiAndClimbTime;
-        
-        var hours = Math.floor(totalTime);
-        var minutes = Math.round((totalTime - hours) * 60);
-        
-        return {
-            hours: hours,
-            minutes: minutes,
-            formatted: hours + 'h ' + minutes + 'm',
-            cruiseTime: cruiseTime,
-            taxiTime: taxiAndClimbTime
-        };
-    },
+    // ...existing code...
+};
 
-    // Setup event listeners per selezione aereo dettagliata
-    setupDetailedAircraftSelection: function() {
-        var detailedSelector = document.getElementById('detailed-aircraft-selector');
-        var frequencySelector = document.getElementById('flight-frequency');
-        var detailedAnalysisBtn = document.getElementById('detailed-analysis-btn');
-        
-        if (!detailedSelector || !frequencySelector || !detailedAnalysisBtn) return;
-        
-        var self = this;
-        
-        // Event listener per selezione aereo
-        detailedSelector.addEventListener('change', function() {
-            self.updateDetailedFlightTime();
-            self.checkDetailedAnalysisRequirements();
-        });
-        
-        // Event listener per frequenza voli
-        frequencySelector.addEventListener('change', function() {
-            self.checkDetailedAnalysisRequirements();
-        });
-    },
-    
-    // Aggiorna tempo di volo quando si seleziona un aereo specifico
-    updateDetailedFlightTime: function() {
-        var detailedSelector = document.getElementById('detailed-aircraft-selector');
-        var flightTimeSpan = document.getElementById('config-flight-time');
-        
-        if (!detailedSelector || !flightTimeSpan) return;
-        
-        var selectedAircraftId = detailedSelector.value;
-        var origin = this.routeCreationState.originAirport;
-        var destination = this.routeCreationState.destinationAirport;
-        
-        if (!origin || !destination) return;
-        
-        if (selectedAircraftId && selectedAircraftId !== '') {
-            // Trova l'aereo selezionato
-            var aircraft = null;
-            if (game.fleetManager) {
-                var availableAircraft = game.fleetManager.getAvailableAircraft();
-                aircraft = availableAircraft.find(a => a.id === selectedAircraftId);
-            }
-            
-            if (aircraft) {
-                // Calcola tempo specifico per questo aereo
-                var specificTime = this.calculateSpecificFlightTime(origin, destination, aircraft);
-                flightTimeSpan.textContent = specificTime.formatted;
-                flightTimeSpan.title = 'Tempo specifico per ' + aircraft.name + ' (include decollo/atterraggio)';
-            }
-        } else {
-            // Torna al range
-            var flightTimeRange = this.calculateFlightTimeRange(origin, destination);
-            flightTimeSpan.textContent = flightTimeRange.formatted;
-            flightTimeSpan.title = 'Range basato su tutti gli aerei disponibili';
-        }
-    },
-    
-    // Controlla se i requisiti per l'analisi dettagliata sono soddisfatti
-    checkDetailedAnalysisRequirements: function() {
-        var detailedSelector = document.getElementById('detailed-aircraft-selector');
-        var frequencySelector = document.getElementById('flight-frequency');
-        var detailedAnalysisBtn = document.getElementById('detailed-analysis-btn');
-        var requirementNote = document.querySelector('.requirement-note');
-        
-        if (!detailedSelector || !frequencySelector || !detailedAnalysisBtn) return;
-        
+// Export per uso globale
+window.RouteUIManager = RouteUIManager;
+console.log('✅ RouteUIManager caricato');
