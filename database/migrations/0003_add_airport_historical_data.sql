@@ -28,7 +28,10 @@ BEGIN
     -- Companies
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='founded') THEN
         ALTER TABLE companies ADD COLUMN founded TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
-        UPDATE companies SET founded = founded_date WHERE founded_date IS NOT NULL;
+        -- Aggiorna solo se la colonna founded_date esiste
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='founded_date') THEN
+            UPDATE companies SET founded = founded_date WHERE founded_date IS NOT NULL;
+        END IF;
         COMMENT ON COLUMN companies.founded IS 'Data di fondazione della compagnia (formato compatibile con backend)';
     END IF;
 END $$;
