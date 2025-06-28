@@ -94,17 +94,9 @@ async function runSqlFile(client, filePath) {
 
   let totalChanged = 0;
   for (let stmt of statements) {
-    // Log dettagliato di ogni statement
+    // Logga sempre ogni statement, anche se non è INSERT/UPDATE/DELETE
     const preview = stmt.substring(0, 200).replace(/\n/g, ' ');
-    if (stmt.startsWith('INSERT INTO')) {
-      console.log(`[DEBUG] Eseguo INSERT: ${preview}`);
-    } else if (stmt.startsWith('UPDATE')) {
-      console.log(`[DEBUG] Eseguo UPDATE: ${preview}`);
-    } else if (stmt.startsWith('DELETE')) {
-      console.log(`[DEBUG] Eseguo DELETE: ${preview}`);
-    } else {
-      console.log(`[DEBUG] Eseguo statement: ${preview}`);
-    }
+    console.log(`[DEBUG] Statement: ${preview}`);
     // Trasforma INSERT in upsert se necessario
     if (stmt.startsWith('INSERT INTO')) {
       stmt = transformInsertToUpsert(stmt);
