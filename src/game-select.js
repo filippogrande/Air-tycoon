@@ -120,7 +120,7 @@ function createSaveCard(saveKey, save) {
             </div>
             <div class="stat-item">
                 <span class="stat-value">🏢 ${gameData.homeAirport || 'N/A'}</span>
-                <span class="stat-label">Base</span>
+                <span class="stat-label">Hub Principale</span>
             </div>
         </div>
         
@@ -140,22 +140,31 @@ function populateStartingAirports() {
         return;
     }
     
-    // Filtra solo aeroporti hub per la partenza
-    const hubAirports = window.AirportData.airports
-        .filter(airport => airport.size === 'hub')
-        .sort((a, b) => b.passengerTraffic - a.passengerTraffic)
-        .slice(0, 25); // I 25 hub più grandi
+    // Filtra solo aeroporti grandi per la partenza e ordina per traffico passeggeri
+    const largeAirports = window.AirportData.airports
+        .filter(airport => airport.size === 'large')
+        .sort((a, b) => (b.passengerTraffic || 0) - (a.passengerTraffic || 0));
     
     select.innerHTML = '<option value="">Seleziona hub di partenza...</option>';
     
-    hubAirports.forEach(airport => {
+    largeAirports.forEach(airport => {
         const option = document.createElement('option');
         option.value = airport.code;
+        
+        // Formato migliorato con traffico passeggeri
+        const trafficFormatted = airport.passengerTraffic 
+            ? `${(airport.passengerTraffic / 1000000).toFixed(1)}M pax/anno`
+            : '';
+        
         option.textContent = `${airport.name} (${airport.code}) - ${airport.city}, ${airport.country}`;
+        if (trafficFormatted) {
+            option.textContent += ` • ${trafficFormatted}`;
+        }
+        
         select.appendChild(option);
     });
     
-    console.log('🏢 Caricati', hubAirports.length, 'hub disponibili per la partenza');
+    console.log('🏢 Caricati', largeAirports.length, 'aeroporti grandi disponibili per la partenza');
 }
 
 function setupEventListeners() {
@@ -262,7 +271,8 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
         company: {
             name: companyName,
             money: settings.money,
-            reputation: settings.reputation
+            reputation: settings.reputation,
+            headquarters: startingAirport
         },
         homeAirport: startingAirport,
         difficulty: difficulty,
@@ -272,6 +282,7 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
         },
         fleet: [],
         routes: [],
+        hubs: [startingAirport], // Il primo hub è gratuito
         research: {
             completedResearch: [],
             currentResearch: null
@@ -283,12 +294,22 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
         }
     };
     
-    // Salva il nuovo gioco
+    // Salva il nuovo gioco localmente
     const saveResult = authManager.saveGame(saveName, gameData);
     
     hideLoading();
     
     if (saveResult) {
+        // Sincronizza con il server se l'utente è autenticato
+        if (!currentUser.isGuest) {
+            syncGameWithServer(saveName, gameData).then(() => {
+                console.log('✅ Gioco sincronizzato con il server');
+            }).catch(error => {
+                console.warn('⚠️ Errore sincronizzazione server:', error);
+                // Non blocca il gioco, continua in modalità offline
+            });
+        }
+        
         showToast('Nuovo gioco creato con successo!', 'success');
         hideNewGameModal();
         
@@ -299,6 +320,64 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
         }, 1000);
     } else {
         showToast('Errore durante la creazione del gioco', 'error');
+    }
+}
+
+// Funzione per sincronizzare il gioco con il server
+async function syncGameWithServer(saveName, gameData) {
+    try {
+        const user = authManager.getCurrentUser();
+        
+        // Prima crea o aggiorna la compagnia
+        const companyResponse = await fetch('/api/game/companies/create-or-update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({
+                id: `${user.id}_${saveName}`, // ID univoco basato su user + save
+                name: gameData.company.name,
+                money: gameData.company.money,
+                reputation: gameData.company.reputation,
+                founded: gameData.gameTime.currentDate,
+                base_airport: gameData.homeAirport
+            })
+        });
+        
+        if (!companyResponse.ok) {
+            throw new Error(`Errore creazione compagnia: ${companyResponse.status}`);
+        }
+        
+        const companyData = await companyResponse.json();
+        console.log('✅ Compagnia creata/aggiornata:', companyData.data.name);
+        
+        // Poi salva il gioco
+        const saveResponse = await fetch('/api/game/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({
+                company_id: companyData.data.id,
+                save_name: saveName,
+                game_data: gameData
+            })
+        });
+        
+        if (!saveResponse.ok) {
+            throw new Error(`Errore salvataggio: ${saveResponse.status}`);
+        }
+        
+        const saveData = await saveResponse.json();
+        console.log('✅ Gioco salvato sul server:', saveData.data.save_name);
+        
+        return saveData;
+        
+    } catch (error) {
+        console.error('❌ Errore sincronizzazione server:', error);
+        throw error;
     }
 }
 

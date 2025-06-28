@@ -62,6 +62,7 @@ function createAircraftData() {
 // Dati aeroporti (compatibile)
 function createAirportData() {
     return [
+        // Aeroporti grandi per hub di partenza
         {
             code: 'MXP',
             name: 'Milano Malpensa',
@@ -70,11 +71,12 @@ function createAirportData() {
             continent: 'Europa',
             latitude: 45.6306,
             longitude: 8.7281,
-            size: 'large',  // Aeroporto internazionale grande
+            size: 'large',
             runwayLength: 3920,
             maxAircraftSize: 'large',
             businessLevel: 85,
-            touristLevel: 75
+            touristLevel: 75,
+            passengerTraffic: 28846000
         },
         {
             code: 'FCO',
@@ -84,11 +86,12 @@ function createAirportData() {
             continent: 'Europa',
             latitude: 41.8003,
             longitude: 12.2389,
-            size: 'large',  // Aeroporto internazionale grande
+            size: 'large',
             runwayLength: 3900,
             maxAircraftSize: 'large',
             businessLevel: 80,
-            touristLevel: 90
+            touristLevel: 90,
+            passengerTraffic: 43532573
         },
         {
             code: 'LHR',
@@ -98,11 +101,12 @@ function createAirportData() {
             continent: 'Europa',
             latitude: 51.4706,
             longitude: -0.4619,
-            size: 'large',  // Aeroporto internazionale molto grande
+            size: 'large',
             runwayLength: 3900,
             maxAircraftSize: 'large',
             businessLevel: 95,
-            touristLevel: 70
+            touristLevel: 70,
+            passengerTraffic: 80884310
         },
         {
             code: 'CDG',
@@ -112,11 +116,12 @@ function createAirportData() {
             continent: 'Europa',
             latitude: 49.0097,
             longitude: 2.5479,
-            size: 'large',  // Aeroporto internazionale grande
+            size: 'large',
             runwayLength: 4200,
             maxAircraftSize: 'large',
             businessLevel: 90,
-            touristLevel: 80
+            touristLevel: 80,
+            passengerTraffic: 76150007
         },
         {
             code: 'JFK',
@@ -126,11 +131,117 @@ function createAirportData() {
             continent: 'Nord America',
             latitude: 40.6413,
             longitude: -73.7781,
-            size: 'large',  // Aeroporto internazionale molto grande
+            size: 'large',
             runwayLength: 4400,
             maxAircraftSize: 'large',
             businessLevel: 98,
-            touristLevel: 85
+            touristLevel: 85,
+            passengerTraffic: 62551253
+        },
+        {
+            code: 'FRA',
+            name: 'Frankfurt am Main',
+            city: 'Frankfurt',
+            country: 'Germany',
+            continent: 'Europa',
+            latitude: 50.0379,
+            longitude: 8.5622,
+            size: 'large',
+            runwayLength: 4000,
+            maxAircraftSize: 'large',
+            businessLevel: 92,
+            touristLevel: 65,
+            passengerTraffic: 70556072
+        },
+        {
+            code: 'AMS',
+            name: 'Amsterdam Schiphol',
+            city: 'Amsterdam',
+            country: 'Netherlands',
+            continent: 'Europa',
+            latitude: 52.3105,
+            longitude: 4.7683,
+            size: 'large',
+            runwayLength: 3800,
+            maxAircraftSize: 'large',
+            businessLevel: 88,
+            touristLevel: 78,
+            passengerTraffic: 71706999
+        },
+        {
+            code: 'MAD',
+            name: 'Madrid Barajas',
+            city: 'Madrid',
+            country: 'Spain',
+            continent: 'Europa',
+            latitude: 40.4839,
+            longitude: -3.5680,
+            size: 'large',
+            runwayLength: 4200,
+            maxAircraftSize: 'large',
+            businessLevel: 83,
+            touristLevel: 85,
+            passengerTraffic: 61734944
+        },
+        {
+            code: 'BCN',
+            name: 'Barcelona El Prat',
+            city: 'Barcelona',
+            country: 'Spain',
+            continent: 'Europa',
+            latitude: 41.2974,
+            longitude: 2.0833,
+            size: 'large',
+            runwayLength: 3500,
+            maxAircraftSize: 'large',
+            businessLevel: 78,
+            touristLevel: 92,
+            passengerTraffic: 52686314
+        },
+        {
+            code: 'MUC',
+            name: 'Munich Airport',
+            city: 'Munich',
+            country: 'Germany',
+            continent: 'Europa',
+            latitude: 48.3537,
+            longitude: 11.7750,
+            size: 'large',
+            runwayLength: 4000,
+            maxAircraftSize: 'large',
+            businessLevel: 87,
+            touristLevel: 75,
+            passengerTraffic: 47959885
+        },
+        {
+            code: 'ZUR',
+            name: 'Zurich Airport',
+            city: 'Zurich',
+            country: 'Switzerland',
+            continent: 'Europa',
+            latitude: 47.4647,
+            longitude: 8.5492,
+            size: 'large',
+            runwayLength: 3700,
+            maxAircraftSize: 'large',
+            businessLevel: 95,
+            touristLevel: 70,
+            passengerTraffic: 31100000
+        },
+        {
+            code: 'VIE',
+            name: 'Vienna International',
+            city: 'Vienna',
+            country: 'Austria',
+            continent: 'Europa',
+            latitude: 48.1103,
+            longitude: 16.5697,
+            size: 'large',
+            runwayLength: 3500,
+            maxAircraftSize: 'large',
+            businessLevel: 82,
+            touristLevel: 80,
+            passengerTraffic: 31661486
         },
         // Aeroporti medi per test icone
         {
