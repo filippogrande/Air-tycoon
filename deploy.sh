@@ -211,26 +211,63 @@ run_migrations() {
     log_success "Migrazioni completate"
 }
 
-# Verifica post-migrazione
+# Verifica post-migrazione completa
 verify_deployment() {
-    log_info "Verifica post-migrazione..."
+    log_info "Verifica post-migrazione completa..."
     
     # Test connessione
     test_connection
     
-    # Verifica integrità schema base
-    EXPECTED_TABLES=("companies" "airports" "routes" "flights" "aircraft" "company_hubs")
-    
-    for table in "${EXPECTED_TABLES[@]}"; do
-        if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1 FROM $table LIMIT 1;" &> /dev/null; then
-            log_success "Tabella $table OK"
+    # Esegui script di verifica completo
+    cd database
+    if node verify_migrations.js --env "$ENVIRONMENT" --check-performance; then
+        log_success "Verifica automatica completata con successo"
+    else
+        local exit_code=$?
+        cd ..
+        
+        if [[ $exit_code -eq 2 ]]; then
+            log_warning "Verifica completata con avvisi - controlla il report"
+            if [[ "$ENVIRONMENT" == "production" ]]; then
+                echo ""
+                log_warning "⚠️  PRODUZIONE: Trovati avvisi durante la verifica"
+                read -p "Continuare comunque? (scrivi 'CONTINUA' per procedere): " confirm
+                if [[ "$confirm" != "CONTINUA" ]]; then
+                    log_error "Deploy interrotto a causa degli avvisi"
+                    exit 1
+                fi
+            fi
         else
-            log_error "Problema con tabella $table"
+            log_error "Verifica fallita - controlla il report per dettagli"
+            exit 1
+        fi
+    fi
+    cd ..
+    
+    # Test aggiuntivi di integrità dati
+    log_info "Test integrità dati critici..."
+    
+    # Verifica che il sistema di migrazioni funzioni
+    if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT COUNT(*) FROM schema_migrations WHERE status = 'completed';" &> /dev/null; then
+        log_success "Sistema migrazioni funzionante"
+    else
+        log_error "Problema con sistema migrazioni"
+        exit 1
+    fi
+    
+    # Verifica funzioni critiche
+    CRITICAL_FUNCTIONS=("verify_database_integrity" "run_migration_tests" "create_safety_checkpoint")
+    
+    for func in "${CRITICAL_FUNCTIONS[@]}"; do
+        if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT ${func}();" &> /dev/null; then
+            log_success "Funzione $func OK"
+        else
+            log_error "Problema con funzione $func"
             exit 1
         fi
     done
     
-    log_success "Verifica completata con successo"
+    log_success "Verifica deployment completata con successo"
 }
 
 # Notifica completamento (se configurato)
