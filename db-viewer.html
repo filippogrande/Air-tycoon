@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizzatore Database - Air Tycoon</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4a90e2;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+        }
+
+        .header .buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .table-selector {
+            margin-bottom: 20px;
+        }
+
+        .table-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .table-tab {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .table-tab:hover {
+            background: #e9ecef;
+        }
+
+        .table-tab.active {
+            background: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: auto;
+            max-height: 70vh;
+        }
+
+        .table-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #17a2b8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+
+        .refresh-btn {
+            float: right;
+            margin-bottom: 10px;
+        }
+
+        .record-count {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ Visualizzatore Database</h1>
+            <div class="buttons">
+                <button class="btn btn-primary" onclick="refreshCurrentTable()">🔄 Aggiorna</button>
+                <a href="index.html" class="btn btn-secondary">← Torna al Gioco</a>
+            </div>
+        </div>
+
+        <div class="table-selector">
+            <div class="table-tabs" id="table-tabs">
+                <!-- Le tab delle tabelle verranno generate dinamicamente -->
+            </div>
+        </div>
+
+        <div class="table-container" id="table-container">
+            <div class="loading">
+                Caricamento tabelle database...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTable = null;
+        let tables = [];
+
+        // Lista delle tabelle da visualizzare
+        const TABLES_TO_SHOW = [
+            'companies',
+            'game_saves',
+            'airports',
+            'fleet',
+            'routes',
+            'financial_records',
+            'airport_infrastructure',
+            'demand_data'
+        ];
+
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTablesList();
+        });
+
+        // Carica la lista delle tabelle
+        async function loadTablesList() {
+            try {
+                // Crea le tab per le tabelle predefinite
+                const tabsContainer = document.getElementById('table-tabs');
+                tabsContainer.innerHTML = '';
+
+                TABLES_TO_SHOW.forEach((tableName, index) => {
+                    const tab = document.createElement('div');
+                    tab.className = 'table-tab';
+                    tab.textContent = tableName;
+                    tab.onclick = () => selectTable(tableName);
+                    
+                    if (index === 0) {
+                        tab.classList.add('active');
+                        currentTable = tableName;
+                    }
+                    
+                    tabsContainer.appendChild(tab);
+                });
+
+                // Carica la prima tabella
+                if (TABLES_TO_SHOW.length > 0) {
+                    loadTableData(TABLES_TO_SHOW[0]);
+                }
+
+            } catch (error) {
+                showError('Errore nel caricamento delle tabelle: ' + error.message);
+            }
+        }
+
+        // Seleziona una tabella
+        function selectTable(tableName) {
+            // Aggiorna le tab attive
+            document.querySelectorAll('.table-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.textContent === tableName) {
+                    tab.classList.add('active');
+                }
+            });
+
+            currentTable = tableName;
+            loadTableData(tableName);
+        }
+
+        // Carica i dati di una tabella
+        async function loadTableData(tableName) {
+            const container = document.getElementById('table-container');
+            container.innerHTML = '<div class="loading">Caricamento dati della tabella ' + tableName + '...</div>';
+
+            try {
+                // Costruisci l'endpoint in base alla tabella
+                let endpoint = '';
+                switch(tableName) {
+                    case 'companies':
+                        endpoint = '/api/game/companies';
+                        break;
+                    case 'game_saves':
+                        endpoint = '/api/admin/tables/game_saves';
+                        break;
+                    case 'airports':
+                        endpoint = '/api/airports';
+                        break;
+                    case 'fleet':
+                        endpoint = '/api/admin/tables/fleet';
+                        break;
+                    case 'routes':
+                        endpoint = '/api/admin/tables/routes';
+                        break;
+                    case 'financial_records':
+                        endpoint = '/api/admin/tables/financial_records';
+                        break;
+                    case 'airport_infrastructure':
+                        endpoint = '/api/admin/tables/airport_infrastructure';
+                        break;
+                    case 'demand_data':
+                        endpoint = '/api/admin/tables/demand_data';
+                        break;
+                    default:
+                        endpoint = '/api/admin/tables/' + tableName;
+                }
+
+                const response = await fetch(endpoint);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayTableData(tableName, result.data);
+                } else {
+                    throw new Error(result.error || 'Errore sconosciuto');
+                }
+
+            } catch (error) {
+                showError('Errore nel caricamento della tabella ' + tableName + ': ' + error.message);
+            }
+        }
+
+        // Visualizza i dati della tabella
+        function displayTableData(tableName, data) {
+            const container = document.getElementById('table-container');
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="table-info">
+                        <strong>Tabella:</strong> ${tableName}
+                    </div>
+                    <div class="no-data">
+                        Nessun dato presente nella tabella.
+                    </div>
+                `;
+                return;
+            }
+
+            // Ottieni le colonne dal primo record
+            const columns = Object.keys(data[0]);
+
+            let html = `
+                <div class="table-info">
+                    <strong>Tabella:</strong> ${tableName} 
+                    <span class="record-count">(${data.length} record${data.length !== 1 ? 's' : ''})</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            ${columns.map(col => `<th>${col}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(row => {
+                html += '<tr>';
+                columns.forEach(col => {
+                    let value = row[col];
+                    
+                    // Formatta valori speciali
+                    if (value === null || value === undefined) {
+                        value = '<em>null</em>';
+                    } else if (typeof value === 'object') {
+                        value = JSON.stringify(value);
+                    } else if (typeof value === 'string' && value.length > 100) {
+                        value = value.substring(0, 100) + '...';
+                    }
+                    
+                    html += `<td>${value}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Aggiorna la tabella corrente
+        function refreshCurrentTable() {
+            if (currentTable) {
+                loadTableData(currentTable);
+            }
+        }
+
+        // Mostra un errore
+        function showError(message) {
+            const container = document.getElementById('table-container');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Mostra un messaggio di successo
+        function showSuccess(message) {
+            const container = document.getElementById('table-container');
+            container.innerHTML = `<div class="success">${message}</div>`;
+        }
+    </script>
+</body>
+</html>

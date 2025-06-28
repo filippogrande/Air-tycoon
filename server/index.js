@@ -15,6 +15,7 @@ const routeRoutes = require('./routes/routes');
 const airportRoutes = require('./routes/airports');
 const financeRoutes = require('./routes/finance');
 const marketAnalysisRoutes = require('./routes/market-analysis');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -86,7 +87,8 @@ app.get('/api', (req, res) => {
             routes: '/api/routes/*',
             airports: '/api/airports/*',
             finance: '/api/finance/*',
-            marketAnalysis: '/api/market-analysis/*'
+            marketAnalysis: '/api/market-analysis/*',
+            admin: '/api/admin/*'
         },
         database: 'PostgreSQL Connected',
         docs: 'See README.md for full API documentation'
@@ -100,6 +102,7 @@ app.use('/api/routes', routeRoutes);
 app.use('/api/airports', airportRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/market-analysis', marketAnalysisRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Servire file statici del gioco dalla root del progetto
 app.use('/game', express.static(path.join(__dirname, '..')));

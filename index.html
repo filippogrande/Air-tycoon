@@ -220,6 +220,7 @@
                     <button class="settings-btn save" id="save-game-settings">Salva Partita</button>
                     <button class="settings-btn menu" id="back-to-menu">Torna al Menu</button>
                     <button class="settings-btn danger logout" id="logout-btn">Log Out</button>
+                    <button class="settings-btn" id="db-viewer-btn" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white;">🗄️ Visualizza Database</button>
                     <button class="settings-btn secondary back" id="back-to-game">Ritorna alla Partita</button>
                 </div>
             </div>
@@ -281,6 +282,7 @@
             const saveGameBtn = document.getElementById('save-game-settings');
             const backToMenuBtn = document.getElementById('back-to-menu');
             const logoutBtn = document.getElementById('logout-btn');
+            const dbViewerBtn = document.getElementById('db-viewer-btn');
             
             if (saveGameBtn) {
                 saveGameBtn.addEventListener('click', function() {
@@ -321,6 +323,14 @@
                         authManager.logout();
                         window.location.href = 'auth.html';
                     }
+                });
+            }
+            
+            if (dbViewerBtn) {
+                dbViewerBtn.addEventListener('click', function() {
+                    // Apri il visualizzatore database in una nuova finestra
+                    window.open('db-viewer.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+                    settingsOverlay.classList.remove('active');
                 });
             }
         }

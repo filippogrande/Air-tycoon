@@ -1539,3 +1539,10 @@ body {
     transform: none;
     box-shadow: none;
 }
+
+/* Stile specifico per il pulsante visualizzatore database */
+#db-viewer-btn:hover {
+    background: linear-gradient(135deg, #138496 0%, #117a8b 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+}
