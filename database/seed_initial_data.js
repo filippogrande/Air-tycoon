@@ -61,9 +61,9 @@ async function runSqlFile(client, filePath) {
   }
 
   const sql = fs.readFileSync(filePath, 'utf8');
-  // Divide in statement (grezzo, ma funziona per la maggior parte dei casi)
+  // Divide in statement (più robusto: split su ogni punto e virgola)
   const statements = sql
-    .split(/;\s*\n/)
+    .split(/;/)
     .map(s => s.trim())
     .filter(s => s && !s.startsWith('--'));
 
