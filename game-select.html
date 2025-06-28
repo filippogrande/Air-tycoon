@@ -156,18 +156,52 @@
     <script src="src/data/SimpleData.js"></script>
     <script src="src/game-select.js"></script>
     <script>
-      // Aggiorna subito la lista hub di partenza in base allo scenario selezionato di default
-      document.addEventListener('DOMContentLoaded', function() {
-        var scenarioSelect = document.getElementById('scenario');
-        if (scenarioSelect) {
-          // Popola subito la lista aeroporti in base al valore selezionato
-          populateStartingAirports(scenarioSelect.value);
-          // Aggiorna la lista ogni volta che cambia scenario
-          scenarioSelect.addEventListener('change', function(e) {
-            populateStartingAirports(e.target.value);
-          });
-        }
+  // Mappa scenario -> data di inizio
+  function getScenarioDate(scenario) {
+    switch (scenario) {
+      case 'aviation_dawn': return '1950-01-01';
+      case 'jet_age': return '1970-01-01';
+      case 'deregulation': return '1990-01-01';
+      case 'modern_era': return '2024-01-01';
+      default: return '1950-01-01';
+    }
+  }
+
+  async function populateStartingAirports(scenario) {
+    const scenarioDate = getScenarioDate(scenario);
+    const select = document.getElementById('starting-airport');
+    if (!select) return;
+    select.innerHTML = '<option value="">Caricamento hub disponibili...</option>';
+    try {
+      // Chiamata API al backend (adatta l'endpoint se necessario)
+      const res = await fetch(`/api/airports?size=large&before=${scenarioDate}`);
+      if (!res.ok) throw new Error('Errore fetch aeroporti');
+      const airports = await res.json();
+      select.innerHTML = '<option value="">Seleziona hub di partenza...</option>';
+      airports.forEach(a => {
+        const label = `${a.name} (${a.iata_code || a.code}) - ${a.city}, ${a.country}`;
+        const opt = document.createElement('option');
+        opt.value = a.iata_code || a.code;
+        opt.textContent = label;
+        select.appendChild(opt);
       });
-    </script>
+      if (airports.length === 0) {
+        select.innerHTML = '<option value="">Nessun hub disponibile per questo scenario</option>';
+      }
+    } catch (e) {
+      select.innerHTML = '<option value="">Errore nel caricamento aeroporti</option>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var scenarioSelect = document.getElementById('scenario');
+    if (scenarioSelect) {
+      populateStartingAirports(scenarioSelect.value);
+      scenarioSelect.addEventListener('change', function(e) {
+        populateStartingAirports(e.target.value);
+      });
+    }
+  });
+</script>
   </body>
 </html>
