@@ -20,6 +20,10 @@ INSERT INTO airports (name, iata_code, icao_code, city, country, latitude, longi
 ('Torino Caselle Airport', 'TRN', 'LIMF', 'Turin', 'Italy', 45.2008, 7.6492, 301, 'Europe/Rome', '1953-06-30', NULL, 1, 3300, 'medium', 55, 65),
 ('Bologna Guglielmo Marconi Airport', 'BLQ', 'LIPE', 'Bologna', 'Italy', 44.5354, 11.2887, 37, 'Europe/Rome', '1931-11-15', NULL, 1, 2800, 'medium', 75, 50),
 ('Palermo Falcone-Borsellino Airport', 'PMO', 'LICJ', 'Palermo', 'Italy', 38.1759, 13.0910, 14, 'Europe/Rome', '1960-01-10', NULL, 1, 3326, 'medium', 40, 90),
+('Torino Aeritalia Airport', 'LIMA', 'LIMA', 'Turin', 'Italy', 45.0850, 7.6050, 288, 'Europe/Rome', '1916-07-10', NULL, 1, 1500, 'small', 30, 40),
+('Campo di Marte Airport', 'QCM', 'LIRQ', 'Florence', 'Italy', 43.7800, 11.2700, 50, 'Europe/Rome', '1910-06-01', '1951-12-31', 1, 1200, 'small', 25, 35),
+('Guidonia Air Base', 'QGU', 'LIRG', 'Rome', 'Italy', 41.9931, 12.7406, 73, 'Europe/Rome', '1916-01-01', NULL, 1, 1800, 'small', 20, 20),
+('Ghedi Air Base', 'GDI', 'LIPL', 'Brescia', 'Italy', 45.4300, 10.2667, 92, 'Europe/Rome', '1931-01-01', NULL, 1, 2991, 'medium', 15, 10),
 
 -- Italia - Aeroporti Storici Chiusi (per realismo storico)
 ('Roma Urbe Airport', 'QRU', 'LIRU', 'Rome', 'Italy', 41.9519, 12.4994, 24, 'Europe/Rome', '1928-04-15', '1990-12-31', 1, 1100, 'small', 30, 40),
