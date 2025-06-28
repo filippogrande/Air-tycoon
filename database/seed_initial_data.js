@@ -57,11 +57,39 @@ async function runSqlFile(client, filePath) {
     .map(s => s.trim())
     .filter(s => s && !s.startsWith('--'));
 
+  // Mappa tabella => chiave unica (puoi estendere qui)
+  const upsertConfig = {
+    airports: 'iata_code',
+    companies: 'id', // Sostituisci con la chiave unica reale se diversa
+    // Aggiungi altre tabelle e chiavi se necessario
+  };
+
+  function transformInsertToUpsert(stmt) {
+    // Match base: INSERT INTO <table> (<fields>) VALUES (<values>)
+    const insertRegex = /^INSERT INTO ([a-zA-Z0-9_]+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i;
+    const match = stmt.match(insertRegex);
+    if (!match) return stmt;
+    const [_, table, fields, values] = match;
+    const key = upsertConfig[table];
+    if (!key) return stmt; // Tabella non supportata
+    const fieldList = fields.split(',').map(f => f.trim());
+    // Se la chiave non è tra i campi, non trasformare
+    if (!fieldList.includes(key)) return stmt;
+    // Costruisci la parte DO UPDATE per tutti i campi tranne la chiave
+    const updateFields = fieldList.filter(f => f !== key)
+      .map(f => `${f} = EXCLUDED.${f}`)
+      .join(', ');
+    return `${stmt} ON CONFLICT (${key}) DO UPDATE SET ${updateFields}`;
+  }
+
   let totalChanged = 0;
-  for (const stmt of statements) {
+  for (let stmt of statements) {
+    // Trasforma INSERT in upsert se necessario
+    if (stmt.startsWith('INSERT INTO')) {
+      stmt = transformInsertToUpsert(stmt);
+    }
     try {
       const res = await client.query(stmt);
-      // res.rowCount è definito solo per INSERT/UPDATE/DELETE
       if (typeof res.rowCount === 'number') {
         totalChanged += res.rowCount;
         console.log(`[seed] Query: ${stmt.substring(0, 60).replace(/\n/g, ' ')}... => ${res.rowCount} righe modificate`);
