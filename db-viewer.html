@@ -632,10 +632,13 @@
             return html;
         }
 
+        // Variabili globali per ordinamento
+        let sortColumn = null;
+        let sortDirection = 1; // 1 = asc, -1 = desc
+
         // Visualizza i dati della tabella
         function displayTableData(tableName, data) {
             const container = document.getElementById('table-container');
-            
             if (!data || data.length === 0) {
                 container.innerHTML = `
                     <div class="table-info">
@@ -651,6 +654,27 @@
             // Ottieni le colonne dal primo record
             const columns = Object.keys(data[0]);
 
+            // Applica ordinamento se richiesto
+            let sortedData = [...data];
+            if (sortColumn && columns.includes(sortColumn)) {
+                sortedData.sort((a, b) => {
+                    let va = a[sortColumn];
+                    let vb = b[sortColumn];
+                    // Gestione null/undefined
+                    if (va == null && vb == null) return 0;
+                    if (va == null) return 1 * sortDirection;
+                    if (vb == null) return -1 * sortDirection;
+                    // Numerico
+                    if (!isNaN(va) && !isNaN(vb)) return (va - vb) * sortDirection;
+                    // Data ISO
+                    if (typeof va === 'string' && va.match(/^\d{4}-\d{2}-\d{2}/) && typeof vb === 'string') {
+                        return (new Date(va) - new Date(vb)) * sortDirection;
+                    }
+                    // Stringa
+                    return String(va).localeCompare(String(vb), 'it', {numeric: true}) * sortDirection;
+                });
+            }
+
             let html = `
                 <div class="table-info">
                     <strong>Categoria:</strong> ${tableName} (${currentDataSource})
@@ -659,17 +683,16 @@
                 <table>
                     <thead>
                         <tr>
-                            ${columns.map(col => `<th>${col}</th>`).join('')}
+                            ${columns.map(col => `<th style="cursor:pointer" onclick="sortTableByColumn('${col}')">${col} ${sortColumn===col ? (sortDirection===1?'▲':'▼') : ''}</th>`).join('')}
                         </tr>
                     </thead>
                     <tbody>
             `;
 
-            data.forEach(row => {
+            sortedData.forEach(row => {
                 html += '<tr>';
                 columns.forEach(col => {
                     let value = row[col];
-                    
                     // Formatta valori speciali
                     if (value === null || value === undefined) {
                         value = '<em style="color: #6c757d;">null</em>';
@@ -686,7 +709,6 @@
                         // Formatta date ISO
                         value = new Date(value).toLocaleString('it-IT');
                     }
-                    
                     html += `<td>${value}</td>`;
                 });
                 html += '</tr>';
@@ -698,6 +720,20 @@
             `;
 
             container.innerHTML = html;
+        }
+
+        // Funzione globale per ordinare la tabella
+        window.sortTableByColumn = function(col) {
+            if (sortColumn === col) {
+                sortDirection = -sortDirection;
+            } else {
+                sortColumn = col;
+                sortDirection = 1;
+            }
+            // Ricarica la tabella corrente con ordinamento
+            if (currentTable) {
+                loadTableData(currentTable);
+            }
         }
 
         // Aggiorna la tabella corrente
