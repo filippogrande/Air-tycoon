@@ -65,7 +65,7 @@ async function runSqlFile(client, filePath) {
   const statements = sql
     .split(/;/)
     .map(s => s.trim())
-    .filter(s => s && !s.startsWith('--'));
+    .filter(s => s.length > 0); // Non scartare statement che iniziano con commenti
 
   // Mappa tabella => chiave unica (puoi estendere qui)
   const upsertConfig = {
