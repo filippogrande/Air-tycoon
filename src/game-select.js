@@ -296,7 +296,7 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
     
     // FLUSSO CORRETTO: Prima sincronizza con server, poi localStorage
     if (!currentUser.isGuest) {
-        // Utente autenticato: sincronizza prima col server
+        // Utente autenticato: DEVE sincronizzare col server
         syncGameWithServer(saveName, gameData).then((serverData) => {
             console.log('✅ Gioco sincronizzato con il server');
             
@@ -313,27 +313,18 @@ function createNewGame(saveName, companyName, startingAirport, difficulty) {
                     startGame(saveName);
                 }, 1000);
             } else {
-                showToast('Gioco creato sul server ma errore localStorage', 'warning');
-                hideNewGameModal();
-                setTimeout(() => startGame(saveName), 1000);
+                showToast('Errore localStorage dopo sincronizzazione server', 'error');
             }
             
         }).catch(error => {
             console.error('❌ Errore sincronizzazione server:', error);
             hideLoading();
             
-            // Fallback: salva solo in localStorage se il server fallisce
-            const saveResult = authManager.saveGame(saveName, gameData);
-            if (saveResult) {
-                showToast('Gioco creato offline (errore server)', 'warning');
-                hideNewGameModal();
-                setTimeout(function() {
-                    loadUserSaves();
-                    startGame(saveName);
-                }, 1000);
-            } else {
-                showToast('Errore durante la creazione del gioco', 'error');
-            }
+            // NON CONTINUARE SE FALLISCE IL SERVER
+            showToast(`Errore sincronizzazione server: ${error.message}. Riprova.`, 'error');
+            
+            // Mantieni il modal aperto per permettere di riprovare
+            // NON salvare in localStorage se il server fallisce
         });
     } else {
         // Utente guest: solo localStorage
@@ -369,6 +360,19 @@ async function syncGameWithServer(saveName, gameData) {
             companyName: gameData.company.name
         });
         
+        // Test connessione server prima di iniziare
+        try {
+            const testResponse = await fetch('/api/game/companies', { method: 'GET' });
+            if (!testResponse.ok && testResponse.status === 404) {
+                throw new Error('API del server non disponibili (404). Verifica che il server sia avviato.');
+            }
+        } catch (testError) {
+            if (testError.message.includes('Failed to fetch')) {
+                throw new Error('Impossibile connettersi al server. Verifica che sia in esecuzione.');
+            }
+            throw testError;
+        }
+        
         // Prima crea o aggiorna la compagnia
         const companyPayload = {
             id: `${user.id}_${saveName}`, // ID univoco basato su user + save
@@ -393,11 +397,22 @@ async function syncGameWithServer(saveName, gameData) {
         console.log('📊 Risposta server compagnia:', companyResponse.status, companyResponse.statusText);
         
         if (!companyResponse.ok) {
-            const errorData = await companyResponse.text();
-            throw new Error(`Errore creazione compagnia (${companyResponse.status}): ${errorData}`);
+            let errorMessage = `Errore HTTP ${companyResponse.status}`;
+            try {
+                const errorData = await companyResponse.json();
+                errorMessage = errorData.error || errorData.message || errorMessage;
+            } catch (e) {
+                const errorText = await companyResponse.text();
+                errorMessage = errorText || errorMessage;
+            }
+            throw new Error(`Creazione compagnia fallita: ${errorMessage}`);
         }
         
         const companyData = await companyResponse.json();
+        if (!companyData.success || !companyData.data) {
+            throw new Error('Risposta compagnia non valida dal server');
+        }
+        
         console.log('✅ Compagnia creata/aggiornata:', companyData.data?.name || 'Nome non disponibile');
         
         // Poi salva il gioco
@@ -424,11 +439,22 @@ async function syncGameWithServer(saveName, gameData) {
         console.log('💾 Risposta server salvataggio:', saveResponse.status, saveResponse.statusText);
         
         if (!saveResponse.ok) {
-            const errorData = await saveResponse.text();
-            throw new Error(`Errore salvataggio (${saveResponse.status}): ${errorData}`);
+            let errorMessage = `Errore HTTP ${saveResponse.status}`;
+            try {
+                const errorData = await saveResponse.json();
+                errorMessage = errorData.error || errorData.message || errorMessage;
+            } catch (e) {
+                const errorText = await saveResponse.text();
+                errorMessage = errorText || errorMessage;
+            }
+            throw new Error(`Salvataggio fallito: ${errorMessage}`);
         }
         
         const saveData = await saveResponse.json();
+        if (!saveData.success || !saveData.data) {
+            throw new Error('Risposta salvataggio non valida dal server');
+        }
+        
         console.log('✅ Gioco salvato sul server:', saveData.data?.save_name || 'Nome non disponibile');
         
         return {
@@ -439,7 +465,15 @@ async function syncGameWithServer(saveName, gameData) {
     } catch (error) {
         console.error('❌ Errore sincronizzazione server:', error);
         console.error('Stack trace:', error.stack);
-        throw error;
+        
+        // Rilancia l'errore con messaggio più user-friendly
+        if (error.message.includes('Failed to fetch')) {
+            throw new Error('Server non raggiungibile. Verifica la connessione di rete.');
+        } else if (error.message.includes('404')) {
+            throw new Error('API non trovate. Verifica che il server Air Tycoon sia avviato.');
+        } else {
+            throw error;
+        }
     }
 }
 
@@ -531,8 +565,9 @@ function showToast(message, type) {
     
     toast.classList.remove('hidden');
     
-    // Auto hide after 4 seconds
-    setTimeout(hideToast, 4000);
+    // Auto hide after 6 seconds for errors (più tempo per leggere)
+    const hideDelay = type === 'error' ? 6000 : 4000;
+    setTimeout(hideToast, hideDelay);
 }
 
 function hideToast() {
