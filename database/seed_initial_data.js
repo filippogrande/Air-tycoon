@@ -50,6 +50,16 @@ async function saveSeedHash(client, fileName, fileHash) {
 }
 
 async function runSqlFile(client, filePath) {
+  // Log: conta aeroporti prima
+  let beforeAirports = 0;
+  try {
+    const res = await client.query('SELECT COUNT(*) FROM airports');
+    beforeAirports = parseInt(res.rows[0].count, 10);
+    console.log(`[DEBUG] Aeroporti PRIMA del seeding: ${beforeAirports}`);
+  } catch (e) {
+    console.log('[DEBUG] Impossibile contare aeroporti prima del seeding:', e.message);
+  }
+
   const sql = fs.readFileSync(filePath, 'utf8');
   // Divide in statement (grezzo, ma funziona per la maggior parte dei casi)
   const statements = sql
@@ -84,6 +94,10 @@ async function runSqlFile(client, filePath) {
 
   let totalChanged = 0;
   for (let stmt of statements) {
+    // Logga ogni statement sugli aeroporti
+    if (stmt.startsWith('INSERT INTO airports')) {
+      console.log('[DEBUG] Statement airports:', stmt.substring(0, 120));
+    }
     // Trasforma INSERT in upsert se necessario
     if (stmt.startsWith('INSERT INTO')) {
       stmt = transformInsertToUpsert(stmt);
@@ -98,9 +112,18 @@ async function runSqlFile(client, filePath) {
       }
     } catch (err) {
       console.error(`[seed] Errore statement: ${stmt.substring(0, 60)}...`, err.message);
-      throw err;
     }
   }
+
+  // Log: conta aeroporti dopo
+  try {
+    const res = await client.query('SELECT COUNT(*) FROM airports');
+    const afterAirports = parseInt(res.rows[0].count, 10);
+    console.log(`[DEBUG] Aeroporti DOPO il seeding: ${afterAirports}`);
+  } catch (e) {
+    console.log('[DEBUG] Impossibile contare aeroporti dopo il seeding:', e.message);
+  }
+
   return totalChanged;
 }
 
