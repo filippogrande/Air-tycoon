@@ -14,6 +14,12 @@ FleetManager.prototype.addAircraft = function(aircraftData, customName) {
         this.gameState.fleet.push(aircraft);
         
         console.log('✈️ Aeromobile aggiunto alla flotta: ' + aircraft.name + ' (' + aircraft.id + ')');
+        
+        // Trigger auto-save per aggiunta aeromobile
+        if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
+            SaveLoad.triggerAutoSave('acquisto_aeromobile');
+        }
+        
         return aircraft;
     } catch (error) {
         console.error('Errore nell\'aggiunta dell\'aeromobile:', error);
@@ -28,6 +34,12 @@ FleetManager.prototype.removeAircraft = function(aircraftId) {
             var aircraft = this.gameState.fleet[i];
             this.gameState.fleet.splice(i, 1);
             console.log('🗑️ Aeromobile rimosso dalla flotta: ' + aircraft.name);
+            
+            // Trigger auto-save per rimozione aeromobile
+            if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
+                SaveLoad.triggerAutoSave('vendita_aeromobile');
+            }
+            
             return aircraft;
         }
     }

@@ -735,7 +735,9 @@ body {
 }
 
 /* Rimuovi TUTTE le bolle dagli span nella configurazione rotte */
-.route-config-panel span {
+.route-config-panel span,
+.route-config-panel .business-level,
+.route-config-panel .tourist-level {
     background: none !important;
     padding: 0 !important;
     border-radius: 0 !important;

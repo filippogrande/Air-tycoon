@@ -260,8 +260,12 @@ Game.prototype.advanceMonth = function() {
         
         console.log('✅ Mese avanzato a:', dateStr);
         
-        // Auto-save dopo avanzamento
-        this.saveGame();
+        // Auto-save triggered dall'avanzamento mese
+        if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
+            SaveLoad.triggerAutoSave('avanzamento_mese');
+        } else {
+            this.saveGame(); // Fallback al metodo normale
+        }
         
         return true;
         

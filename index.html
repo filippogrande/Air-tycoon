@@ -284,8 +284,23 @@
             
             if (saveGameBtn) {
                 saveGameBtn.addEventListener('click', function() {
-                    // TODO: Implementare salvataggio
-                    alert('Funzione salvataggio da implementare');
+                    // Implementazione salvataggio avanzato
+                    try {
+                        if (window.game && window.game.saveGame) {
+                            var success = window.game.saveGame();
+                            if (success) {
+                                console.log('✅ Salvataggio completato con successo');
+                                // Il feedback viene già gestito dal sistema SaveLoad
+                            } else {
+                                alert('❌ Errore durante il salvataggio. Controlla la console per i dettagli.');
+                            }
+                        } else {
+                            alert('⚠️ Sistema di gioco non disponibile per il salvataggio.');
+                        }
+                    } catch (error) {
+                        console.error('❌ Errore durante il salvataggio:', error);
+                        alert('❌ Errore durante il salvataggio: ' + error.message);
+                    }
                     settingsOverlay.classList.remove('active');
                 });
             }

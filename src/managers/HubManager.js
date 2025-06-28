@@ -40,6 +40,11 @@ HubManager.prototype.initializeStartingHub = function(airportCode) {
         reputation: 50
     };
     
+    // Trigger auto-save per hub di partenza
+    if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
+        SaveLoad.triggerAutoSave('hub_partenza');
+    }
+    
     return true;
 };
 
@@ -92,6 +97,11 @@ HubManager.prototype.buildHub = function(airportCode) {
     };
     
     console.log('🏗️ Hub costruito:', airportCode, 'Costo:', buildCost);
+    
+    // Trigger auto-save per costruzione hub
+    if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
+        SaveLoad.triggerAutoSave('costruzione_hub');
+    }
     
     return { 
         success: true, 

@@ -73,13 +73,22 @@ GameTime.prototype.formatTime = function() {
 
 // Ora definiamo GameState
 function GameState() {
+    // Genera o recupera l'ID della compagnia
+    this.companyId = this._getOrCreateCompanyId();
+    
     this.company = {
+        id: this.companyId,
         name: "Air Express",
         money: 1000000,
         reputation: 50,
         founded: new Date(),
         baseAirport: null
     };
+    
+    // Inizializza il sistema di salvataggio con l'ID della compagnia
+    if (typeof SaveLoad !== 'undefined' && SaveLoad.initialize) {
+        SaveLoad.initialize(this.companyId);
+    }
     
     this.gameTime = new GameTime();
     this.fleet = []; // Array di aeromobili
@@ -104,7 +113,9 @@ function GameState() {
 
 GameState.prototype.toSaveData = function() {
     return {
+        companyId: this.companyId,  // Aggiungi l'ID della compagnia
         company: {
+            id: this.companyId,
             name: this.company.name,
             money: this.company.money,
             reputation: this.company.reputation,
@@ -138,12 +149,28 @@ GameState.prototype.toSaveData = function() {
 
 GameState.prototype.loadFromData = function(data) {
     try {
+        // Carica o genera ID compagnia
+        if (data.companyId) {
+            this.companyId = data.companyId;
+            // Salva l'ID nel localStorage per persistenza
+            localStorage.setItem('air-tycoon-company-id', this.companyId);
+        } else {
+            // Se non c'è ID nel salvataggio, usa quello esistente o genera nuovo
+            this.companyId = this._getOrCreateCompanyId();
+        }
+        
         // Carica dati compagnia
+        this.company.id = this.companyId;
         this.company.name = data.company.name || "Air Express";
         this.company.money = data.company.money || 1000000;
         this.company.reputation = data.company.reputation || 50;
         this.company.founded = new Date(data.company.founded || Date.now());
         this.company.baseAirport = data.company.baseAirport || null;
+        
+        // Re-inizializza il sistema di salvataggio con l'ID aggiornato
+        if (typeof SaveLoad !== 'undefined' && SaveLoad.initialize) {
+            SaveLoad.initialize(this.companyId);
+        }
         
         // Carica tempo di gioco
         if (data.gameTime) {
@@ -292,6 +319,28 @@ GameState.prototype.spendMoney = function(amount) {
 GameState.prototype.earnMoney = function(amount) {
     this.company.money += amount;
     this.money = this.company.money;
+};
+
+// Metodo per ottenere o creare l'ID della compagnia
+GameState.prototype._getOrCreateCompanyId = function() {
+    try {
+        // Prova a recuperare l'ID esistente dal localStorage
+        var existingId = localStorage.getItem('air-tycoon-company-id');
+        if (existingId) {
+            console.log('🏢 ID compagnia esistente:', existingId);
+            return existingId;
+        }
+        
+        // Se non esiste, genera un nuovo ID
+        var newId = 'company_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('air-tycoon-company-id', newId);
+        console.log('🏢 Nuovo ID compagnia generato:', newId);
+        return newId;
+    } catch (error) {
+        console.error('❌ Errore gestione ID compagnia:', error);
+        // Fallback ID temporaneo
+        return 'company_temp_' + Date.now();
+    }
 };
 
 // Rendi disponibili globalmente

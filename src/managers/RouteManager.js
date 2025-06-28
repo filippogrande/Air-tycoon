@@ -75,6 +75,11 @@ RouteManager.prototype.createRoute = function(originCode, destinationCode, aircr
         
         console.log('✅ Rotta creata con successo:', route.toString());
         
+        // Trigger auto-save per creazione rotta
+        if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
+            SaveLoad.triggerAutoSave('creazione_rotta');
+        }
+        
         return {
             success: true,
             route: route,
@@ -96,6 +101,12 @@ RouteManager.prototype.removeRoute = function(routeId) {
             var route = this.gameState.routes[i];
             this.gameState.routes.splice(i, 1);
             console.log('🗑️ Rotta rimossa: ' + route.toString());
+            
+            // Trigger auto-save per rimozione rotta
+            if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
+                SaveLoad.triggerAutoSave('rimozione_rotta');
+            }
+            
             return route;
         }
     }

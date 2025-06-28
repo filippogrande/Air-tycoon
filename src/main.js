@@ -83,6 +83,10 @@ function initializeGame() {
     try {
         console.log('🎮 Creazione istanza Game...');
         game = new Game();
+        
+        // Rendi il gioco disponibile globalmente per l'UI
+        window.game = game;
+        
         console.log('✅ Game creato');
         
         // Gestione errori globali
@@ -111,6 +115,10 @@ function initializeGame() {
         // Setup eventi del menu di gioco dopo che il game è inizializzato
         console.log('🔧 Setup eventi menu di gioco...');
         setupGameMenuEvents();
+        
+        // Setup salvataggio automatico
+        console.log('🔧 Setup salvataggio automatico...');
+        setupAutoSave();
         
         console.log('✅ Gioco avviato con successo!');
         
@@ -1128,4 +1136,71 @@ function handleTabSwitch(tabName) {
         default:
             console.log('📋 Tab sconosciuto:', tabName);
     }
+}
+
+// Inizializzazione completata
+console.log('🎮 Sistema di gioco caricato e pronto!');
+
+// Setup del sistema di salvataggio automatico
+function setupAutoSave() {
+    // Auto-save ogni 2 minuti (120 secondi)
+    const AUTOSAVE_INTERVAL = 120 * 1000;
+    let autoSaveTimer;
+    
+    function performAutoSave() {
+        try {
+            if (game && game.saveGame) {
+                var success = game.saveGame();
+                if (success) {
+                    console.log('💾 Auto-save completato:', new Date().toLocaleTimeString());
+                } else {
+                    console.warn('⚠️ Auto-save fallito');
+                }
+            }
+        } catch (error) {
+            console.error('❌ Errore durante auto-save:', error);
+        }
+    }
+    
+    // Avvia il timer di auto-save
+    function startAutoSave() {
+        if (autoSaveTimer) {
+            clearInterval(autoSaveTimer);
+        }
+        
+        autoSaveTimer = setInterval(performAutoSave, AUTOSAVE_INTERVAL);
+        console.log('⏰ Auto-save attivato: ogni', AUTOSAVE_INTERVAL / 1000, 'secondi');
+        
+        // Primo auto-save dopo 30 secondi dall'inizio
+        setTimeout(performAutoSave, 30 * 1000);
+    }
+    
+    // Ferma il timer di auto-save
+    function stopAutoSave() {
+        if (autoSaveTimer) {
+            clearInterval(autoSaveTimer);
+            autoSaveTimer = null;
+            console.log('⏸️ Auto-save fermato');
+        }
+    }
+    
+    // Avvia auto-save
+    startAutoSave();
+    
+    // Ferma auto-save quando la pagina diventa invisibile
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            performAutoSave(); // Salva subito prima di nascondere
+            stopAutoSave();
+        } else {
+            startAutoSave(); // Riprendi quando torna visibile
+        }
+    });
+    
+    // Esporta le funzioni per controllo manuale se necessario
+    window.autoSaveControl = {
+        start: startAutoSave,
+        stop: stopAutoSave,
+        saveNow: performAutoSave
+    };
 }
