@@ -178,6 +178,11 @@ router.post('/companies/create-or-update', async (req, res) => {
                 error: 'Name is required'
             });
         }
+        // Se base_airport è una stringa (IATA code), usala come base_airport_code
+        if (base_airport && typeof base_airport === 'string' && isNaN(Number(base_airport))) {
+            base_airport_code = base_airport;
+            base_airport = undefined;
+        }
         // Se arriva solo il codice IATA, cerca l'id numerico
         if (!base_airport && base_airport_code) {
             const airportRes = await db.query('SELECT id FROM airports WHERE iata_code = $1', [base_airport_code]);
