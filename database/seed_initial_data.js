@@ -5,14 +5,15 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { Client } = require('pg');
 const path = require('path');
+require('dotenv').config(); // Carica variabili da .env
 
 // Configurazione DB (puoi sostituire con dotenv o config custom)
 const DB_CONFIG = {
-  user: process.env.PGUSER || 'postgres',
-  host: process.env.PGHOST || 'localhost',
-  database: process.env.PGDATABASE || 'airtycoon',
-  password: process.env.PGPASSWORD || '',
-  port: process.env.PGPORT ? parseInt(process.env.PGPORT) : 5432,
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'air_tycoon',
+  password: String(process.env.DB_PASSWORD || ''),
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
 };
 
 const SQL_FILE = path.join(__dirname, 'initial_data.sql');
