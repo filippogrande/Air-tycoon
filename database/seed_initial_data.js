@@ -75,6 +75,5 @@ async function main() {
   }
 }
 
-if (require.main === module) {
-  main();
-}
+// Esegui sempre il seeding anche se importato come modulo
+main();
