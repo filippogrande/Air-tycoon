@@ -51,13 +51,11 @@ async function saveSeedHash(client, fileName, fileHash) {
 }
 
 async function runSqlFile(client, filePath, fileLabel) {
-  // Log: conta aeroporti prima (solo se tabella airports)
   let beforeAirports = 0;
   if (fileLabel === 'airports.sql') {
     try {
       const res = await client.query('SELECT COUNT(*) FROM airports');
       beforeAirports = parseInt(res.rows[0].count, 10);
-      console.log(`[DEBUG] Aeroporti PRIMA del seeding: ${beforeAirports}`);
     } catch (e) {
       console.log('[DEBUG] Impossibile contare aeroporti prima del seeding:', e.message);
     }
@@ -93,8 +91,6 @@ async function runSqlFile(client, filePath, fileLabel) {
 
   let totalChanged = 0;
   for (let stmt of statements) {
-    const preview = stmt.substring(0, 200).replace(/\n/g, ' ');
-    console.log(`[DEBUG][${fileLabel}] Statement: ${preview}`);
     if (stmt.startsWith('INSERT INTO')) {
       stmt = transformInsertToUpsert(stmt);
     }
@@ -102,12 +98,9 @@ async function runSqlFile(client, filePath, fileLabel) {
       const res = await client.query(stmt);
       if (typeof res.rowCount === 'number') {
         totalChanged += res.rowCount;
-        console.log(`[DEBUG][${fileLabel}] Risultato: ${res.rowCount} righe modificate`);
-      } else {
-        console.log(`[DEBUG][${fileLabel}] Risultato: nessun rowCount`);
       }
     } catch (err) {
-      console.error(`[DEBUG][${fileLabel}] Errore statement: ${preview}`, err.message);
+      console.error(`[DEBUG][${fileLabel}] Errore statement: ${stmt.substring(0, 200).replace(/\n/g, ' ')}`, err.message);
     }
   }
 
@@ -116,13 +109,10 @@ async function runSqlFile(client, filePath, fileLabel) {
     try {
       const res = await client.query('SELECT COUNT(*) FROM airports');
       afterAirports = parseInt(res.rows[0].count, 10);
-      console.log(`[DEBUG] Aeroporti DOPO il seeding: ${afterAirports}`);
     } catch (e) {
       console.log('[DEBUG] Impossibile contare aeroporti dopo del seeding:', e.message);
     }
   }
-
-  console.log(`[INFO][${fileLabel}] Seeding completato: ${totalChanged} righe modificate`);
 }
 
 async function main() {
