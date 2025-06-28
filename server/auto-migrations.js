@@ -41,7 +41,9 @@ async function runPendingMigrations() {
         
     } catch (error) {
         console.error('❌ Errore durante l\'esecuzione delle migrazioni:', error);
-        throw error;
+        console.error('⚠️ Il server continuerà senza eseguire le migrazioni...');
+        // Non interrompere l'avvio del server per errori di migrazione
+        return;
     }
 }
 
@@ -153,7 +155,11 @@ async function executeMigration(migration) {
         
     } catch (error) {
         // Rollback in caso di errore
-        await db.query('ROLLBACK');
+        try {
+            await db.query('ROLLBACK');
+        } catch (rollbackError) {
+            console.error('❌ Errore durante rollback:', rollbackError.message);
+        }
         
         // Registra l'errore (compatibile con entrambi i sistemi)
         const executionTime = Date.now() - startTime;
@@ -167,10 +173,14 @@ async function executeMigration(migration) {
             `, [migrationNumber, migration.id, executionTime, 'failed']);
         } catch (errorLog) {
             // Se fallisce, usa migration_tracker
-            await db.query(`
-                INSERT INTO migration_tracker (migration_id, execution_time_ms, status, error_message)
-                VALUES ($1, $2, $3, $4)
-            `, [migration.id, executionTime, 'failed', error.message]);
+            try {
+                await db.query(`
+                    INSERT INTO migration_tracker (migration_id, execution_time_ms, status, error_message)
+                    VALUES ($1, $2, $3, $4)
+                `, [migration.id, executionTime, 'failed', error.message]);
+            } catch (logError) {
+                console.error('❌ Impossibile registrare errore migrazione:', logError.message);
+            }
         }
         
         console.error(`❌ Migrazione ${migration.id} fallita:`, error.message);

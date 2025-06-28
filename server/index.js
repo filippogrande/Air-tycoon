@@ -99,6 +99,7 @@ app.get('/api', (req, res) => {
 });
 
 // API Routes
+console.log('📂 Caricamento route API...');
 app.use('/api/auth', authRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/fleet', fleetRoutes);
@@ -107,6 +108,7 @@ app.use('/api/airports', airportRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/market-analysis', marketAnalysisRoutes);
 app.use('/api/admin', adminRoutes);
+console.log('✅ Route API caricate');
 
 // Servire file statici del gioco dalla root del progetto
 app.use('/game', express.static(path.join(__dirname, '..')));
