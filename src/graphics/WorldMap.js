@@ -137,22 +137,28 @@ WorldMap.prototype._loadAirportsStaticFallback = function() {
 // Renderizza aeroporti sulla mappa
 WorldMap.prototype._renderAirportsOnMap = function(airports) {
     console.log('🗺️ Rendering aeroporti sulla mappa:', airports.length);
-    
+    // Aggiorna window.AirportData con i dati reali dal backend
+    window.AirportData = window.AirportData || {};
+    window.AirportData.airports = airports;
+    // Ricostruisci l'indice per getAirportByCode
+    window.AirportData._airportByCode = {};
     for (var i = 0; i < airports.length; i++) {
         var airport = airports[i];
-        
+        if (airport.code) {
+            window.AirportData._airportByCode[airport.code] = airport;
+        }
         // Verifica che l'aeroporto abbia dati validi
         if (!airport.latitude || !airport.longitude || !airport.code) {
             console.warn('⚠️ Aeroporto con dati invalidi:', airport);
             continue;
         }
-        
-        // Crea marker con icona appropriata
         var marker = this.createAirportMarker(airport);
-        // Non aggiungere direttamente alla mappa - sarà gestito dalla visibilità
-        
         this.airportMarkers[airport.code] = marker;
     }
+    // Definisci o sovrascrivi getAirportByCode per usare solo i dati reali
+    window.AirportData.getAirportByCode = function(code) {
+        return window.AirportData._airportByCode[code] || null;
+    };
     
     console.log('📋 Marker creati:', Object.keys(this.airportMarkers).length);
     
@@ -752,9 +758,7 @@ WorldMap.prototype.resetRouteCreationState = function() {
 // Auto-popolamento slot origine
 WorldMap.prototype.autoPopulateOriginSlot = function() {
     console.log('🤖 Auto-popolamento slot origine...');
-    
     var originAirport = null;
-    
     // Priorità 1: Ultimo aeroporto selezionato
     if (this.selectedAirport) {
         originAirport = this.selectedAirport;
@@ -766,11 +770,10 @@ WorldMap.prototype.autoPopulateOriginSlot = function() {
         if (hubs.length > 0) {
             // Prendi il primo hub (potremmo ordinare per dimensione/importanza)
             var hubCode = hubs[0];
-            originAirport = AirportData.getAirportByCode(hubCode);
+            originAirport = window.AirportData && window.AirportData.getAirportByCode ? window.AirportData.getAirportByCode(hubCode) : null;
             console.log('🏢 Usando hub principale:', hubCode);
         }
     }
-    
     // Popolamento automatico
     if (originAirport) {
         this.routeCreationState.originAirport = originAirport;
@@ -781,7 +784,7 @@ WorldMap.prototype.autoPopulateOriginSlot = function() {
     }
 };
 
-// Pulisci slot (delegata ma serve fallback)
+// Pulisci slot origine/destinazione
 WorldMap.prototype.clearSlot = function(slotType) {
     if (typeof RouteUIManager !== 'undefined') {
         return RouteUIManager.clearSlot(slotType);
