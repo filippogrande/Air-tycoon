@@ -43,10 +43,13 @@ router.post('/register', async (req, res) => {
         const userId = crypto.randomUUID();
         
         // Crea solo l'utente (la compagnia verrà creata quando inizia una partita)
+        // Genera username di default dalla parte locale dell'email
+        const defaultUsername = email.split('@')[0];
+        
         await db.query(`
-            INSERT INTO users (id, email, password_hash, created_at)
-            VALUES ($1, $2, $3, NOW())
-        `, [userId, email, passwordHash]);
+            INSERT INTO users (id, email, username, password_hash, created_at)
+            VALUES ($1, $2, $3, $4, NOW())
+        `, [userId, email, defaultUsername, passwordHash]);
         
         console.log('✅ Utente registrato nel database:', email);
         
