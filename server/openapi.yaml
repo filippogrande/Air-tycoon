@@ -62,8 +62,9 @@ paths:
                 name:
                   type: string
                 headquarters_airport:
-                  type: integer
-                  description: ID numerico, IATA (3 lettere) o ICAO (4 lettere)
+                  type: string
+                  format: uuid
+                  description: UUID, IATA (3 lettere) o ICAO (4 lettere)
                 user_id:
                   type: string
                 founded:
@@ -71,7 +72,7 @@ paths:
                   format: date-time
             example:
               name: "Air Tycoon"
-              headquarters_airport: 1
+              headquarters_airport: "FCO"
               user_id: "user-123"
               founded: "2025-06-29T12:00:00Z"
       responses:
@@ -95,7 +96,8 @@ paths:
           name: id
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "200":
           description: Dettagli compagnia
@@ -116,7 +118,8 @@ paths:
           name: id
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -142,7 +145,8 @@ paths:
           name: id
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         "200":
           description: Ultimo salvataggio trovato
@@ -194,8 +198,9 @@ paths:
               required: [name, user_id, founded, base_airport]
               properties:
                 id:
-                  type: integer
-                  description: "ID compagnia (opzionale, per aggiornamento)"
+                  type: string
+                  format: uuid
+                  description: "UUID compagnia (opzionale, per aggiornamento)"
                 name:
                   type: string
                 money:
@@ -206,7 +211,8 @@ paths:
                   type: string
                   format: date-time
                 base_airport:
-                  type: integer
+                  type: string
+                  format: uuid
                 base_airport_code:
                   type: string
                 user_id:
@@ -216,7 +222,7 @@ paths:
               money: 1000000
               reputation: 50
               founded: "2025-06-29T12:00:00Z"
-              base_airport: 1
+              base_airport: "513d3b10-b1bd-4de6-ac3c-27de4efc692c"
               user_id: "user-123"
       responses:
         "200":
@@ -1194,7 +1200,8 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
+          format: uuid
         name:
           type: string
         money:
@@ -1202,7 +1209,8 @@ components:
         reputation:
           type: number
         base_airport:
-          type: integer
+          type: string
+          format: uuid
         user_id:
           type: string
         founded:

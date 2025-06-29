@@ -484,6 +484,10 @@ function createNewGame(saveName, companyName, startingAirport, difficulty, scena
         syncGameWithServer(saveName, gameData).then((serverData) => {
             console.log('✅ Gioco sincronizzato con il server');
             
+            // Aggiorna il gameData con l'UUID reale della compagnia
+            if (companyData.data && companyData.data.id) {
+                gameData.company.id = companyData.data.id;
+            }
             // Solo dopo il successo server, salva in localStorage
             const saveResult = authManager.saveGame(saveName, gameData);
             hideLoading();
