@@ -8,7 +8,6 @@ ALTER TABLE companies RENAME COLUMN id TO id_old;
 ALTER TABLE fleet DROP CONSTRAINT IF EXISTS fleet_company_id_fkey;
 ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_company_id_fkey;
 ALTER TABLE company_hubs DROP CONSTRAINT IF EXISTS company_hubs_company_id_fkey;
-ALTER TABLE game_saves DROP CONSTRAINT IF EXISTS game_saves_company_id_fkey;
 ALTER TABLE financial_records DROP CONSTRAINT IF EXISTS financial_records_company_id_fkey;
 
 -- 3. Ora puoi rimuovere la primary key
@@ -32,14 +31,6 @@ ALTER TABLE company_hubs DROP CONSTRAINT IF EXISTS company_hubs_company_id_fkey;
 ALTER TABLE company_hubs DROP COLUMN company_id;
 ALTER TABLE company_hubs RENAME COLUMN company_id_new TO company_id;
 ALTER TABLE company_hubs ADD CONSTRAINT company_hubs_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
-
--- Esempio per game_saves
-ALTER TABLE game_saves ADD COLUMN company_id_new INTEGER;
-UPDATE game_saves SET company_id_new = (SELECT id FROM companies WHERE id_old = game_saves.company_id);
-ALTER TABLE game_saves DROP CONSTRAINT IF EXISTS game_saves_company_id_fkey;
-ALTER TABLE game_saves DROP COLUMN company_id;
-ALTER TABLE game_saves RENAME COLUMN company_id_new TO company_id;
-ALTER TABLE game_saves ADD CONSTRAINT game_saves_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
 
 -- Esempio per financial_records
 ALTER TABLE financial_records ADD COLUMN company_id_new INTEGER;
