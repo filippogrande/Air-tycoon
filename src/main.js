@@ -47,18 +47,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Nuova funzione: carica dati fondamentali via API
     function loadCoreDataAndStartGame(companyId) {
-        Promise.all([
-            fetch('/api/game/aircraft-data').then(r => r.json()),
-            fetch('/api/game/airport-data').then(r => r.json())
-        ]).then(([aircraftData, airportData]) => {
-            window.AircraftData = aircraftData;
-            window.AirportData = airportData;
-            console.log('✅ AircraftData e AirportData caricati via API');
-            initializeGame(companyId);
-        }).catch(err => {
-            console.error('❌ Errore nel caricamento dati fondamentali:', err);
-            showError('Errore nel caricamento dei dati di gioco (Aircraft/Airport). Riprova.');
-        });
+        // Carica solo AircraftData, la logica aeroporti è ora in WorldMap.js
+        fetch('/api/game/aircraft-data').then(r => r.json())
+            .then(aircraftData => {
+                window.AircraftData = aircraftData;
+                console.log('✅ AircraftData caricato via API');
+                initializeGame(companyId);
+            })
+            .catch(err => {
+                console.error('❌ Errore nel caricamento dati fondamentali:', err);
+                showError('Errore nel caricamento dei dati di gioco (Aircraft). Riprova.');
+            });
     }
 
     waitForLeaflet(function() {
@@ -79,10 +78,10 @@ function initializeGame(companyId) {
         'UIManager', 'WorldMap', 'SaveLoad', 'Game'
     ];
     const missingClasses = requiredClasses.filter(className => !window[className]);
-    // Verifica anche che i dati fondamentali siano caricati
-    if (!window.AircraftData || !window.AirportData) {
-        console.error('❌ Dati fondamentali mancanti:', [!window.AircraftData && 'AircraftData', !window.AirportData && 'AirportData'].filter(Boolean));
-        showError('Errore: dati fondamentali non caricati: ' + [!window.AircraftData && 'AircraftData', !window.AirportData && 'AirportData'].filter(Boolean).join(', '));
+    // Verifica solo che AircraftData sia caricato (AirportData ora è gestito in WorldMap)
+    if (!window.AircraftData) {
+        console.error('❌ Dati fondamentali mancanti:', ['AircraftData']);
+        showError('Errore: dati fondamentali non caricati: AircraftData');
         return;
     }
     if (missingClasses.length > 0) {
