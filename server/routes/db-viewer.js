@@ -32,6 +32,15 @@ router.get('/', async (req, res) => {
             if (typeof val === 'string' && val.length > 100) return val.substring(0,100)+'...';
             return val;
         }
+        // Funzione per generare il pulsante elimina
+        function deleteButton(row) {
+            if (!columns.includes('id')) return '';
+            return `<form method='post' action='/db-viewer/delete' style='display:inline'>
+                <input type='hidden' name='table' value='${selectedTable}' />
+                <input type='hidden' name='id' value='${row.id}' />
+                <button type='submit' style='color:#fff;background:#dc3545;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;'>Elimina</button>
+            </form>`;
+        }
         res.send(`<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -43,12 +52,14 @@ router.get('/', async (req, res) => {
         h1 { color: #4a90e2; }
         .table-selector { margin-bottom: 24px; }
         select { padding: 8px 16px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th, td { padding: 10px; border-bottom: 1px solid #eaeaea; font-size: 14px; }
+        .table-container { overflow-x: auto; }
+        table { width: max-content; min-width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eaeaea; font-size: 14px; white-space: pre; }
         th { background: #f8f9fa; color: #2c3e50; position: sticky; top: 0; z-index: 1; }
         tr:hover { background: #f4f8fb; }
         .error { background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #dc3545; }
         .record-count { font-size: 13px; color: #6c757d; margin-top: 8px; }
+        .delete-btn { color:#fff;background:#dc3545;border:none;border-radius:4px;padding:4px 10px;cursor:pointer; }
     </style>
 </head>
 <body>
@@ -66,12 +77,12 @@ router.get('/', async (req, res) => {
             <table>
                 <thead>
                     <tr>
-                        ${columns.map(col => `<th>${col}</th>`).join('')}
+                        ${columns.map(col => `<th>${col}</th>`).join('')}${columns.includes('id') ? '<th>Azioni</th>' : ''}
                     </tr>
                 </thead>
                 <tbody>
                     ${tableData.length === 0 ? `<tr><td colspan="${columns.length}">Nessun dato</td></tr>` :
-                        tableData.map(row => `<tr>${columns.map(col => `<td>${formatCell(row[col])}</td>`).join('')}</tr>`).join('')}
+                        tableData.map(row => `<tr>${columns.map(col => `<td>${formatCell(row[col])}</td>`).join('')}${deleteButton(row)}</tr>`).join('')}
                 </tbody>
             </table>
         </div>
@@ -80,6 +91,20 @@ router.get('/', async (req, res) => {
 </html>`);
     } catch (err) {
         res.status(500).send('<div class="error">Errore caricamento tabelle: '+err.message+'</div>');
+    }
+});
+
+// Route per eliminare una entry da una tabella tramite id
+router.post('/delete', async (req, res) => {
+    const { table, id } = req.body;
+    if (!table || !id) {
+        return res.status(400).send('Tabella e id obbligatori');
+    }
+    try {
+        await db.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
+        res.redirect(`/db-viewer?table=${encodeURIComponent(table)}`);
+    } catch (err) {
+        res.status(500).send(`<div class='error'>Errore eliminazione: ${err.message}</div>`);
     }
 });
 
