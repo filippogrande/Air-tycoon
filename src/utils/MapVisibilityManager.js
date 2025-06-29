@@ -169,7 +169,6 @@ var MapVisibilityManager = {
     // Sistema intelligente anti-clutter - LOGICA ORIGINALE FUNZIONANTE
     calculateVisibleAirports: function(game, airportsInView, zoom) {
         var self = this;
-        
         // Calcola rating per ogni aeroporto
         var airportsWithRating = airportsInView.map(function(airport) {
             return {
@@ -178,59 +177,37 @@ var MapVisibilityManager = {
                 isPlayerHub: game.hubManager && game.hubManager.hasHub(airport.code)
             };
         });
-        
         // Ordina per rating (più alto = più importante)
         airportsWithRating.sort(function(a, b) {
-            // Hub del giocatore sempre in cima
             if (a.isPlayerHub && !b.isPlayerHub) return -1;
             if (!a.isPlayerHub && b.isPlayerHub) return 1;
-            
             return b.rating - a.rating;
         });
-        
-        // Determina quanti aeroporti mostrare basandosi su zoom
         var maxAirports = this.getMaxAirportsForZoom(zoom);
         var minDistance = this.getMinDistanceForZoom(zoom);
-        
         var selectedAirports = [];
-        
         for (var i = 0; i < airportsWithRating.length && selectedAirports.length < maxAirports; i++) {
             var current = airportsWithRating[i];
-            
-            // Hub del giocatore sempre visibili
-            if (current.isPlayerHub) {
-                selectedAirports.push(current.airport.code);
-                continue;
-            }
-            
-            // Controlla se l'aeroporto è troppo vicino ad altri già selezionati
             var tooClose = false;
             for (var j = 0; j < selectedAirports.length; j++) {
                 var selectedCode = selectedAirports[j];
                 var selectedAirport = AirportData.getAirportByCode(selectedCode);
-                
                 if (selectedAirport) {
                     var distance = RouteCalculator.calculateDistance(
                         current.airport.latitude, current.airport.longitude,
                         selectedAirport.latitude, selectedAirport.longitude
                     );
-                    
-                    // Se troppo vicino ad un aeroporto più importante, salta
+                    // Se troppo vicino ad un aeroporto già selezionato, scarta SEMPRE quello meno importante
                     if (distance < minDistance) {
-                        var selectedRating = this.calculateAirportRating(selectedAirport);
-                        if (selectedRating > current.rating * 0.9) { // 10% di tolleranza
-                            tooClose = true;
-                            break;
-                        }
+                        tooClose = true;
+                        break;
                     }
                 }
             }
-            
             if (!tooClose) {
                 selectedAirports.push(current.airport.code);
             }
         }
-        
         return selectedAirports;
     },
     
@@ -263,6 +240,11 @@ var MapVisibilityManager = {
         }
         
         var finalRating = baseRating * typeMultiplier;
+        
+        // Bonus per hub del player: +100 (li rende sempre selezionati)
+        if (window.game && window.game.hubManager && window.game.hubManager.hasHub && window.game.hubManager.hasHub(airport.code)) {
+            finalRating += 100; // bonus enorme per essere sempre selezionato
+        }
         
         // Debug occasionale per verificare i calcoli
         if (Math.random() < 0.1) { // 10% delle volte
@@ -307,20 +289,15 @@ var MapVisibilityManager = {
     
     // Configurazione distanza minima per zoom - ORIGINALE FUNZIONANTE + ANTI-CLUTTER SEVERO PER ETICHETTE
     getMinDistanceForZoom: function(zoom) {
-        // Quando le etichette sono attive (zoom >= 6), rendi l'anti-clutter più severo
-        if (zoom >= 6) {
-            if (zoom <= 6) return 80;    // Zoom 6: distanza maggiore per evitare sovrapposizioni etichette
-            if (zoom <= 7) return 50;    // Zoom 7: ancora distanza considerevole
-            if (zoom <= 8) return 30;    // Zoom 8: distanza media
-            return 15;                   // Zoom 9+: distanza minima
-        }
-        
-        // Comportamento normale quando non ci sono etichette
-        if (zoom <= 2) return 400;   // Vista mondo: meno distanziati
-        if (zoom <= 3) return 200;   // Continente: meno distanziati
-        if (zoom <= 4) return 100;   // Regione: ancora meno
-        if (zoom <= 5) return 50;    // Area: vicini
-        return 25;                   // Default per zoom intermedi
+        // Distanze più aggressive per anti-clutter
+        if (zoom <= 2) return 800;   // Vista mondo: aeroporti molto distanziati
+        if (zoom <= 3) return 400;   // Continente
+        if (zoom <= 4) return 200;   // Regione
+        if (zoom <= 5) return 100;   // Area
+        if (zoom <= 6) return 80;
+        if (zoom <= 7) return 50;
+        if (zoom <= 8) return 30;
+        return 15; // Zoom 9+: minima distanza
     }
 };
 
