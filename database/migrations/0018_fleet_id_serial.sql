@@ -34,6 +34,7 @@ ALTER TABLE flights ADD COLUMN aircraft_id INTEGER;
 
 -- 5b. Aggiornamento tabella routes: conversione id da UUID a SERIAL
 ALTER TABLE routes RENAME COLUMN id TO id_old;
+ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_pkey;
 ALTER TABLE routes ADD COLUMN id SERIAL PRIMARY KEY;
 -- (Opzionale: se serve, mappa i dati da id_old a id nelle tabelle collegate)
 
