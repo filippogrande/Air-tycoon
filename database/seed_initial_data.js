@@ -71,6 +71,8 @@ async function runSqlFile(client, filePath, fileLabel) {
   const upsertConfig = {
     airports: 'iata_code',
     companies: 'id',
+    research_events: 'name',
+    random_events: 'name',
     // Estendi qui per altre tabelle
   };
 

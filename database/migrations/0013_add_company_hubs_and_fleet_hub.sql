@@ -37,13 +37,6 @@ BEGIN
         COMMENT ON COLUMN fleet.hub_id IS 'Hub di assegnazione principale per l aeromobile (FK verso company_hubs)';
     END IF;
 
-    -- 3. Migrazione dati: assegna hub principale agli aerei già presenti (se possibile)
-    UPDATE fleet f
-    SET hub_id = ch.id
-    FROM companies c
-    JOIN company_hubs ch ON ch.company_id = c.id AND ch.hub_type = 'headquarters'
-    WHERE f.company_id = c.id AND f.hub_id IS NULL;
-
 END $$;
 
 -- Log
