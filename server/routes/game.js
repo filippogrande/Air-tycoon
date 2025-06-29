@@ -274,3 +274,5 @@ router.get('/companies/:id/latest-save', async (req, res) => {
         });
     }
 });
+
+module.exports = router;
