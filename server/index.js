@@ -22,6 +22,11 @@ const apiInfoRoute = require('./routes/api-info');
 // Sistema migrazioni
 const MigrationSystem = require('../database/migration-system');
 
+// Swagger/OpenAPI
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load(path.join(__dirname, 'openapi.yaml'));
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -93,6 +98,9 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/market-analysis', marketAnalysisRoutes);
 app.use('/api/admin', adminRoutes);
 console.log('✅ Route API caricate');
+
+// Documentazione Swagger
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Servire file statici del gioco dalla root del progetto
 app.use('/game', express.static(path.join(__dirname, '..')));

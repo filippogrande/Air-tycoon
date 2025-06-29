@@ -48,10 +48,52 @@ const endpoints = [
         example: '/api/game/companies'
       },
       {
+        method: 'POST',
+        path: '/api/game/companies',
+        description: 'Crea nuova compagnia e hub principale',
+        example: '/api/game/companies'
+      },
+      {
         method: 'GET',
         path: '/api/game/companies/:id',
         description: 'Dettagli di una compagnia',
         example: '/api/game/companies/1'
+      },
+      {
+        method: 'PUT',
+        path: '/api/game/companies/:id',
+        description: 'Aggiorna una compagnia',
+        example: '/api/game/companies/1'
+      },
+      {
+        method: 'POST',
+        path: '/api/game/companies/create-or-update',
+        description: 'Crea o aggiorna una compagnia (upsert)',
+        example: '/api/game/companies/create-or-update'
+      },
+      {
+        method: 'GET',
+        path: '/api/game/save/:id',
+        description: 'Carica un salvataggio specifico',
+        example: '/api/game/save/123'
+      },
+      {
+        method: 'GET',
+        path: '/api/game/companies/:id/latest-save',
+        description: 'Ottieni l’ultimo salvataggio per una compagnia',
+        example: '/api/game/companies/1/latest-save'
+      },
+      {
+        method: 'POST',
+        path: '/api/game/save',
+        description: 'Salva una partita (crea o aggiorna un salvataggio)',
+        example: '/api/game/save'
+      },
+      {
+        method: 'GET',
+        path: '/api/game/saves/:company_id',
+        description: 'Lista di tutti i salvataggi per una compagnia',
+        example: '/api/game/saves/1'
       }
     ]
   },

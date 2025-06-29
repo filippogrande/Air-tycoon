@@ -1,0 +1,159 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API
+  version: 1.0.0
+  description: |
+    Documentazione interattiva delle API di Air Tycoon 2.
+
+    Tutte le rotte principali sono documentate qui. Puoi testare le chiamate direttamente da questa pagina.
+servers:
+  - url: http://localhost:3001
+paths:
+  /api/game/companies:
+    get:
+      summary: Ottieni tutte le compagnie
+      responses:
+        "200":
+          description: Lista compagnie
+    post:
+      summary: Crea nuova compagnia e hub principale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                headquarters_airport_id:
+                  type: integer
+                user_id:
+                  type: string
+      responses:
+        "201":
+          description: Compagnia creata
+  /api/game/companies/{id}:
+    get:
+      summary: Dettagli di una compagnia
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dettagli compagnia
+    put:
+      summary: Aggiorna una compagnia
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                money:
+                  type: number
+                reputation:
+                  type: number
+      responses:
+        "200":
+          description: Compagnia aggiornata
+  /api/game/save/{id}:
+    get:
+      summary: Carica un salvataggio specifico
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dati salvataggio
+  /api/game/save:
+    post:
+      summary: Salva una partita (crea o aggiorna un salvataggio)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id:
+                  type: integer
+                save_name:
+                  type: string
+                game_data:
+                  type: object
+      responses:
+        "200":
+          description: Salvataggio effettuato
+  /api/game/saves/{company_id}:
+    get:
+      summary: Lista di tutti i salvataggi per una compagnia
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista salvataggi
+  /api/airports:
+    get:
+      summary: Lista aeroporti (filtrabile)
+      parameters:
+        - in: query
+          name: country
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista aeroporti
+  /api/auth/register:
+    post:
+      summary: Registra un nuovo utente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Utente registrato
+  /api/auth/login:
+    post:
+      summary: Effettua il login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login effettuato
