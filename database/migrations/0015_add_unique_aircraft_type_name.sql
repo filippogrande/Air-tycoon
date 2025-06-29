@@ -23,3 +23,6 @@ WHERE a.name = b.name AND a.id > b.id;
 
 ALTER TABLE random_events
 ADD CONSTRAINT random_events_name_unique UNIQUE (name);
+
+-- Log
+SELECT 'Migrazione 0015 - aggiunta unique constraint su aircraft_types.name, research_events.name, random_events.name - COMPLETATA' as status;
