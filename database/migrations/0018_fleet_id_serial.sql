@@ -1,15 +1,5 @@
 -- MIGRAZIONE 0018: Correzione ordine vincoli
 
--- 1. Rinominare le colonne per backup
-ALTER TABLE fleet RENAME COLUMN id TO id_old;
-ALTER TABLE fleet RENAME COLUMN company_id TO company_id_old;
-ALTER TABLE flights RENAME COLUMN id TO id_old;
-ALTER TABLE flights RENAME COLUMN route_id TO route_id_old;
-ALTER TABLE flights RENAME COLUMN aircraft_id TO aircraft_id_old;
-
--- 1b. Rinomina la tabella fleet in aircraft
-ALTER TABLE fleet RENAME TO aircraft;
-
 -- 2. Rimuovere i vincoli di FOREIGN KEY che fanno riferimento a aircraft.id_old (ex fleet.id)
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_fleet_id_fkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_aircraft_id_fkey;
@@ -23,6 +13,16 @@ ALTER TABLE aircraft DROP CONSTRAINT IF EXISTS aircraft_company_id_fkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_pkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_company_id_fkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_route_id_fkey;
+
+-- 1. Rinominare le colonne per backup
+ALTER TABLE fleet RENAME COLUMN id TO id_old;
+ALTER TABLE fleet RENAME COLUMN company_id TO company_id_old;
+ALTER TABLE flights RENAME COLUMN id TO id_old;
+ALTER TABLE flights RENAME COLUMN route_id TO route_id_old;
+ALTER TABLE flights RENAME COLUMN aircraft_id TO aircraft_id_old;
+
+-- 1b. Rinomina la tabella fleet in aircraft
+ALTER TABLE fleet RENAME TO aircraft;
 
 -- 5. Aggiungere nuove colonne PK/FK e conversione dati
 ALTER TABLE aircraft ADD COLUMN id SERIAL PRIMARY KEY;
