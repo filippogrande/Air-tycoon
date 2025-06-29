@@ -25,6 +25,13 @@ router.get('/', async (req, res) => {
                 error = 'Errore caricamento dati: ' + err.message;
             }
         }
+        // Funzione di formattazione lato server
+        function formatCell(val) {
+            if (val === null || val === undefined) return '<em style="color:#aaa">null</em>';
+            if (typeof val === 'object') return '<code>'+JSON.stringify(val).substring(0,100)+'...</code>';
+            if (typeof val === 'string' && val.length > 100) return val.substring(0,100)+'...';
+            return val;
+        }
         res.send(`<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -69,14 +76,6 @@ router.get('/', async (req, res) => {
             </table>
         </div>
     </div>
-    <script>
-        function formatCell(val) {
-            if (val === null || val === undefined) return '<em style="color:#aaa">null</em>';
-            if (typeof val === 'object') return '<code>'+JSON.stringify(val).substring(0,100)+'...</code>';
-            if (typeof val === 'string' && val.length > 100) return val.substring(0,100)+'...';
-            return val;
-        }
-    </script>
 </body>
 </html>`);
     } catch (err) {
