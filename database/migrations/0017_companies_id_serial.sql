@@ -9,6 +9,8 @@ ALTER TABLE fleet DROP CONSTRAINT IF EXISTS fleet_company_id_fkey;
 ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_company_id_fkey;
 ALTER TABLE company_hubs DROP CONSTRAINT IF EXISTS company_hubs_company_id_fkey;
 ALTER TABLE financial_records DROP CONSTRAINT IF EXISTS financial_records_company_id_fkey;
+ALTER TABLE active_events DROP CONSTRAINT IF EXISTS active_events_company_id_fkey;
+ALTER TABLE company_research DROP CONSTRAINT IF EXISTS company_research_company_id_fkey;
 
 -- 3. Ora puoi rimuovere la primary key
 ALTER TABLE companies DROP CONSTRAINT companies_pkey;
@@ -39,6 +41,19 @@ ALTER TABLE financial_records DROP CONSTRAINT IF EXISTS financial_records_compan
 ALTER TABLE financial_records DROP COLUMN company_id;
 ALTER TABLE financial_records RENAME COLUMN company_id_new TO company_id;
 ALTER TABLE financial_records ADD CONSTRAINT financial_records_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
+-- Esempio per active_events
+ALTER TABLE active_events ADD COLUMN company_id_new INTEGER;
+UPDATE active_events SET company_id_new = (SELECT id FROM companies WHERE id_old = active_events.company_id);
+ALTER TABLE active_events DROP COLUMN company_id;
+ALTER TABLE active_events RENAME COLUMN company_id_new TO company_id;
+ALTER TABLE active_events ADD CONSTRAINT active_events_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
+
+-- Esempio per company_research
+ALTER TABLE company_research ADD COLUMN company_id_new INTEGER;
+UPDATE company_research SET company_id_new = (SELECT id FROM companies WHERE id_old = company_research.company_id);
+ALTER TABLE company_research DROP COLUMN company_id;
+ALTER TABLE company_research RENAME COLUMN company_id_new TO company_id;
+ALTER TABLE company_research ADD CONSTRAINT company_research_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
 
 -- 4. (Opzionale) Rimuovere la vecchia colonna id_old
 ALTER TABLE companies DROP COLUMN id_old;
