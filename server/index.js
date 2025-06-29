@@ -17,7 +17,6 @@ const airportRoutes = require('./routes/airports');
 const financeRoutes = require('./routes/finance');
 const marketAnalysisRoutes = require('./routes/market-analysis');
 const adminRoutes = require('./routes/admin');
-const apiInfoRoute = require('./routes/api-info');
 
 // Sistema migrazioni
 const MigrationSystem = require('../database/migration-system');
@@ -83,9 +82,6 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
     res.redirect(302, '/game/index.html');
 });
-
-// API info endpoint
-app.use('/api', apiInfoRoute);
 
 // API Routes
 console.log('📂 Caricamento route API...');
