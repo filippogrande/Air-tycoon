@@ -73,6 +73,11 @@ async function runSqlFile(client, filePath, fileLabel) {
     companies: 'id',
     research_events: 'name',
     random_events: 'name',
+    route_services: 'name',
+    seat_manufacturers: 'name',
+    seat_models: 'model_name',
+    world_events: 'name',
+    aircraft_types: 'name',
     // Estendi qui per altre tabelle
   };
 
