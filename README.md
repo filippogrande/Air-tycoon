@@ -173,8 +173,6 @@ air-tycoon/
 - `GET /api/game/companies` - Lista compagnie
 - `POST /api/game/companies` - Crea nuova compagnia
 - `GET /api/game/companies/:id` - Dettagli compagnia
-- `POST /api/game/save` - Salva partita
-- `GET /api/game/save/:id` - Carica salvataggio
 
 ### Flotta
 

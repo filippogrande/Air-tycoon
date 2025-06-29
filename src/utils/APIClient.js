@@ -64,10 +64,7 @@ class APIClient {
         const responses = {
             '/health': { status: 'ok', message: 'Modalità offline attiva' },
             '/auth/login': { success: true, token: 'mock-token', user: { id: 1, username: 'player' } },
-            '/auth/verify': { valid: true, user: { id: 1, username: 'player' } },
-            '/saves': [],
-            '/saves/save': { success: true, message: 'Salvato (modalità offline)' },
-            '/saves/load': null
+            // ...altri mock se necessario...
         };
         
         // Default response
@@ -103,21 +100,6 @@ class APIClient {
     // =====================================
     // SAVE / LOAD SYSTEM
     // =====================================
-
-    async saveGame(companyId, saveName, gameData) {
-        return this.request('/game/save', {
-            method: 'POST',
-            body: JSON.stringify({
-                company_id: companyId,
-                save_name: saveName,
-                game_data: gameData
-            })
-        });
-    }
-
-    async loadGame(saveId) {
-        return this.request(`/game/save/${saveId}`);
-    }
 
     async getSaves(companyId) {
         return this.request(`/game/saves/${companyId}`);

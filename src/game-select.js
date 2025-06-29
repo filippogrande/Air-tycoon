@@ -512,58 +512,12 @@ async function syncGameWithServer(saveName, gameData) {
         
         console.log('✅ Compagnia creata/aggiornata:', companyData.data?.name || 'Nome non disponibile');
         
-        // Poi salva il gioco
-        const savePayload = {
-            company_id: companyData.data.id,
-            save_name: saveName,
-            game_data: gameData
-        };
         // Aggiorna localStorage per retrocompatibilità (legacy)
         localStorage.setItem('air-tycoon-company-id', companyData.data.id);
         // Avvia il gioco passando l'UUID corretto
         if (typeof initializeGame === 'function') {
             initializeGame(companyData.data.id);
         }
-        
-        console.log('💾 Salvataggio gioco sul server...', {
-            company_id: savePayload.company_id,
-            save_name: savePayload.save_name
-        });
-        
-        const saveResponse = await fetch('/api/game/save', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${user.token || 'no-token'}`
-            },
-            body: JSON.stringify(savePayload)
-        });
-        
-        console.log('💾 Risposta server salvataggio:', saveResponse.status, saveResponse.statusText);
-        
-        if (!saveResponse.ok) {
-            let errorMessage = `Errore HTTP ${saveResponse.status}`;
-            try {
-                const errorData = await saveResponse.json();
-                errorMessage = errorData.error || errorData.message || errorMessage;
-            } catch (e) {
-                const errorText = await saveResponse.text();
-                errorMessage = errorText || errorMessage;
-            }
-            throw new Error(`Salvataggio fallito: ${errorMessage}`);
-        }
-        
-        const saveData = await saveResponse.json();
-        if (!saveData.success || !saveData.data) {
-            throw new Error('Risposta salvataggio non valida dal server');
-        }
-        
-        console.log('✅ Gioco salvato sul server:', saveData.data?.save_name || 'Nome non disponibile');
-        
-        return {
-            company: companyData,
-            save: saveData
-        };
         
     } catch (error) {
         console.error('❌ Errore sincronizzazione server:', error);
