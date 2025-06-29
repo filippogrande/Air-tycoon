@@ -180,7 +180,8 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
             latitude: lat,
             longitude: lon,
             businessLevel: airport.businessLevel !== undefined ? airport.businessLevel : airport.business_level,
-            touristLevel: airport.touristLevel !== undefined ? airport.touristLevel : airport.tourist_level
+            touristLevel: airport.touristLevel !== undefined ? airport.touristLevel : airport.tourist_level,
+            size: airport.size || airport.airport_size // Normalizza sempre il campo size
         });
         this.airportMarkers[code] = marker;
     }
