@@ -34,8 +34,8 @@ WHERE a.name = b.name AND a.id > b.id;
 ALTER TABLE route_services
 ADD CONSTRAINT route_services_name_unique UNIQUE (name);
 
--- 6. Elimina la tabella migration_history se esiste
--- DROP TABLE IF EXISTS migration_history;
+-- 6. Elimina la tabella schema_migration se esiste
+DROP TABLE IF EXISTS schema_migration;
 
 -- 7. Unique constraint su seat_manufacturers.name
 DELETE FROM seat_manufacturers a
