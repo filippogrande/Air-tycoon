@@ -10,15 +10,15 @@ ALTER TABLE flights RENAME COLUMN aircraft_id TO aircraft_id_old;
 -- 1b. Rinomina la tabella fleet in aircraft
 ALTER TABLE fleet RENAME TO aircraft;
 
+-- 1c. Rimuovere la PRIMARY KEY residua con il vecchio nome (fleet_pkey) dopo la rinomina
+ALTER TABLE aircraft DROP CONSTRAINT IF EXISTS fleet_pkey;
+ALTER TABLE aircraft DROP CONSTRAINT IF EXISTS aircraft_pkey;
+
 -- 2. Rimuovere i vincoli di FOREIGN KEY che fanno riferimento a aircraft.id
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_fleet_id_fkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_aircraft_id_fkey;
 
--- 3. Ora puoi rimuovere la PRIMARY KEY su aircraft
-ALTER TABLE aircraft DROP CONSTRAINT IF EXISTS aircraft_pkey;
-ALTER TABLE aircraft DROP CONSTRAINT IF EXISTS aircraft_company_id_fkey;
-
--- 4. E ora puoi rimuovere gli altri vincoli di flights
+-- 3. Ora puoi rimuovere la PRIMARY KEY su flights (potrebbe chiamarsi flights_pkey)
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_pkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_company_id_fkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_route_id_fkey;
