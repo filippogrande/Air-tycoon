@@ -1,6 +1,9 @@
 -- Migrazione 0016: vincoli companies e cleanup schema
 -- Data: 2025-06-29
 
+-- 0. Elimina tutte le compagnie senza user_id (per evitare errori sul vincolo NOT NULL)
+DELETE FROM companies WHERE user_id IS NULL;
+
 -- 1. Rendi obbligatorio user_id su companies
 ALTER TABLE companies
 ALTER COLUMN user_id SET NOT NULL;
