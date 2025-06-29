@@ -116,4 +116,33 @@ router.post('/delete', async (req, res) => {
     }
 });
 
+// Rotta per vedere le dipendenze (foreign key) di una tabella
+router.get('/dependencies/:table', async (req, res) => {
+    const table = req.params.table;
+    try {
+        const depsResult = await db.query(`
+            SELECT
+                tc.table_name AS tabella_figlia,
+                kcu.column_name AS colonna_figlia,
+                ccu.table_name AS tabella_padre,
+                ccu.column_name AS colonna_padre
+            FROM
+                information_schema.table_constraints AS tc
+                JOIN information_schema.key_column_usage AS kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                  AND tc.table_schema = kcu.table_schema
+                JOIN information_schema.constraint_column_usage AS ccu
+                  ON ccu.constraint_name = tc.constraint_name
+                  AND ccu.table_schema = tc.table_schema
+            WHERE
+                tc.constraint_type = 'FOREIGN KEY'
+                AND ccu.table_name = $1
+            ORDER BY tabella_figlia, colonna_figlia
+        `, [table]);
+        res.json(depsResult.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
