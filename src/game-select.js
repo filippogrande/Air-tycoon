@@ -134,7 +134,7 @@ function createCompanyCard(company) {
                 <span class="stat-label">Hub Principale</span>
             </div>
         </div>
-        <button class="action-btn primary load-save-btn" onclick="startGameFromCompany(${company.id})">
+        <button class="action-btn primary load-save-btn" onclick="startGameFromCompany('${company.id}')">
             🎮 Carica Partita
         </button>
     `;
