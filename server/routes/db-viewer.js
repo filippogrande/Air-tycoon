@@ -82,7 +82,7 @@ router.get('/', async (req, res) => {
                 </thead>
                 <tbody>
                     ${tableData.length === 0 ? `<tr><td colspan="${columns.length}">Nessun dato</td></tr>` :
-                        tableData.map(row => `<tr>${columns.map(col => `<td>${formatCell(row[col])}</td>`).join('')}${deleteButton(row)}</tr>`).join('')}
+                        tableData.map(row => `<tr>${columns.map(col => `<td>${formatCell(row[col])}</td>`).join('')}${columns.includes('id') ? `<td>${deleteButton(row)}</td>` : ''}</tr>`).join('')}
                 </tbody>
             </table>
         </div>
