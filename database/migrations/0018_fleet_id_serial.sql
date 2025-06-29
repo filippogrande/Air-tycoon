@@ -1,8 +1,6 @@
 -- Migrazione destructive: rimozione uuid come PK (eccetto users)
 -- ATTENZIONE: tutti i dati delle tabelle coinvolte andranno persi!
 
--- Disabilita temporaneamente le foreign key
-SET session_replication_role = replica;
 
 -- active_events: id era uuid, ora SERIAL PRIMARY KEY; FKs aggiornate da uuid a integer
 DROP TABLE IF EXISTS active_events CASCADE;
@@ -168,5 +166,3 @@ CREATE TABLE user_preferences (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Riabilita le foreign key
-SET session_replication_role = DEFAULT;
