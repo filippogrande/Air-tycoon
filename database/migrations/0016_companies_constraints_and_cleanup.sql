@@ -35,7 +35,7 @@ ALTER TABLE route_services
 ADD CONSTRAINT route_services_name_unique UNIQUE (name);
 
 -- 6. Elimina la tabella migration_history se esiste
-DROP TABLE IF EXISTS migration_history;
+-- DROP TABLE IF EXISTS migration_history;
 
 -- 7. Unique constraint su seat_manufacturers.name
 DELETE FROM seat_manufacturers a
