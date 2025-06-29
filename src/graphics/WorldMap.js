@@ -144,21 +144,28 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
     window.AirportData._airportByCode = {};
     for (var i = 0; i < airports.length; i++) {
         var airport = airports[i];
-        if (airport.code) {
-            window.AirportData._airportByCode[airport.code] = airport;
+        // Normalizza codice aeroporto (preferisci IATA, fallback ICAO)
+        var code = airport.iata_code || airport.icao_code || airport.code;
+        // Conversione sicura di lat/lon a float
+        var lat = parseFloat(airport.latitude);
+        var lon = parseFloat(airport.longitude);
+        var latOk = !isNaN(lat);
+        var lonOk = !isNaN(lon);
+        if (code) {
+            window.AirportData._airportByCode[code] = airport;
         }
-        // Verifica che l'aeroporto abbia dati validi (accetta anche stringhe numeriche)
-        const lat = airport.latitude;
-        const lon = airport.longitude;
-        const code = airport.code;
-        const latOk = lat !== undefined && lat !== null && lat !== '' && !isNaN(Number(lat));
-        const lonOk = lon !== undefined && lon !== null && lon !== '' && !isNaN(Number(lon));
         if (!latOk || !lonOk || !code) {
             console.warn('⚠️ Aeroporto con dati invalidi:', airport);
             continue;
         }
-        var marker = this.createAirportMarker(airport);
-        this.airportMarkers[airport.code] = marker;
+        // Passa i valori normalizzati a createAirportMarker
+        var marker = this.createAirportMarker({
+            ...airport,
+            code: code,
+            latitude: lat,
+            longitude: lon
+        });
+        this.airportMarkers[code] = marker;
     }
     // Definisci o sovrascrivi getAirportByCode per usare solo i dati reali
     window.AirportData.getAirportByCode = function(code) {
