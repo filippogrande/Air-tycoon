@@ -109,43 +109,20 @@ function initializeGame(companyId) {
     try {
         console.log('🎮 Creazione istanza Game...');
         game = new Game(companyIdNum);
-        // Rendi il gioco disponibile globalmente per l'UI
         window.game = game;
         console.log('✅ Game creato');
-        
-        // Gestione errori globali
         window.addEventListener('error', handleGlobalError);
         window.addEventListener('unhandledrejection', handleUnhandledRejection);
-        
-        // Gestione resize della finestra
         window.addEventListener('resize', handleWindowResize);
-        
-        // Gestione visibilità pagina (per pause automatica)
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        
-        // Salvataggio automatico prima di chiudere la pagina
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        
         console.log('✅ Event listeners configurati');
-        
         // Mostra messaggio di benvenuto
-        console.log('🎉 Mostrando messaggio di benvenuto...');
         showWelcomeMessage();
-        
         // Setup eventi UI
-        console.log('🔧 Setup eventi UI...');
         setupUIEvents();
-        
         // Setup eventi del menu di gioco dopo che il game è inizializzato
-        console.log('🔧 Setup eventi menu di gioco...');
         setupGameMenuEvents();
-        
-        // Setup salvataggio automatico
-        console.log('🔧 Setup salvataggio automatico...');
-        setupAutoSave();
-        
         console.log('✅ Gioco avviato con successo!');
-        
     } catch (error) {
         console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
         console.error('❌ Stack trace:', error.stack);
@@ -180,19 +157,8 @@ function checkBrowserCompatibility() {
 // Gestione errori globali
 function handleGlobalError(event) {
     console.error('❌ Errore globale:', event.error);
-    
-    // Prova a salvare il gioco in caso di errore
-    if (game && game.saveGame) {
-        try {
-            game.saveGame();
-            console.log('💾 Gioco salvato automaticamente dopo errore');
-        } catch (saveError) {
-            console.error('❌ Impossibile salvare dopo errore:', saveError);
-        }
-    }
-    
     // Mostra notifica all'utente
-    showError('Si è verificato un errore. Il gioco è stato salvato automaticamente.');
+    showError('Si è verificato un errore.');
 }
 
 // Gestione promise rigettate
@@ -234,15 +200,6 @@ function handleVisibilityChange() {
 
 // Gestione chiusura pagina
 function handleBeforeUnload(event) {
-    if (game && game.saveGame) {
-        try {
-            game.saveGame();
-            console.log('💾 Gioco salvato prima della chiusura');
-        } catch (error) {
-            console.error('❌ Errore nel salvataggio prima della chiusura:', error);
-        }
-    }
-    
     // Mostra conferma solo se ci sono modifiche non salvate
     if (game && game.state && hasUnsavedChanges()) {
         event.preventDefault();
@@ -260,28 +217,15 @@ function hasUnsavedChanges() {
 
 // Mostra messaggio di benvenuto
 function showWelcomeMessage() {
-    // Verifica se è la prima volta che l'utente gioca
-    const isFirstTime = !SaveLoad.hasSaveData();
-    
-    if (isFirstTime) {
-        setTimeout(() => {
-            if (game && game.uiManager && game.uiManager.showNotification) {
-                game.uiManager.showNotification(
-                    '🎉 Benvenuto in Air Tycoon 2 Clone! Inizia acquistando il tuo primo aeromobile.',
-                    'info'
-                );
-            }
-        }, 2000);
-    } else {
-        setTimeout(() => {
-            if (game && game.uiManager && game.uiManager.showNotification) {
-                game.uiManager.showNotification(
-                    '👋 Bentornato! Il tuo gioco è stato caricato.',
-                    'success'
-                );
-            }
-        }, 1000);
-    }
+    // Mostra sempre il messaggio di benvenuto (nessun controllo salvataggio)
+    setTimeout(() => {
+        if (game && game.uiManager && game.uiManager.showNotification) {
+            game.uiManager.showNotification(
+                '🎉 Benvenuto in Air Tycoon 2 Clone! Inizia acquistando il tuo primo aeromobile.',
+                'info'
+            );
+        }
+    }, 2000);
 }
 
 // Mostra errore all'utente
@@ -329,70 +273,6 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 
 // Funzioni di utilità globali
 window.gameUtils = {
-    // Resetta il gioco
-    resetGame: function() {
-        if (confirm('Sei sicuro di voler resettare il gioco? Tutti i progressi andranno persi.')) {
-            SaveLoad.deleteSave();
-            location.reload();
-        }
-    },
-    
-    // Esporta salvataggio
-    exportSave: function() {
-        if (game && game.state) {
-            const saveData = game.state.toSaveData();
-            SaveLoad.exportSave(saveData);
-        }
-    },
-    
-    // Importa salvataggio
-    importSave: function() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        
-        input.onchange = function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                SaveLoad.importSave(file)
-                    .then(saveData => {
-                        if (confirm('Importare questo salvataggio? I progressi attuali andranno persi.')) {
-                            game.state.loadFromData(saveData);
-                            game.updateUI();
-                            if (game.uiManager) {
-                                game.uiManager.showNotification('📥 Salvataggio importato con successo!', 'success');
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Errore nell\'importazione:', error);
-                        if (game.uiManager) {
-                            game.uiManager.showNotification('❌ Errore nell\'importazione: ' + error.message, 'error');
-                        }
-                    });
-            }
-        };
-        
-        input.click();
-    },
-    
-    // Statistiche storage
-    showStorageStats: function() {
-        const stats = SaveLoad.getStorageStats();
-        if (stats) {
-            console.log('📊 Statistiche Storage:', stats);
-            alert(`Storage utilizzato: ${stats.formattedSizes.gameData} del gioco su ${stats.formattedSizes.total} totali (${Math.round(stats.percentUsed)}% della quota stimata)`);
-        }
-    },
-    
-    // Pulizia storage
-    cleanupStorage: function() {
-        const removed = SaveLoad.cleanupOldSaves();
-        if (game.uiManager) {
-            game.uiManager.showNotification(`🧹 Puliti ${removed} salvataggi vecchi`, 'info');
-        }
-    },
-    
     // Cambia velocità gioco
     setGameSpeed: function(speed) {
         if (game && game.setGameSpeed) {
@@ -417,11 +297,6 @@ window.gameUtils = {
 console.log(`
 🛫 Air Tycoon 2 Clone
 Comandi disponibili:
-- gameUtils.resetGame() - Resetta il gioco
-- gameUtils.exportSave() - Esporta salvataggio
-- gameUtils.importSave() - Importa salvataggio
-- gameUtils.showStorageStats() - Mostra statistiche storage
-- gameUtils.cleanupStorage() - Pulisce storage vecchi
 - gameUtils.setGameSpeed(x) - Cambia velocità (0.1-10)
 - gameUtils.getGameStats() - Statistiche di gioco
 `);
@@ -452,39 +327,12 @@ function setupGameMenuEvents() {
         });
     }
     
-    // Salva e continua
-    var saveAndContinueBtn = document.getElementById('save-and-continue');
-    if (saveAndContinueBtn) {
-        saveAndContinueBtn.addEventListener('click', function() {
-            console.log('💾 Salvataggio partita...');
-            if (game && game.saveGame) {
-                try {
-                    game.saveGame();
-                    alert('✅ Partita salvata con successo!');
-                    gameMenuModal.classList.add('hidden');
-                } catch (error) {
-                    console.error('❌ Errore nel salvataggio:', error);
-                    alert('❌ Errore nel salvataggio: ' + error.message);
-                }
-            }
-        });
-    }
-    
     // Torna alla selezione giochi
     var returnToGameSelectBtn = document.getElementById('return-to-game-select');
     if (returnToGameSelectBtn) {
         returnToGameSelectBtn.addEventListener('click', function() {
             console.log('🔙 Ritorno alla selezione giochi...');
             if (confirm('Vuoi davvero tornare alla selezione dei giochi? Assicurati di aver salvato la partita.')) {
-                // Salva automaticamente prima di uscire
-                if (game && game.saveGame) {
-                    try {
-                        game.saveGame();
-                        console.log('💾 Partita salvata automaticamente prima dell\'uscita');
-                    } catch (error) {
-                        console.warn('⚠️ Errore nel salvataggio automatico:', error);
-                    }
-                }
                 window.location.href = 'game-select.html';
             }
         });
@@ -504,48 +352,10 @@ function setupGameMenuEvents() {
         logoutFromGameBtn.addEventListener('click', function() {
             console.log('🚪 Logout dal gioco...');
             if (confirm('Vuoi davvero fare il logout? Assicurati di aver salvato la partita.')) {
-                // Salva automaticamente prima del logout
-                if (game && game.saveGame) {
-                    try {
-                        game.saveGame();
-                        console.log('💾 Partita salvata automaticamente prima del logout');
-                    } catch (error) {
-                        console.warn('⚠️ Errore nel salvataggio automatico:', error);
-                    }
-                }
-                
                 // Effettua logout
                 var authManager = new AuthManager();
                 authManager.logout();
                 window.location.href = 'auth.html';
-            }
-        });
-    }
-    
-    // Gestione salvataggio rapido
-    var saveGameBtn = document.getElementById('save-game-btn');
-    if (saveGameBtn) {
-        saveGameBtn.addEventListener('click', function() {
-            console.log('💾 Salvataggio rapido...');
-            if (game && game.saveGame) {
-                try {
-                    game.saveGame();
-                    // Mostra feedback visivo temporaneo
-                    saveGameBtn.textContent = '✅ Salvato!';
-                    saveGameBtn.style.background = '#2ecc71';
-                    setTimeout(function() {
-                        saveGameBtn.textContent = '💾 Salva';
-                        saveGameBtn.style.background = '';
-                    }, 2000);
-                } catch (error) {
-                    console.error('❌ Errore nel salvataggio rapido:', error);
-                    saveGameBtn.textContent = '❌ Errore';
-                    saveGameBtn.style.background = '#e74c3c';
-                    setTimeout(function() {
-                        saveGameBtn.textContent = '💾 Salva';
-                        saveGameBtn.style.background = '';
-                    }, 2000);
-                }
             }
         });
     }
@@ -651,15 +461,6 @@ function setupUIEvents() {
         // ESC per aprire/chiudere menu
         if (e.key === 'Escape') {
             toggleGameMenu();
-        }
-        
-        // Salvataggio rapido con Ctrl+S
-        if (e.ctrlKey && e.key === 's') {
-            e.preventDefault();
-            if (game) {
-                game.saveGame();
-                showNotification('Gioco salvato!', 'success');
-            }
         }
     });
     
@@ -793,6 +594,7 @@ function handleTabSwitch(tabName) {
             console.log('📋 Tab sconosciuto:', tabName);
     }
 }
+
 
 
 
