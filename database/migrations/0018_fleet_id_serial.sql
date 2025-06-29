@@ -14,7 +14,7 @@ ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_pkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_company_id_fkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_route_id_fkey;
 
-SELECT 'CONSTRAINT dropped' AS log
+SELECT 'CONSTRAINT dropped' AS log;
 -- 1. Rinominare le colonne per backup
 ALTER TABLE fleet RENAME COLUMN id TO id_old;
 ALTER TABLE fleet RENAME COLUMN company_id TO company_id_old;
@@ -27,7 +27,7 @@ ALTER TABLE routes RENAME COLUMN id TO id_old;
 -- 1b. Rinomina la tabella fleet in aircraft
 ALTER TABLE fleet RENAME TO aircraft;
 
-SELECT 'renames' AS log
+SELECT 'renames' AS log;
 -- 5. Aggiungere nuove colonne PK/FK e conversione dati
 ALTER TABLE aircraft ADD COLUMN id SERIAL PRIMARY KEY;
 -- Solo ora aggiungi la colonna company_id e popola con conversione
@@ -42,7 +42,7 @@ ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_pkey;
 ALTER TABLE routes ADD COLUMN id SERIAL PRIMARY KEY;
 -- (Opzionale: se serve, mappa i dati da id_old a id nelle tabelle collegate)
 
-SELECT 'add column' AS log
+SELECT 'add column' AS log;
 -- 8. Ricreare i constraint
 ALTER TABLE aircraft ADD CONSTRAINT aircraft_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
 ALTER TABLE flights ADD CONSTRAINT flights_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
@@ -51,7 +51,7 @@ ALTER TABLE flights ADD CONSTRAINT flights_aircraft_id_fkey FOREIGN KEY (aircraf
 ALTER TABLE flights ADD CONSTRAINT flights_route_id_fkey FOREIGN KEY (route_id) REFERENCES routes(id);
 
 
-SELECT 'Ricreare' AS log
+SELECT 'Ricreare' AS log;
 -- 9. Rimuovere le colonne di backup
 ALTER TABLE aircraft DROP COLUMN id_old;
 ALTER TABLE aircraft DROP COLUMN company_id_old;
