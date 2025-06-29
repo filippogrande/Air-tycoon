@@ -17,6 +17,7 @@ const airportRoutes = require('./routes/airports');
 const financeRoutes = require('./routes/finance');
 const marketAnalysisRoutes = require('./routes/market-analysis');
 const adminRoutes = require('./routes/admin');
+const apiInfoRoute = require('./routes/api-info');
 
 // Sistema migrazioni
 const MigrationSystem = require('../database/migration-system');
@@ -79,26 +80,7 @@ app.get('/', (req, res) => {
 });
 
 // API info endpoint
-app.get('/api', (req, res) => {
-    res.json({
-        name: 'Air Tycoon 2 API Server',
-        version: '1.0.0',
-        status: 'Running',
-        endpoints: {
-            health: '/health',
-            auth: '/api/auth/*',
-            game: '/api/game/*',
-            fleet: '/api/fleet/*',
-            routes: '/api/routes/*',
-            airports: '/api/airports/*',
-            finance: '/api/finance/*',
-            marketAnalysis: '/api/market-analysis/*',
-            admin: '/api/admin/*'
-        },
-        database: 'PostgreSQL Connected',
-        docs: 'See README.md for full API documentation'
-    });
-});
+app.use('/api', apiInfoRoute);
 
 // API Routes
 console.log('📂 Caricamento route API...');
