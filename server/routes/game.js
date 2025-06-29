@@ -147,10 +147,10 @@ router.post('/companies', async (req, res) => {
         if (!money) money = 1000000;
         // Crea compagnia
         const result = await db.query(`
-            INSERT INTO companies (name, money, reputation, founded, base_airport, user_id, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            INSERT INTO companies (name, money, reputation, founded, base_airport, user_id, game_date, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *
-        `, [name, money, 50, founded, headquarters_airport_id, user_id]);
+        `, [name, money || 1000000, reputation || 50, founded || new Date().toISOString(), headquarters_airport_id, user_id]);
         res.status(201).json({
             success: true,
             data: result.rows[0]
@@ -203,11 +203,11 @@ router.put('/companies/:id', async (req, res) => {
 // POST /api/game/companies/create-or-update - Crea o aggiorna una compagnia
 router.post('/companies/create-or-update', async (req, res) => {
     try {
-        let { id, name, money, reputation, founded, base_airport, base_airport_code } = req.body;
-        if (!name) {
+        let { id, name, money, reputation, founded, base_airport, base_airport_code, user_id } = req.body;
+        if (!user_id || !name || (!base_airport && !base_airport_code) || !founded) {
             return res.status(400).json({
                 success: false,
-                error: 'Name is required'
+                error: 'user_id, name, founded e base_airport (o base_airport_code) sono obbligatori'
             });
         }
         // Se base_airport è una stringa (IATA code), usala come base_airport_code
@@ -230,24 +230,33 @@ router.post('/companies/create-or-update', async (req, res) => {
         if (!id) {
             // Crea nuova compagnia con id generato dal DB
             result = await db.query(`
-                INSERT INTO companies (name, money, reputation, founded, base_airport, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO companies (name, money, reputation, founded, base_airport, user_id, game_date, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 RETURNING *
-            `, [name, money || 1000000, reputation || 50, founded || new Date().toISOString(), base_airport]);
+            `, [name, money || 1000000, reputation || 50, founded || new Date().toISOString(), base_airport, user_id]);
+            // Inserisci anche l'hub principale in company_hubs
+            const companyId = result.rows[0].id;
+            await db.query(`
+                INSERT INTO company_hubs (company_id, airport_id, hub_level, maintenance_capacity, staff_capacity, monthly_cost, facilities, established_date, created_at, updated_at)
+                VALUES ($1, $2, 1, 2, 50, 100000, '{}', $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT (company_id, airport_id) DO NOTHING
+            `, [companyId, base_airport, founded]);
         } else {
             // Aggiorna compagnia esistente
             result = await db.query(`
-                INSERT INTO companies (id, name, money, reputation, founded, base_airport, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO companies (id, name, money, reputation, founded, base_airport, user_id, game_date, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ON CONFLICT (id) 
                 DO UPDATE SET 
                     name = EXCLUDED.name,
                     money = EXCLUDED.money,
                     reputation = EXCLUDED.reputation,
                     base_airport = EXCLUDED.base_airport,
+                    user_id = EXCLUDED.user_id,
+                    game_date = EXCLUDED.founded,
                     updated_at = CURRENT_TIMESTAMP
                 RETURNING *
-            `, [id, name, money || 1000000, reputation || 50, founded || new Date().toISOString(), base_airport]);
+            `, [id, name, money || 1000000, reputation || 50, founded || new Date().toISOString(), base_airport, user_id]);
         }
         res.json({
             success: true,

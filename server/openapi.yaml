@@ -35,25 +35,57 @@ paths:
       responses:
         "200":
           description: Lista compagnie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Company"
     post:
       tags: [Game]
       summary: Crea nuova compagnia e hub principale
+      description: |
+        Crea una nuova compagnia e il suo hub principale. Il campo `founded` è obbligatorio e viene usato anche come `game_date` e come `established_date` dell'hub principale.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [name, headquarters_airport, user_id, founded]
               properties:
                 name:
                   type: string
-                headquarters_airport_id:
+                headquarters_airport:
                   type: integer
+                  description: ID numerico, IATA (3 lettere) o ICAO (4 lettere)
                 user_id:
                   type: string
+                founded:
+                  type: string
+                  format: date-time
+            example:
+              name: "Air Tycoon"
+              headquarters_airport: 1
+              user_id: "user-123"
+              founded: "2025-06-29T12:00:00Z"
       responses:
         "201":
           description: Compagnia creata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/Company"
   /api/game/companies/{id}:
     get:
       tags: [Game]
@@ -67,6 +99,15 @@ paths:
       responses:
         "200":
           description: Dettagli compagnia
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/CompanyDetails"
     put:
       tags: [Game]
       summary: Aggiorna una compagnia
@@ -142,12 +183,15 @@ paths:
     post:
       tags: [Game]
       summary: Crea o aggiorna una compagnia (upsert)
+      description: |
+        Crea o aggiorna una compagnia. `founded` è obbligatorio e viene usato anche come `game_date` e come `established_date` dell'hub principale se la compagnia è nuova.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [name, user_id, founded, base_airport]
               properties:
                 id:
                   type: integer
@@ -165,12 +209,15 @@ paths:
                   type: integer
                 base_airport_code:
                   type: string
+                user_id:
+                  type: string
             example:
               name: "Air Tycoon"
               money: 1000000
               reputation: 50
               founded: "2025-06-29T12:00:00Z"
               base_airport: 1
+              user_id: "user-123"
       responses:
         "200":
           description: Compagnia creata o aggiornata
@@ -182,7 +229,7 @@ paths:
                   success:
                     type: boolean
                   data:
-                    type: object
+                    $ref: "#/components/schemas/Company"
                   action:
                     type: string
               example:
@@ -193,6 +240,8 @@ paths:
                   money: 1000000
                   reputation: 50
                   base_airport: 1
+                  founded: "2025-06-29T12:00:00Z"
+                  game_date: "2025-06-29T12:00:00Z"
                 action: "created"
         "400":
           description: Parametri mancanti o errati
@@ -1081,3 +1130,49 @@ paths:
                     type: array
                     items:
                       type: object
+components:
+  schemas:
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        money:
+          type: number
+        reputation:
+          type: number
+        base_airport:
+          type: integer
+        user_id:
+          type: string
+        founded:
+          type: string
+          format: date-time
+        game_date:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CompanyDetails:
+      allOf:
+        - $ref: "#/components/schemas/Company"
+        - type: object
+          properties:
+            fleet:
+              type: array
+              items:
+                type: object
+            routes:
+              type: array
+              items:
+                type: object
+            financials:
+              type: array
+              items:
+                type: object
