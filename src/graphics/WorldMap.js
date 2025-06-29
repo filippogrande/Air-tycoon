@@ -220,7 +220,11 @@ WorldMap.prototype.createAirportMarker = function(airport) {
         iconAnchor: [iconSize[0]/2, iconSize[1]/2]
     });
     
-    var marker = L.marker([airport.latitude, airport.longitude], {
+    // Conversione sicura di lat/lon a numeri
+    var lat = parseFloat(airport.latitude);
+    var lon = parseFloat(airport.longitude);
+    
+    var marker = L.marker([lat, lon], {
         icon: airportIcon,
         title: (airport.name || 'Aeroporto sconosciuto') + ' (' + (airport.code || 'N/A') + ')',
         zIndexOffset: zIndex
