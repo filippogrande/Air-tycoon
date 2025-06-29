@@ -21,6 +21,15 @@ router.get('/', async (req, res) => {
                 const dataResult = await db.query(`SELECT * FROM ${selectedTable} LIMIT 500`);
                 tableData = dataResult.rows;
                 columns = dataResult.fields.map(f => f.name);
+                // Recupera anche i tipi delle colonne
+const typesResult = await db.query(`
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = $1
+    ORDER BY ordinal_position
+`, [selectedTable]);
+var columnTypes = {};
+typesResult.rows.forEach(r => columnTypes[r.column_name] = r.data_type);
             } catch (err) {
                 error = 'Errore caricamento dati: ' + err.message;
             }
@@ -68,8 +77,8 @@ router.get('/', async (req, res) => {
         <form class="table-selector" method="get" action="/db-viewer">
             <label for="table">Tabella:</label>
             <select name="table" id="table" onchange="this.form.submit()">
-                ${tables.map(t => `<option value="${t}"${t === selectedTable ? ' selected' : ''}>${t}</option>`).join('')}
-            </select>
+    ${tables.map(tbl => `<option value="${tbl}"${tbl === selectedTable ? ' selected' : ''}>${tbl}</option>`).join('')}
+</select>
             <span class="record-count">(${tableData.length} record)</span>
         </form>
         ${error ? `<div class="error">${error}</div>` : ''}
@@ -77,8 +86,7 @@ router.get('/', async (req, res) => {
             <table>
                 <thead>
                     <tr>
-                        ${columns.map(col => `<th>${col}</th>`).join('')}${columns.includes('id') ? '<th>Azioni</th>' : ''}
-                    </tr>
+                   ${columns.map(col => `<th>${col}<br><span style="font-size:11px;color:#888">${columnTypes ? columnTypes[col] : ''}</span></th>`).join('')}${columns.includes('id') ? '<th>Azioni</th>' : ''} </tr>
                 </thead>
                 <tbody>
                     ${tableData.length === 0 ? `<tr><td colspan="${columns.length}">Nessun dato</td></tr>` :
