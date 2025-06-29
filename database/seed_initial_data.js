@@ -129,12 +129,10 @@ async function main() {
       .sort();
     for (const file of files) {
       const filePath = path.join(INITIAL_DB_DIR, file);
-      console.log(`[INFO] Eseguo seeding per ${file}...`);
       await runSqlFile(client, filePath, file);
       // Salva hash per ogni file
       const fileHash = await getFileHash(filePath);
       await saveSeedHash(client, file, fileHash);
-      console.log(`[INFO] Seeding completato e hash salvato per ${file}`);
     }
     console.log('[INFO] Seeding COMPLETATO per tutti i file.');
   } catch (err) {
