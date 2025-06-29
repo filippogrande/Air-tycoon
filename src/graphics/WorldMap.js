@@ -163,7 +163,9 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
             ...airport,
             code: code,
             latitude: lat,
-            longitude: lon
+            longitude: lon,
+            businessLevel: airport.businessLevel !== undefined ? airport.businessLevel : airport.business_level,
+            touristLevel: airport.touristLevel !== undefined ? airport.touristLevel : airport.tourist_level
         });
         this.airportMarkers[code] = marker;
     }

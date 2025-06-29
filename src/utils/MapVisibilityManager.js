@@ -26,6 +26,20 @@ var MapVisibilityManager = {
     // Calcola aeroporti da mostrare - LOGICA ORIGINALE FUNZIONANTE
     updateAirportVisibility: function(game, map, airportMarkers, zoom) {
         console.log('🔍 Aggiornamento visibilità aeroporti intelligente, zoom:', zoom);
+        // Se zoom massimo, mostra tutti gli aeroporti senza filtri
+        if (zoom >= 10) {
+            var visibleCount = 0;
+            for (var code in airportMarkers) {
+                var marker = airportMarkers[code];
+                if (!map.hasLayer(marker)) {
+                    map.addLayer(marker);
+                    visibleCount++;
+                }
+            }
+            console.log('✅ [FORZATO] Tutti gli aeroporti visibili:', visibleCount, '/', Object.keys(airportMarkers).length);
+            this.updateCityLabels(map, airportMarkers, zoom);
+            return;
+        }
         
         // Ottieni i bounds della mappa visibile
         var bounds = map.getBounds();
