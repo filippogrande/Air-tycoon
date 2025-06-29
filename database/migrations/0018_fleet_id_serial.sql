@@ -27,6 +27,8 @@ ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_route_id_fkey;
 -- 5. Aggiungere nuove colonne
 ALTER TABLE aircraft ADD COLUMN id SERIAL PRIMARY KEY;
 ALTER TABLE aircraft ADD COLUMN company_id INTEGER;
+-- Popola la nuova colonna company_id con i valori di backup
+UPDATE aircraft SET company_id = company_id_old;
 -- aircraft_id non serve più
 ALTER TABLE flights ADD COLUMN id SERIAL PRIMARY KEY;
 ALTER TABLE flights ADD COLUMN route_id INTEGER;
