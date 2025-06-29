@@ -1158,7 +1158,6 @@ paths:
                     capacity: 189
                     range_km: 5436
                     fuel_consumption: 2600
-                    ...
   /api/game/airport-data:
     get:
       tags: [Game]
@@ -1189,7 +1188,6 @@ paths:
                     country: "IT"
                     latitude: 41.8003
                     longitude: 12.2389
-                    ...
 components:
   schemas:
     Company:
