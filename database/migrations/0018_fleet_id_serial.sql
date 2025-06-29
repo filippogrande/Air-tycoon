@@ -5,9 +5,9 @@ ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_fleet_id_fkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_aircraft_id_fkey;
 
 -- 3. Ora puoi rimuovere la PRIMARY KEY residua con il vecchio nome (fleet_pkey) dopo la rinomina
-ALTER TABLE aircraft DROP CONSTRAINT IF EXISTS fleet_pkey;
-ALTER TABLE aircraft DROP CONSTRAINT IF EXISTS aircraft_pkey;
-ALTER TABLE aircraft DROP CONSTRAINT IF EXISTS aircraft_company_id_fkey;
+ALTER TABLE fleet DROP CONSTRAINT IF EXISTS fleet_pkey;
+ALTER TABLE fleet DROP CONSTRAINT IF EXISTS fleet_pkey;
+ALTER TABLE fleet DROP CONSTRAINT IF EXISTS fleet_company_id_fkey;
 
 -- 4. E ora puoi rimuovere gli altri vincoli di flights
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_pkey;
