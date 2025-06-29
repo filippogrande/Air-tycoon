@@ -108,4 +108,48 @@ router.post('/delete', async (req, res) => {
     }
 });
 
+// ...existing code...
+
+// Route temporanea per vedere tutte le foreign key verso companies
+router.get('/foreign-keys', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT
+              tc.table_name,
+              kcu.column_name,
+              ccu.table_name AS foreign_table_name,
+              ccu.column_name AS foreign_column_name,
+              tc.constraint_name
+            FROM
+              information_schema.table_constraints AS tc
+              JOIN information_schema.key_column_usage AS kcu
+                ON tc.constraint_name = kcu.constraint_name
+              JOIN information_schema.constraint_column_usage AS ccu
+                ON ccu.constraint_name = tc.constraint_name
+            WHERE
+              tc.constraint_type = 'FOREIGN KEY'
+              AND ccu.table_name = 'companies'
+            ORDER BY tc.table_name
+        `);
+        res.send(`<h2>Foreign key verso companies</h2>
+        <table border="1" cellpadding="6">
+            <tr>
+                <th>Tabella</th>
+                <th>Colonna</th>
+                <th>Nome vincolo</th>
+            </tr>
+            ${result.rows.map(r => `<tr>
+                <td>${r.table_name}</td>
+                <td>${r.column_name}</td>
+                <td>${r.constraint_name}</td>
+            </tr>`).join('')}
+        </table>
+        <p><a href="/db-viewer">Torna a DB Viewer</a></p>`);
+    } catch (err) {
+        res.status(500).send('Errore: ' + err.message);
+    }
+});
+
+// ...existing code...
+
 module.exports = router;
