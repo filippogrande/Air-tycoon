@@ -147,8 +147,13 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
         if (airport.code) {
             window.AirportData._airportByCode[airport.code] = airport;
         }
-        // Verifica che l'aeroporto abbia dati validi
-        if (!airport.latitude || !airport.longitude || !airport.code) {
+        // Verifica che l'aeroporto abbia dati validi (accetta anche stringhe numeriche)
+        const lat = airport.latitude;
+        const lon = airport.longitude;
+        const code = airport.code;
+        const latOk = lat !== undefined && lat !== null && lat !== '' && !isNaN(Number(lat));
+        const lonOk = lon !== undefined && lon !== null && lon !== '' && !isNaN(Number(lon));
+        if (!latOk || !lonOk || !code) {
             console.warn('⚠️ Aeroporto con dati invalidi:', airport);
             continue;
         }
