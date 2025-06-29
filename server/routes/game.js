@@ -96,48 +96,70 @@ router.get('/companies/:id', async (req, res) => {
     }
 });
 
-// POST /api/game/companies - Crea nuova compagnia e hub principale
+// POST /api/game/companies - Crea nuova compagnia
 router.post('/companies', async (req, res) => {
     try {
-        let { name, headquarters_airport_id, headquarters_airport_code, initial_money, user_id } = req.body;
-        if (!name || (!headquarters_airport_id && !headquarters_airport_code)) {
+        let { user_id, name, money, headquarters_airport, founded } = req.body;
+        if (!user_id || !name || !headquarters_airport || !founded) {
             return res.status(400).json({
                 success: false,
-                error: 'Name and headquarters airport (id or code) are required'
+                error: 'user_id, name, headquarters_airport e founded sono obbligatori'
             });
         }
-        // Se arriva solo il codice IATA, cerca l'id numerico
-        if (!headquarters_airport_id && headquarters_airport_code) {
-            const airportRes = await db.query('SELECT id FROM airports WHERE iata_code = $1', [headquarters_airport_code]);
-            if (!airportRes.rows.length) {
+        let headquarters_airport_id = null;
+        // Se è un numero, usalo come id
+        if (typeof headquarters_airport === 'number' || (typeof headquarters_airport === 'string' && !isNaN(Number(headquarters_airport)))) {
+            headquarters_airport_id = Number(headquarters_airport);
+        } else if (typeof headquarters_airport === 'string') {
+            if (headquarters_airport.length === 3) {
+                // Cerca per IATA
+                const airportRes = await db.query('SELECT id FROM airports WHERE iata_code = $1', [headquarters_airport.toUpperCase()]);
+                if (!airportRes.rows.length) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Invalid headquarters airport IATA code'
+                    });
+                }
+                headquarters_airport_id = airportRes.rows[0].id;
+            } else if (headquarters_airport.length === 4) {
+                // Cerca per ICAO
+                const airportRes = await db.query('SELECT id FROM airports WHERE icao_code = $1', [headquarters_airport.toUpperCase()]);
+                if (!airportRes.rows.length) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Invalid headquarters airport ICAO code'
+                    });
+                }
+                headquarters_airport_id = airportRes.rows[0].id;
+            } else {
                 return res.status(400).json({
                     success: false,
-                    error: 'Invalid headquarters airport code'
+                    error: 'headquarters_airport deve essere id numerico, IATA (3 lettere) o ICAO (4 lettere)'
                 });
             }
-            headquarters_airport_id = airportRes.rows[0].id;
-        }
-        // Recupera user_id da JWT/sessione o dal body
-        if (!user_id && req.user && req.user.id) {
-            user_id = req.user.id;
-        }
-        if (!user_id) {
+        } else {
             return res.status(400).json({
                 success: false,
-                error: 'User ID is required'
+                error: 'headquarters_airport deve essere id numerico, IATA (3 lettere) o ICAO (4 lettere)'
             });
         }
-        // Usa la funzione atomica
-        const { company, hub } = await db.createCompanyWithHub({ name, headquarters_airport_id, initial_money, user_id });
+        // Default money
+        if (!money) money = 1000000;
+        // Crea compagnia
+        const result = await db.query(`
+            INSERT INTO companies (name, money, reputation, founded, base_airport, user_id, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            RETURNING *
+        `, [name, money, 50, founded, headquarters_airport_id, user_id]);
         res.status(201).json({
             success: true,
-            data: { company, hub }
+            data: result.rows[0]
         });
     } catch (error) {
-        console.error('Error creating company and hub:', error);
+        console.error('Error creating company:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create company and hub'
+            error: 'Failed to create company: ' + error.message
         });
     }
 });

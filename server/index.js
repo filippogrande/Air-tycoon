@@ -17,6 +17,7 @@ const airportRoutes = require('./routes/airports');
 const financeRoutes = require('./routes/finance');
 const marketAnalysisRoutes = require('./routes/market-analysis');
 const adminRoutes = require('./routes/admin');
+const dbViewerRoutes = require('./routes/db-viewer');
 
 // Sistema migrazioni
 const MigrationSystem = require('../database/migration-system');
@@ -93,6 +94,7 @@ app.use('/api/airports', airportRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/market-analysis', marketAnalysisRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/db-viewer', dbViewerRoutes);
 console.log('✅ Route API caricate');
 
 // Documentazione Swagger
