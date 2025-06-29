@@ -24,12 +24,12 @@ ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_pkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_company_id_fkey;
 ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_route_id_fkey;
 
--- 5. Aggiungere nuove colonne
+-- 5. Aggiungere nuove colonne PK/FK e conversione dati
 ALTER TABLE aircraft ADD COLUMN id SERIAL PRIMARY KEY;
+-- Solo ora aggiungi la colonna company_id e popola con conversione
 ALTER TABLE aircraft ADD COLUMN company_id INTEGER;
--- Popola la nuova colonna company_id con i valori di backup
-UPDATE aircraft SET company_id = company_id_old;
--- aircraft_id non serve più
+UPDATE aircraft SET company_id = company_id_old::text::integer;
+
 ALTER TABLE flights ADD COLUMN id SERIAL PRIMARY KEY;
 ALTER TABLE flights ADD COLUMN route_id INTEGER;
 ALTER TABLE flights ADD COLUMN aircraft_id INTEGER;
@@ -40,7 +40,6 @@ ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_pkey;
 ALTER TABLE routes ADD COLUMN id SERIAL PRIMARY KEY;
 -- (Opzionale: se serve, mappa i dati da id_old a id nelle tabelle collegate)
 
--- 6. (Opzionale) se serve mappare route_id o aircraft_id da tabella esterna, farlo qui
 
 -- 7. Modificare tipo colonne se serve
 ALTER TABLE flights ALTER COLUMN company_id TYPE INTEGER USING company_id::integer;
