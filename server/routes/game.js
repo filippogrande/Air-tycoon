@@ -8,7 +8,7 @@ router.get('/companies', async (req, res) => {
         const companies = await db.query(`
             SELECT c.*, 
                    COUNT(DISTINCT a.id) as aircraft_count,
-s                   COUNT(DISTINCT r.id) as routes_count
+                   COUNT(DISTINCT r.id) as routes_count
             FROM companies c
             LEFT JOIN fleet a ON c.id = a.company_id
             LEFT JOIN routes r ON c.id = r.company_id
