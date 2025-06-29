@@ -289,15 +289,15 @@ var MapVisibilityManager = {
     
     // Configurazione distanza minima per zoom - ORIGINALE FUNZIONANTE + ANTI-CLUTTER SEVERO PER ETICHETTE
     getMinDistanceForZoom: function(zoom) {
-        // Distanze ancora meno aggressive per anti-clutter
-        if (zoom <= 2) return 200;   // Vista mondo
-        if (zoom <= 3) return 100;   // Continente
-        if (zoom <= 4) return 50;    // Regione
-        if (zoom <= 5) return 25;    // Area
-        if (zoom <= 6) return 15;
-        if (zoom <= 7) return 10;
-        if (zoom <= 8) return 5;
-        return 2; // Zoom 9+: minima distanza
+        // Distanze meno aggressive per anti-clutter
+        if (zoom <= 2) return 400;   // Vista mondo
+        if (zoom <= 3) return 200;   // Continente
+        if (zoom <= 4) return 100;   // Regione
+        if (zoom <= 5) return 50;    // Area
+        if (zoom <= 6) return 40;
+        if (zoom <= 7) return 25;
+        if (zoom <= 8) return 15;
+        return 8; // Zoom 9+: minima distanza
     }
 };
 
