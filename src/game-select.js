@@ -102,8 +102,9 @@ function createCompanyCard(company) {
     const reputation = company.reputation || 0;
     const aircraftCount = company.aircraft_count || 0;
     const routeCount = company.routes_count || 0;
-    const hub = company.base_airport || 'N/A';
     const founded = company.founded ? new Date(company.founded).toLocaleDateString('it-IT') : 'N/A';
+    // Placeholder per hub, verrà aggiornato async
+    let hub = '...';
     card.innerHTML = `
         <div class="save-header">
             <div class="save-title">
@@ -128,8 +129,8 @@ function createCompanyCard(company) {
                 <span class="stat-value">🛣️ ${routeCount}</span>
                 <span class="stat-label">Rotte</span>
             </div>
-            <div class="stat-item">
-                <span class="stat-value">🏢 ${hub}</span>
+            <div class="stat-item hub-item">
+                <span class="stat-value hub-value">${hub}</span>
                 <span class="stat-label">Hub Principale</span>
             </div>
         </div>
@@ -137,6 +138,20 @@ function createCompanyCard(company) {
             🎮 Carica Partita
         </button>
     `;
+    // Aggiorna async il codice IATA dell'hub
+    if (company.base_airport) {
+        fetch(`/api/airports/${company.base_airport}`)
+            .then(res => res.json())
+            .then(data => {
+                const iata = data && data.iata_code ? data.iata_code : company.base_airport;
+                const hubSpan = card.querySelector('.hub-value');
+                if (hubSpan) hubSpan.textContent = iata;
+            })
+            .catch(() => {
+                const hubSpan = card.querySelector('.hub-value');
+                if (hubSpan) hubSpan.textContent = company.base_airport;
+            });
+    }
     return card;
 }
 
