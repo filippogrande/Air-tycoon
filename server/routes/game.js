@@ -8,14 +8,10 @@ router.get('/companies', async (req, res) => {
         const companies = await db.query(`
             SELECT c.*, 
                    COUNT(DISTINCT a.id) as aircraft_count,
-                   COUNT(DISTINCT r.id) as routes_count,
-                   COALESCE(SUM(f.amount), 0) as total_balance
+                   COUNT(DISTINCT r.id) as routes_count
             FROM companies c
             LEFT JOIN fleet a ON c.id = a.company_id
             LEFT JOIN routes r ON c.id = r.company_id
-            LEFT JOIN financial_records f ON c.id = f.company_id 
-                AND f.type = 'revenue'
-                AND f.created_at >= CURRENT_DATE - INTERVAL '30 days'
             GROUP BY c.id
             ORDER BY c.created_at DESC
         `);
