@@ -4,6 +4,9 @@
 -- 1. Rinominare la colonna id attuale (UUID) per backup temporaneo
 ALTER TABLE companies RENAME COLUMN id TO id_old;
 
+-- 1b. Rimuovere il vincolo PRIMARY KEY dalla vecchia colonna id_old
+ALTER TABLE companies DROP CONSTRAINT companies_pkey;
+
 -- 2. Aggiungere nuova colonna id SERIAL PRIMARY KEY
 ALTER TABLE companies ADD COLUMN id SERIAL PRIMARY KEY;
 
