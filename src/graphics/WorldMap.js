@@ -1045,7 +1045,8 @@ WorldMap.prototype.loadPlayerHubs = function() {
 if (typeof MapVisibilityManager !== 'undefined' && MapVisibilityManager.updateAirportVisibility) {
     var _oldUpdateAirportVisibility = MapVisibilityManager.updateAirportVisibility;
     MapVisibilityManager.updateAirportVisibility = function(game, map, airportMarkers, zoom) {
-        _oldUpdateAirportVisibility(game, map, airportMarkers, zoom);
+        // Mantieni il contesto corretto per le funzioni this.*
+        _oldUpdateAirportVisibility.call(MapVisibilityManager, game, map, airportMarkers, zoom);
         // Forza la visibilità degli hub del player
         if (game && game.hubManager && game.hubManager.getPlayerHubCodes) {
             var hubCodes = game.hubManager.getPlayerHubCodes();
