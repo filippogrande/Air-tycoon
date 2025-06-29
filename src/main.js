@@ -44,7 +44,23 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() { waitForLeaflet(callback); }, 100);
         }
     }
-    
+
+    // Nuova funzione: carica dati fondamentali via API
+    function loadCoreDataAndStartGame(companyId) {
+        Promise.all([
+            fetch('/api/game/aircraft-data').then(r => r.json()),
+            fetch('/api/game/airport-data').then(r => r.json())
+        ]).then(([aircraftData, airportData]) => {
+            window.AircraftData = aircraftData;
+            window.AirportData = airportData;
+            console.log('✅ AircraftData e AirportData caricati via API');
+            initializeGame(companyId);
+        }).catch(err => {
+            console.error('❌ Errore nel caricamento dati fondamentali:', err);
+            showError('Errore nel caricamento dei dati di gioco (Aircraft/Airport). Riprova.');
+        });
+    }
+
     waitForLeaflet(function() {
         console.log('✅ Leaflet caricato');
         // Recupera il companyId UUID SOLO da sessionStorage
@@ -53,7 +69,8 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('Errore: companyId non trovato. Seleziona una compagnia valida dalla schermata di selezione partita.');
             return;
         }
-        initializeGame(companyId);
+        // Carica dati fondamentali e poi avvia il gioco
+        loadCoreDataAndStartGame(companyId);
     });
 });
 
@@ -62,16 +79,21 @@ function initializeGame(companyId) {
     const requiredClasses = [
         'GameState', 'Aircraft', 'Airport', 'Route', 
         'FleetManager', 'RouteManager', 'FinanceManager',
-        'UIManager', 'WorldMap', 'AircraftData', 'AirportData',
-        'SaveLoad', 'Game'
+        'UIManager', 'WorldMap', 'SaveLoad', 'Game'
     ];
     const missingClasses = requiredClasses.filter(className => !window[className]);
+    // Verifica anche che i dati fondamentali siano caricati
+    if (!window.AircraftData || !window.AirportData) {
+        console.error('❌ Dati fondamentali mancanti:', [!window.AircraftData && 'AircraftData', !window.AirportData && 'AirportData'].filter(Boolean));
+        showError('Errore: dati fondamentali non caricati: ' + [!window.AircraftData && 'AircraftData', !window.AirportData && 'AirportData'].filter(Boolean).join(', '));
+        return;
+    }
     if (missingClasses.length > 0) {
         console.error('❌ Classi mancanti:', missingClasses);
         showError(`Errore: classi non caricate: ${missingClasses.join(', ')}`);
         return;
     }
-    console.log('✅ Tutte le classi sono caricate');
+    console.log('✅ Tutte le classi e i dati fondamentali sono caricati');
     // Verifica compatibilità browser
     if (!checkBrowserCompatibility()) {
         showError('Il tuo browser non supporta tutte le funzionalità richieste dal gioco.');
@@ -1140,6 +1162,7 @@ function handleTabSwitch(tabName) {
             console.log('📋 Tab sconosciuto:', tabName);
     }
 }
+
 
 // Inizializzazione completata
 console.log('🎮 Sistema di gioco caricato e pronto!');

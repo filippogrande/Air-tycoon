@@ -8,7 +8,7 @@ router.get('/companies', async (req, res) => {
         const companies = await db.query(`
             SELECT c.*, 
                    COUNT(DISTINCT a.id) as aircraft_count,
-                   COUNT(DISTINCT r.id) as routes_count
+s                   COUNT(DISTINCT r.id) as routes_count
             FROM companies c
             LEFT JOIN fleet a ON c.id = a.company_id
             LEFT JOIN routes r ON c.id = r.company_id
@@ -298,6 +298,41 @@ router.get('/companies/:id/latest-save', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to fetch latest save'
+        });
+    }
+});
+
+// --- API DATI FONDAMENTALI PER IL GIOCO ---
+// GET /api/game/aircraft-data - Restituisce tutti i tipi di aeromobile
+router.get('/aircraft-data', async (req, res) => {
+    try {
+        const aircraftTypes = await db.query('SELECT * FROM aircraft_types ORDER BY name ASC');
+        res.json({
+            success: true,
+            data: aircraftTypes.rows
+        });
+    } catch (error) {
+        console.error('Error fetching aircraft data:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch aircraft data'
+        });
+    }
+});
+
+// GET /api/game/airport-data - Restituisce tutti gli aeroporti
+router.get('/airport-data', async (req, res) => {
+    try {
+        const airports = await db.query('SELECT * FROM airports ORDER BY iata_code ASC');
+        res.json({
+            success: true,
+            data: airports.rows
+        });
+    } catch (error) {
+        console.error('Error fetching airport data:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch airport data'
         });
     }
 });

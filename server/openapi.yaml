@@ -1130,6 +1130,66 @@ paths:
                     type: array
                     items:
                       type: object
+  /api/game/aircraft-data:
+    get:
+      tags: [Game]
+      summary: Restituisce tutti i tipi di aeromobile disponibili
+      description: Restituisce la lista completa dei tipi di aeromobile presenti nel database, usata per il caricamento dati iniziale del gioco.
+      responses:
+        "200":
+          description: Lista tipi di aeromobile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AircraftType"
+              example:
+                success: true
+                data:
+                  - id: 1
+                    name: "Boeing 737-800"
+                    manufacturer: "Boeing"
+                    capacity: 189
+                    range_km: 5436
+                    fuel_consumption: 2600
+                    ...
+  /api/game/airport-data:
+    get:
+      tags: [Game]
+      summary: Restituisce tutti gli aeroporti disponibili
+      description: Restituisce la lista completa degli aeroporti presenti nel database, usata per il caricamento dati iniziale del gioco.
+      responses:
+        "200":
+          description: Lista aeroporti
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Airport"
+              example:
+                success: true
+                data:
+                  - id: 1
+                    name: "Roma Fiumicino"
+                    iata_code: "FCO"
+                    icao_code: "LIRF"
+                    city: "Roma"
+                    country: "IT"
+                    latitude: 41.8003
+                    longitude: 12.2389
+                    ...
 components:
   schemas:
     Company:
@@ -1176,3 +1236,39 @@ components:
               type: array
               items:
                 type: object
+    AircraftType:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        manufacturer:
+          type: string
+        capacity:
+          type: integer
+        range_km:
+          type: integer
+        fuel_consumption:
+          type: number
+        # ...altri campi se presenti...
+    Airport:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        iata_code:
+          type: string
+        icao_code:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        # ...altri campi se presenti...
