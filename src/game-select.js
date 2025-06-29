@@ -143,7 +143,10 @@ function createCompanyCard(company) {
         fetch(`/api/airports/${company.base_airport}`)
             .then(res => res.json())
             .then(data => {
-                const iata = data && data.iata_code ? data.iata_code : company.base_airport;
+                // Corretto: estrai iata_code da data.data.airport
+                const iata = data && data.data && data.data.airport && data.data.airport.iata_code
+                    ? data.data.airport.iata_code
+                    : company.base_airport;
                 const hubSpan = card.querySelector('.hub-value');
                 if (hubSpan) hubSpan.textContent = iata;
             })
