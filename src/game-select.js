@@ -46,33 +46,104 @@ function updateUserInfo() {
     welcomeText.innerHTML = `Benvenuto, <strong>${userName}</strong>`;
 }
 
-function loadUserSaves() {
-    const saves = authManager.getUserSaves();
+async function loadUserSaves() {
     const savesContainer = document.getElementById('saves-container');
     const noSavesDiv = document.getElementById('no-saves');
-    
-    // Pulisci container
     savesContainer.innerHTML = '';
-    
-    const saveKeys = Object.keys(saves);
-    
-    if (saveKeys.length === 0) {
-        // Nessun salvataggio
-        savesContainer.style.display = 'none';
-        noSavesDiv.classList.remove('hidden');
+
+    if (currentUser && !currentUser.isGuest) {
+        // Utente autenticato: carica compagnie dal backend
+        try {
+            const res = await fetch('/api/game/companies');
+            if (!res.ok) throw new Error('Errore nel recupero compagnie dal server');
+            const result = await res.json();
+            const companies = (result && result.data) ? result.data : [];
+            if (companies.length === 0) {
+                savesContainer.style.display = 'none';
+                noSavesDiv.classList.remove('hidden');
+            } else {
+                savesContainer.style.display = 'grid';
+                noSavesDiv.classList.add('hidden');
+                companies.forEach(company => {
+                    const card = createCompanyCard(company);
+                    savesContainer.appendChild(card);
+                });
+            }
+            console.log('📂 Caricate', companies.length, 'compagnie dal server');
+        } catch (e) {
+            savesContainer.style.display = 'none';
+            noSavesDiv.classList.remove('hidden');
+            showToast('Errore caricamento compagnie: ' + e.message, 'error');
+        }
     } else {
-        // Mostra salvataggi
-        savesContainer.style.display = 'grid';
-        noSavesDiv.classList.add('hidden');
-        
-        saveKeys.forEach(saveKey => {
-            const save = saves[saveKey];
-            const saveCard = createSaveCard(saveKey, save);
-            savesContainer.appendChild(saveCard);
-        });
+        // Guest: fallback su localStorage
+        const saves = authManager.getUserSaves();
+        const saveKeys = Object.keys(saves);
+        if (saveKeys.length === 0) {
+            savesContainer.style.display = 'none';
+            noSavesDiv.classList.remove('hidden');
+        } else {
+            savesContainer.style.display = 'grid';
+            noSavesDiv.classList.add('hidden');
+            saveKeys.forEach(saveKey => {
+                const save = saves[saveKey];
+                const saveCard = createSaveCard(saveKey, save);
+                savesContainer.appendChild(saveCard);
+            });
+        }
+        console.log('📂 Caricati', saveKeys.length, 'salvataggi (guest)');
     }
-    
-    console.log('📂 Caricati', saveKeys.length, 'salvataggi');
+}
+
+function createCompanyCard(company) {
+    const card = document.createElement('div');
+    card.className = 'save-card';
+    const money = company.money ? '€' + company.money.toLocaleString() : 'N/A';
+    const reputation = company.reputation || 0;
+    const aircraftCount = company.aircraft_count || 0;
+    const routeCount = company.routes_count || 0;
+    const hub = company.base_airport || 'N/A';
+    const founded = company.founded ? new Date(company.founded).toLocaleDateString('it-IT') : 'N/A';
+    card.innerHTML = `
+        <div class="save-header">
+            <div class="save-title">
+                <h3>${company.name}</h3>
+                <div class="company-name">ID: ${company.id}</div>
+            </div>
+        </div>
+        <div class="save-info">
+            <p><strong>📅 Fondata:</strong> ${founded}</p>
+            <p><strong>💰 Budget:</strong> ${money}</p>
+        </div>
+        <div class="save-stats">
+            <div class="stat-item">
+                <span class="stat-value">⭐ ${reputation}</span>
+                <span class="stat-label">Reputazione</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">✈️ ${aircraftCount}</span>
+                <span class="stat-label">Aeromobili</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">🛣️ ${routeCount}</span>
+                <span class="stat-label">Rotte</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">🏢 ${hub}</span>
+                <span class="stat-label">Hub Principale</span>
+            </div>
+        </div>
+        <button class="action-btn primary load-save-btn" onclick="startGameFromCompany(${company.id})">
+            🎮 Carica Partita
+        </button>
+    `;
+    return card;
+}
+
+window.startGameFromCompany = function(companyId) {
+    // Salva il companyId selezionato in sessionStorage e reindirizza
+    sessionStorage.setItem('selectedCompanyId', companyId);
+    window.location.href = 'index.html';
 }
 
 function createSaveCard(saveKey, save) {
