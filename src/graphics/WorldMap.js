@@ -123,31 +123,21 @@ WorldMap.prototype.loadAirports = function() {
         .then(response => {
             if (!response.success || !response.data || !response.data.company) {
                 console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
-                return fetch('/api/game/airport-data')
-                    .then(res => res.json())
-                    .then(resp => resp.data || []);
+                return fetch('/api/airports?limit=2000')
+                    .then(res => res.json());
             }
             var gameDate = response.data.company.game_date;
             if (!gameDate) {
                 console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
-                return fetch('/api/game/airport-data')
-                    .then(res => res.json())
-                    .then(resp => resp.data || []);
+                return fetch('/api/airports?limit=2000')
+                    .then(res => res.json());
             }
-            // Carica tutti gli aeroporti e filtra quelli aperti alla data di gioco
-            return fetch('/api/game/airport-data')
-                .then(res => res.json())
-                .then(resp => {
-                    var airports = resp.data || [];
-                    // Filtro: aperti alla data di gioco (open_date <= gameDate)
-                    var filtered = airports.filter(function(airport) {
-                        if (!airport.open_date) return true; // se manca la data, considera aperto
-                        return new Date(airport.open_date) <= new Date(gameDate);
-                    });
-                    return filtered;
-                });
+            // Chiedi solo aeroporti aperti alla data di gioco
+            return fetch('/api/airports?limit=2000&before=' + encodeURIComponent(gameDate))
+                .then(res => res.json());
         })
         .then(airports => {
+            // L'API /api/airports restituisce direttamente l'array
             if (!Array.isArray(airports) || airports.length === 0) {
                 console.warn('⚠️ Nessun aeroporto ricevuto dal backend');
                 return;
