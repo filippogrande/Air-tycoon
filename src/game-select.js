@@ -41,8 +41,7 @@ function initializeGameSelectPage() {
 
 function updateUserInfo() {
     const welcomeText = document.getElementById('welcome-text');
-    const userName = currentUser.isGuest ? 'Ospite' : currentUser.email.split('@')[0];
-    
+    const userName = currentUser.email.split('@')[0];
     welcomeText.innerHTML = `Benvenuto, <strong>${userName}</strong>`;
 }
 
@@ -51,47 +50,28 @@ async function loadUserSaves() {
     const noSavesDiv = document.getElementById('no-saves');
     savesContainer.innerHTML = '';
 
-    if (currentUser && !currentUser.isGuest) {
-        // Utente autenticato: carica compagnie dal backend
-        try {
-            const res = await fetch('/api/game/companies');
-            if (!res.ok) throw new Error('Errore nel recupero compagnie dal server');
-            const result = await res.json();
-            const companies = (result && result.data) ? result.data : [];
-            if (companies.length === 0) {
-                savesContainer.style.display = 'none';
-                noSavesDiv.classList.remove('hidden');
-            } else {
-                savesContainer.style.display = 'grid';
-                noSavesDiv.classList.add('hidden');
-                companies.forEach(company => {
-                    const card = createCompanyCard(company);
-                    savesContainer.appendChild(card);
-                });
-            }
-            console.log('📂 Caricate', companies.length, 'compagnie dal server');
-        } catch (e) {
-            savesContainer.style.display = 'none';
-            noSavesDiv.classList.remove('hidden');
-            showToast('Errore caricamento compagnie: ' + e.message, 'error');
-        }
-    } else {
-        // Guest: fallback su localStorage
-        const saves = authManager.getUserSaves();
-        const saveKeys = Object.keys(saves);
-        if (saveKeys.length === 0) {
+    // Utente autenticato: carica compagnie dal backend
+    try {
+        const res = await fetch('/api/game/companies');
+        if (!res.ok) throw new Error('Errore nel recupero compagnie dal server');
+        const result = await res.json();
+        const companies = (result && result.data) ? result.data : [];
+        if (companies.length === 0) {
             savesContainer.style.display = 'none';
             noSavesDiv.classList.remove('hidden');
         } else {
             savesContainer.style.display = 'grid';
             noSavesDiv.classList.add('hidden');
-            saveKeys.forEach(saveKey => {
-                const save = saves[saveKey];
-                const saveCard = createSaveCard(saveKey, save);
-                savesContainer.appendChild(saveCard);
+            companies.forEach(company => {
+                const card = createCompanyCard(company);
+                savesContainer.appendChild(card);
             });
         }
-        console.log('📂 Caricati', saveKeys.length, 'salvataggi (guest)');
+        console.log('📂 Caricate', companies.length, 'compagnie dal server');
+    } catch (e) {
+        savesContainer.style.display = 'none';
+        noSavesDiv.classList.remove('hidden');
+        showToast('Errore caricamento compagnie: ' + e.message, 'error');
     }
 }
 
@@ -161,63 +141,6 @@ window.startGameFromCompany = function(companyId) {
     // Salva il companyId selezionato in sessionStorage e reindirizza
     sessionStorage.setItem('selectedCompanyId', companyId);
     window.location.href = 'index.html';
-}
-
-function createSaveCard(saveKey, save) {
-    const card = document.createElement('div');
-    card.className = 'save-card';
-    
-    const savedDate = new Date(save.savedAt);
-    const gameData = save.data || {};
-    const company = gameData.company || {};
-    
-    // Calcola statistiche
-    const money = company.money ? '€' + company.money.toLocaleString() : 'N/A';
-    const reputation = company.reputation || 0;
-    const aircraftCount = gameData.fleet ? gameData.fleet.length : 0;
-    const routeCount = gameData.routes ? gameData.routes.length : 0;
-    
-    card.innerHTML = `
-        <div class="save-header">
-            <div class="save-title">
-                <h3>${saveKey}</h3>
-                <div class="company-name">${company.name || 'Compagnia Senza Nome'}</div>
-            </div>
-            <div class="save-actions">
-                <button class="icon-btn" onclick="deleteSave('${saveKey}')" title="Elimina">🗑️</button>
-            </div>
-        </div>
-        
-        <div class="save-info">
-            <p><strong>📅 Salvato:</strong> ${savedDate.toLocaleDateString('it-IT')} ${savedDate.toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'})}</p>
-            <p><strong>💰 Budget:</strong> ${money}</p>
-        </div>
-        
-        <div class="save-stats">
-            <div class="stat-item">
-                <span class="stat-value">⭐ ${reputation}</span>
-                <span class="stat-label">Reputazione</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">✈️ ${aircraftCount}</span>
-                <span class="stat-label">Aeromobili</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">🛣️ ${routeCount}</span>
-                <span class="stat-label">Rotte</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">🏢 ${gameData.homeAirport || 'N/A'}</span>
-                <span class="stat-label">Hub Principale</span>
-            </div>
-        </div>
-        
-        <button class="action-btn primary load-save-btn" onclick="loadSave('${saveKey}')">
-            🎮 Carica Partita
-        </button>
-    `;
-    
-    return card;
 }
 
 function populateStartingAirports(selectedScenario = null) {
@@ -384,13 +307,6 @@ function handleNewGame(e) {
         return;
     }
     
-    // Verifica che il nome salvataggio non esista già
-    const existingSaves = authManager.getUserSaves();
-    if (existingSaves[saveName]) {
-        showToast('Un salvataggio con questo nome esiste già', 'error');
-        return;
-    }
-    
     showLoading('Creazione nuovo gioco...');
     
     // Simula creazione gioco
@@ -478,59 +394,19 @@ function createNewGame(saveName, companyName, startingAirport, difficulty, scena
         }
     };
     
-    // FLUSSO CORRETTO: Prima sincronizza con server, poi localStorage
-    if (!currentUser.isGuest) {
-        // Utente autenticato: DEVE sincronizzare col server
-        syncGameWithServer(saveName, gameData).then((serverData) => {
-            console.log('✅ Gioco sincronizzato con il server');
-            
-            // Aggiorna il gameData con l'UUID reale della compagnia
-            if (companyData.data && companyData.data.id) {
-                gameData.company.id = companyData.data.id;
-            }
-            // Solo dopo il successo server, salva in localStorage
-            const saveResult = authManager.saveGame(saveName, gameData);
-            hideLoading();
-            
-            if (saveResult) {
-                showToast('Nuovo gioco creato e sincronizzato!', 'success');
-                hideNewGameModal();
-                
-                setTimeout(function() {
-                    loadUserSaves();
-                    startGame(saveName);
-                }, 1000);
-            } else {
-                showToast('Errore localStorage dopo sincronizzazione server', 'error');
-            }
-            
-        }).catch(error => {
-            console.error('❌ Errore sincronizzazione server:', error);
-            hideLoading();
-            
-            // NON CONTINUARE SE FALLISCE IL SERVER
-            showToast(`Errore sincronizzazione server: ${error.message}. Riprova.`, 'error');
-            
-            // Mantieni il modal aperto per permettere di riprovare
-            // NON salvare in localStorage se il server fallisce
-        });
-    } else {
-        // Utente guest: solo localStorage
-        const saveResult = authManager.saveGame(saveName, gameData);
+    // FLUSSO CORRETTO: sincronizza solo col server
+    syncGameWithServer(saveName, gameData).then(() => {
         hideLoading();
-        
-        if (saveResult) {
-            showToast('Nuovo gioco creato (modalità offline)!', 'success');
-            hideNewGameModal();
-            
-            setTimeout(function() {
-                loadUserSaves();
-                startGame(saveName);
-            }, 1000);
-        } else {
-            showToast('Errore durante la creazione del gioco', 'error');
-        }
-    }
+        showToast('Nuovo gioco creato e sincronizzato!', 'success');
+        hideNewGameModal();
+        setTimeout(function() {
+            loadUserSaves();
+        }, 1000);
+    }).catch(error => {
+        console.error('❌ Errore sincronizzazione server:', error);
+        hideLoading();
+        showToast(`Errore sincronizzazione server: ${error.message}. Riprova.`, 'error');
+    });
 }
 
 // Funzione per sincronizzare il gioco con il server
@@ -624,14 +500,6 @@ async function syncGameWithServer(saveName, gameData) {
             throw error;
         }
     }
-}
-
-function loadSave(saveKey) {
-    showLoading('Caricamento partita...');
-    
-    setTimeout(function() {
-        startGame(saveKey);
-    }, 1000);
 }
 
 function startGame(saveKey) {

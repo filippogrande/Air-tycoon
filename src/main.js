@@ -69,10 +69,21 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('Errore: companyId non trovato. Seleziona una compagnia valida dalla schermata di selezione partita.');
             return;
         }
+        // Validazione UUID
+        if (!isValidUUID(companyId)) {
+            showError('Errore: companyId non valido. Seleziona una compagnia valida dalla schermata di selezione partita.');
+            return;
+        }
         // Carica dati fondamentali e poi avvia il gioco
         loadCoreDataAndStartGame(companyId);
     });
 });
+
+
+// Funzione di validazione UUID (versione semplice, accetta UUID v4)
+function isValidUUID(uuid) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
+}
 
 function initializeGame(companyId) {
     // Debug: verifica che tutte le classi siano caricate
@@ -100,9 +111,9 @@ function initializeGame(companyId) {
         return;
     }
     console.log('✅ Browser compatibile');
-    // Verifica presenza companyId
-    if (!companyId) {
-        showError('Errore: companyId mancante. Impossibile avviare il gioco senza un identificativo compagnia valido.');
+    // Verifica presenza e validità companyId
+    if (!isValidUUID(companyId)) {
+        showError('Errore: companyId mancante o non valido. Impossibile avviare il gioco senza un identificativo compagnia valido.');
         return;
     }
     // Inizializza il gioco
@@ -793,6 +804,7 @@ function handleTabSwitch(tabName) {
             console.log('📋 Tab sconosciuto:', tabName);
     }
 }
+
 
 
 // Inizializzazione completata
