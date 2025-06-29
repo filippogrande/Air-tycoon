@@ -98,14 +98,17 @@ function initializeGame(companyId) {
     }
     console.log('✅ Browser compatibile');
     // Verifica presenza e validità companyId
-    if (!companyId || !/^\d+$/.test(companyId)) {
-    showError('Errore: companyId mancante o non valido. Impossibile avviare il gioco senza un identificativo compagnia valido.');
-    return;
-}
+    if (!companyId || !/^[0-9]+$/.test(companyId)) {
+        showError('Errore: companyId mancante o non valido. Impossibile avviare il gioco senza un identificativo compagnia valido.');
+        return;
+    }
+    // Conversione companyId a numero
+    const companyIdNum = Number(companyId);
+    console.log('[DEBUG] companyId passato a Game:', companyIdNum, '| typeof:', typeof companyIdNum);
     // Inizializza il gioco
     try {
         console.log('🎮 Creazione istanza Game...');
-        game = new Game(companyId);
+        game = new Game(companyIdNum);
         // Rendi il gioco disponibile globalmente per l'UI
         window.game = game;
         console.log('✅ Game creato');

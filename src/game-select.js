@@ -140,6 +140,7 @@ function createCompanyCard(company) {
 window.startGameFromCompany = function(companyId) {
     // Salva il companyId selezionato in sessionStorage e reindirizza
     sessionStorage.setItem('selectedCompanyId', companyId);
+    console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage:', companyId, '| typeof:', typeof companyId);
     window.location.href = 'index.html';
 }
 
@@ -483,6 +484,7 @@ async function syncGameWithServer(saveName, gameData) {
         // SEMPLIFICATO: salva solo l'UUID in sessionStorage e avvia subito il gioco
         if (companyData.data && companyData.data.id) {
             sessionStorage.setItem('selectedCompanyId', companyData.data.id);
+            console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage (nuovo gioco):', companyData.data.id, '| typeof:', typeof companyData.data.id);
             window.location.href = 'index.html';
             return;
         }
@@ -515,6 +517,7 @@ function startGame(saveKey) {
         return;
     }
     sessionStorage.setItem('selectedCompanyId', companyId);
+    console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage (startGame):', companyId, '| typeof:', typeof companyId);
     window.location.href = 'index.html';
 }
 
