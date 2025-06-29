@@ -112,17 +112,31 @@ WorldMap.prototype.initializeRouteUI = function() {
     }
 };
 
-// Carica aeroporti sulla mappa (sempre dal backend)
+// Carica aeroporti sulla mappa (solo quelli aperti alla data di gioco)
 WorldMap.prototype.loadAirports = function() {
+    var self = this;
     console.log('✈️ Caricamento aeroporti dalla API backend...');
-    fetch('/api/airports?limit=2000')
+    // Ottieni la data di gioco dal backend (tramite /companies/:id)
+    var companyId = this.game && this.game.companyId ? this.game.companyId : 1; // fallback id 1
+    fetch('/companies/' + companyId)
         .then(res => res.json())
+        .then(company => {
+            var gameDate = company && company.game_date ? company.game_date : null;
+            if (!gameDate) {
+                console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
+                return fetch('/api/airports?limit=2000')
+                    .then(res => res.json());
+            }
+            // Chiedi solo aeroporti aperti alla data di gioco
+            return fetch('/api/airports?limit=2000&open_at=' + encodeURIComponent(gameDate))
+                .then(res => res.json());
+        })
         .then(airports => {
             if (!Array.isArray(airports) || airports.length === 0) {
                 console.warn('⚠️ Nessun aeroporto ricevuto dal backend');
                 return;
             }
-            this._renderAirportsOnMap(airports);
+            self._renderAirportsOnMap(airports);
         })
         .catch(error => {
             console.error('❌ Errore caricamento aeroporti dal backend:', error);
