@@ -109,7 +109,6 @@ function createCompanyCard(company) {
         <div class="save-header">
             <div class="save-title">
                 <h3>${company.name}</h3>
-                <div class="company-name">ID: ${company.id}</div>
             </div>
         </div>
         <div class="save-info">

@@ -47,8 +47,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     waitForLeaflet(function() {
         console.log('✅ Leaflet caricato');
-        // Recupera il companyId UUID dalla variabile globale (impostata da game-select.js)
-        const companyId = window.selectedCompanyId;
+        // Recupera il companyId UUID SOLO da sessionStorage
+        const companyId = sessionStorage.getItem('selectedCompanyId');
         if (!companyId) {
             showError('Errore: companyId non trovato. Seleziona una compagnia valida dalla schermata di selezione partita.');
             return;
@@ -771,6 +771,7 @@ function handleTabSwitch(tabName) {
             console.log('📋 Tab sconosciuto:', tabName);
     }
 }
+
 
 // Inizializzazione completata
 console.log('🎮 Sistema di gioco caricato e pronto!');
