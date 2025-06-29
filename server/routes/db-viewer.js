@@ -144,4 +144,68 @@ router.get('/dependencies/:table', async (req, res) => {
     }
 });
 
+// Rotta per esportare lo schema SQL del database
+router.get('/schema', async (req, res) => {
+    try {
+        // Recupera tutte le tabelle utente
+        const tablesResult = await db.query(`
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+        `);
+        const tables = tablesResult.rows.map(r => r.table_name);
+        let schemaSql = '';
+        for (const table of tables) {
+            // Recupera la definizione delle colonne
+            const columnsResult = await db.query(`
+                SELECT column_name, data_type, is_nullable, column_default
+                FROM information_schema.columns
+                WHERE table_name = $1 AND table_schema = 'public'
+                ORDER BY ordinal_position
+            `, [table]);
+            // Recupera le chiavi primarie
+            const pkResult = await db.query(`
+                SELECT kcu.column_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                  AND tc.table_schema = kcu.table_schema
+                WHERE tc.table_name = $1 AND tc.constraint_type = 'PRIMARY KEY' AND tc.table_schema = 'public'
+            `, [table]);
+            const pkCols = pkResult.rows.map(r => r.column_name);
+            // Recupera le foreign key
+            const fkResult = await db.query(`
+                SELECT kcu.column_name, ccu.table_name AS foreign_table, ccu.column_name AS foreign_column
+                FROM information_schema.table_constraints AS tc
+                JOIN information_schema.key_column_usage AS kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                  AND tc.table_schema = kcu.table_schema
+                JOIN information_schema.constraint_column_usage AS ccu
+                  ON ccu.constraint_name = tc.constraint_name
+                  AND ccu.table_schema = tc.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = $1 AND tc.table_schema = 'public'
+            `, [table]);
+            // Costruisci la definizione della tabella
+            schemaSql += `CREATE TABLE ${table} (\n`;
+            schemaSql += columnsResult.rows.map(col => {
+                let line = `  ${col.column_name} ${col.data_type}`;
+                if (col.is_nullable === 'NO') line += ' NOT NULL';
+                if (col.column_default) line += ` DEFAULT ${col.column_default}`;
+                return line;
+            }).join(',\n');
+            if (pkCols.length > 0) {
+                schemaSql += `,\n  PRIMARY KEY (${pkCols.join(', ')})`;
+            }
+            fkResult.rows.forEach(fk => {
+                schemaSql += `,\n  FOREIGN KEY (${fk.column_name}) REFERENCES ${fk.foreign_table}(${fk.foreign_column})`;
+            });
+            schemaSql += '\n);\n\n';
+        }
+        res.setHeader('Content-Type', 'text/plain');
+        res.send(schemaSql);
+    } catch (err) {
+        res.status(500).send('Errore generazione schema: ' + err.message);
+    }
+});
+
 module.exports = router;
