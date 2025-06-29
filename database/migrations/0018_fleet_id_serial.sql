@@ -1,9 +1,9 @@
--- Migrazione 0018: fleet.id e fleet.aircraft_id da UUID a SERIAL numerico
+-- Migrazione 0018: fleet.id SERIAL, company_id INTEGER, aircraft_id SERIAL, flights id/route_id/aircraft_id INTEGER
 -- Data: 2025-06-29
 
--- 1. Rinominare le colonne id, route_id e aircraft_id in flights per backup temporaneo
+-- 1. Rinominare le colonne id e company_id in fleet, id/route_id/aircraft_id in flights per backup temporaneo
 ALTER TABLE fleet RENAME COLUMN id TO id_old;
-ALTER TABLE fleet RENAME COLUMN aircraft_id TO aircraft_id_old;
+ALTER TABLE fleet RENAME COLUMN company_id TO company_id_old;
 ALTER TABLE flights RENAME COLUMN id TO id_old;
 ALTER TABLE flights RENAME COLUMN route_id TO route_id_old;
 ALTER TABLE flights RENAME COLUMN aircraft_id TO aircraft_id_old;
@@ -19,16 +19,13 @@ ALTER TABLE flights DROP CONSTRAINT IF EXISTS flights_route_id_fkey;
 
 -- 3. Aggiungere le nuove colonne
 ALTER TABLE fleet ADD COLUMN id SERIAL PRIMARY KEY;
+ALTER TABLE fleet ADD COLUMN company_id INTEGER;
 ALTER TABLE fleet ADD COLUMN aircraft_id SERIAL;
 ALTER TABLE flights ADD COLUMN id SERIAL PRIMARY KEY;
 ALTER TABLE flights ADD COLUMN route_id INTEGER;
 ALTER TABLE flights ADD COLUMN aircraft_id INTEGER;
 
--- 4. Aggiornare i dati nelle tabelle dipendenti
--- aircraft_id: mapping tramite fleet
-UPDATE flights SET aircraft_id = (
-    SELECT id FROM fleet WHERE fleet.aircraft_id_old = flights.aircraft_id_old
-);
+
 -- route_id: se serve mapping, aggiungere qui (esempio: stesso valore numerico, oppure join con tabella routes)
 -- UPDATE flights SET route_id = ...
 
@@ -45,10 +42,11 @@ ALTER TABLE flights ADD CONSTRAINT flights_route_id_fkey FOREIGN KEY (route_id) 
 
 -- 7. Eliminare le colonne di backup solo alla fine
 ALTER TABLE fleet DROP COLUMN id_old;
+ALTER TABLE fleet DROP COLUMN company_id_old;
 ALTER TABLE fleet DROP COLUMN aircraft_id_old;
 ALTER TABLE flights DROP COLUMN id_old;
 ALTER TABLE flights DROP COLUMN route_id_old;
 ALTER TABLE flights DROP COLUMN aircraft_id_old;
 
 -- Log
-SELECT 'Migrazione 0018 - fleet.id, aircraft_id, route_id SERIAL/INTEGER - COMPLETATA' as status;
+SELECT 'Migrazione 0018 - fleet.id/company_id/aircraft_id, flights id/route_id/aircraft_id SERIAL/INTEGER - COMPLETATA' as status;
