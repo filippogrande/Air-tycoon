@@ -260,67 +260,62 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     
     // Event handler per click
     marker.on('click', function(e) {
-        // Non aggiorniamo il popup qui per evitare conflitti con Leaflet
-        // Il popup si aprirà automaticamente con il contenuto bindato
         self.onAirportClick(airport, e);
     });
     
     // Salva riferimento airport nel marker
     marker.airportData = airport;
     
+    // Label dinamica (inizialmente nascosta)
+    marker._nameLabel = null;
     return marker;
 };
 
-// Crea popup per un aeroporto
-WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
-    // Usa RouteUIManager se disponibile, altrimenti fallback
-    if (typeof RouteUIManager !== 'undefined') {
-        return RouteUIManager.createAirportPopup(airport, isPlayerHub);
-    }
-    
-    // Fallback semplice
-    return '<div class="airport-popup">' +
-           '<h3>' + (airport.name || 'Nome non disponibile') + '</h3>' +
-           '<p><strong>Codice:</strong> ' + (airport.code || 'N/A') + '</p>' +
-           '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
-           '</div>';
-};
-
-// Setup visibilità basata su zoom (fallback)
-WorldMap.prototype.setupZoomBasedVisibility = function() {
-    // Fallback se MapVisibilityManager non è disponibile
-    var self = this;
-    
-    this.map.on('zoomend', function() {
-        self.updateAirportVisibilitySimple();
-    });
-    
-    this.map.on('moveend', function() {
-        self.updateAirportVisibilitySimple();
-    });
-    
-    this.updateAirportVisibilitySimple();
-};
-
-// Aggiorna visibilità aeroporti (versione semplice)
-WorldMap.prototype.updateAirportVisibilitySimple = function() {
-    // Logica fallback semplice se MapVisibilityManager non è disponibile
+// Aggiorna la visibilità delle label dei nomi aeroporti in base a zoom
+WorldMap.prototype.updateAirportNameLabels = function() {
     var zoom = this.map.getZoom();
-    var visibleCount = 0;
-    
     for (var code in this.airportMarkers) {
         var marker = this.airportMarkers[code];
-        var shouldShow = zoom >= 3; // Mostra tutti gli aeroporti a zoom >= 3
-        
-        if (shouldShow && !this.map.hasLayer(marker)) {
-            marker.addTo(this.map);
-            visibleCount++;
-        } else if (!shouldShow && this.map.hasLayer(marker)) {
-            this.map.removeLayer(marker);
+        var airport = marker.airportData;
+        if (!airport) continue;
+        var showLabel = false;
+        if (airport.size === 'large' || airport.airport_size === 'large') {
+            showLabel = zoom >= 5;
+        } else if (airport.size === 'medium' || airport.airport_size === 'medium') {
+            showLabel = zoom >= 6;
+        } else {
+            showLabel = zoom >= 8;
+        }
+        // Crea o aggiorna label
+        if (showLabel) {
+            if (!marker._nameLabel) {
+                marker._nameLabel = L.marker(marker.getLatLng(), {
+                    icon: L.divIcon({
+                        className: 'airport-name-label',
+                        html: '<span>' + (airport.name || airport.code) + '</span>',
+                        iconSize: null,
+                        iconAnchor: [0, 0]
+                    }),
+                    interactive: false
+                }).addTo(this.map);
+            }
+        } else {
+            if (marker._nameLabel) {
+                this.map.removeLayer(marker._nameLabel);
+                marker._nameLabel = null;
+            }
         }
     }
-    
-    console.log('✅ Visibilità fallback: aeroporti visibili:', visibleCount);
+};
+
+// Aggiorna anche su zoom/moveend
+var _oldSetupZoomBasedVisibility = WorldMap.prototype.setupZoomBasedVisibility;
+WorldMap.prototype.setupZoomBasedVisibility = function() {
+    var self = this;
+    if (_oldSetupZoomBasedVisibility) _oldSetupZoomBasedVisibility.call(this);
+    this.map.on('zoomend', function() { self.updateAirportNameLabels(); });
+    this.map.on('moveend', function() { self.updateAirportNameLabels(); });
+    this.updateAirportNameLabels();
 };
 
 // Carica rotte esistenti
