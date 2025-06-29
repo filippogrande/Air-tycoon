@@ -196,7 +196,15 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
         console.log('✅ MapVisibilityManager disponibile, inizializzazione...');
         var self = this;
         MapVisibilityManager.setupZoomBasedVisibility(this.map, function(zoom) {
+            // Aggiorna visibilità aeroporti, ma gli hub del player sono sempre visibili
             MapVisibilityManager.updateAirportVisibility(self.game, self.map, self.airportMarkers, zoom);
+            // Forza sempre la visibilità degli hub
+            for (var code in self.airportMarkers) {
+                var marker = self.airportMarkers[code];
+                if (marker.isPlayerHub && !self.map.hasLayer(marker)) {
+                    marker.addTo(self.map);
+                }
+            }
         });
     } else {
         console.warn('⚠️ MapVisibilityManager non caricato, usando logica semplificata');
@@ -206,16 +214,39 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
     console.log('✅ Creati marker per', airports.length, 'aeroporti');
 };
 
+// Mapping tipo aeroporto leggibile
+WorldMap.prototype.getAirportTypeLabel = function(airport) {
+    var size = airport.size || airport.airport_size;
+    switch ((size || '').toLowerCase()) {
+        case 'large':
+            return '● Aeroporto Internazionale';
+        case 'medium':
+            return '● Aeroporto Regionale';
+        case 'small':
+            return '● Aeroporto Locale';
+        case 'campo_aviazione':
+        case 'campo aviazione':
+            return '● Campo Aviazione';
+        default:
+            return '● Aeroporto';
+    }
+};
+
 // Crea popup per un aeroporto
 WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
     // Usa RouteUIManager se disponibile, altrimenti fallback
     if (typeof RouteUIManager !== 'undefined') {
         return RouteUIManager.createAirportPopup(airport, isPlayerHub);
     }
-    // Fallback semplice
+    // Fallback con label tipo aeroporto
     return '<div class="airport-popup">' +
            '<h3>' + (airport.name || 'Nome non disponibile') + '</h3>' +
            '<p><strong>Codice:</strong> ' + (airport.code || 'N/A') + '</p>' +
+           '<p><strong>Città:</strong> ' + (airport.city || '-') + '</p>' +
+           '<p><strong>Paese:</strong> ' + (airport.country || '-') + '</p>' +
+           '<p><strong>Tipo:</strong> ' + this.getAirportTypeLabel(airport) + '</p>' +
+           '<p><strong>Traffico:</strong> Business: ' + (airport.businessLevel || airport.business_level || '-') +
+           ' | Turismo: ' + (airport.touristLevel || airport.tourist_level || '-') + '</p>' +
            '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
            '</div>';
 };
@@ -228,25 +259,21 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     
     // Determina icona e dimensioni basate su tipo e proprietà
     if (isPlayerHub) {
-        // Hub del giocatore - target verde
-        iconHtml = '<div class="airport-icon player-hub"></div>';
-        iconSize = [20, 20];
-        zIndex = 1000;
+        // Hub del giocatore - SVG target verde
+        iconHtml = '<svg width="24" height="24" viewBox="0 0 24 24" class="airport-icon player-hub" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="none" stroke="#27ae60" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="#27ae60"/></svg>';
+        iconSize = [24, 24];
+        zIndex = 1200;
     } else {
         // Tutti gli altri aeroporti - map-pin con dimensioni diverse
         iconHtml = '<div class="airport-icon standard-airport"></div>';
-        
-        // Dimensione dell'icona basata sulla dimensione dell'aeroporto
-        // Map-pin ha proporzioni 4:5 (larghezza:altezza)
-        // Differenze più marcate per distinguerli chiaramente
         if (airport.size === 'large') {
-            iconSize = [20, 25];  // Aeroporti grandi ben visibili
+            iconSize = [20, 25];
             zIndex = 800;
         } else if (airport.size === 'medium') {
-            iconSize = [14, 18];  // Aeroporti medi di dimensione media
+            iconSize = [14, 18];
             zIndex = 700;
         } else {
-            iconSize = [10, 12];  // Aeroporti piccoli più discreti
+            iconSize = [10, 12];
             zIndex = 600;
         }
     }
@@ -279,8 +306,6 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     
     // Salva riferimento airport nel marker
     marker.airportData = airport;
-    
-    // Label dinamica (inizialmente nascosta)
     marker._nameLabel = null;
     return marker;
 };
@@ -987,6 +1012,49 @@ WorldMap.prototype.confirmCreateRoute = function() {
     return false;
 };
 
-// Export per uso globale
-window.WorldMap = WorldMap;
-console.log('✅ WorldMap con Leaflet caricato');
+// Carica e visualizza gli hub del player sulla mappa
+WorldMap.prototype.loadPlayerHubs = function() {
+    var self = this;
+    var companyId = this.game && this.game.companyId ? this.game.companyId : 1;
+    fetch('/api/game/companies/' + companyId + '/hubs')
+        .then(res => res.json())
+        .then(response => {
+            if (!response.success || !Array.isArray(response.data)) {
+                console.warn('⚠️ Nessun hub ricevuto dal backend');
+                return;
+            }
+            var hubs = response.data;
+            // Evidenzia i marker hub sulla mappa
+            hubs.forEach(function(hub) {
+                var code = hub.iata_code || hub.icao_code || hub.code;
+                var marker = self.airportMarkers[code];
+                if (marker) {
+                    marker.isPlayerHub = true;
+                    // Forza la visibilità dell'hub
+                    marker.addTo(self.map);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('❌ Errore caricamento hub dal backend:', error);
+        });
+};
+
+// --- Forza la visibilità degli hub del player anche con MapVisibilityManager ---
+// Patcha updateAirportVisibility se esiste
+if (typeof MapVisibilityManager !== 'undefined' && MapVisibilityManager.updateAirportVisibility) {
+    var _oldUpdateAirportVisibility = MapVisibilityManager.updateAirportVisibility;
+    MapVisibilityManager.updateAirportVisibility = function(game, map, airportMarkers, zoom) {
+        _oldUpdateAirportVisibility(game, map, airportMarkers, zoom);
+        // Forza la visibilità degli hub del player
+        if (game && game.hubManager && game.hubManager.getPlayerHubCodes) {
+            var hubCodes = game.hubManager.getPlayerHubCodes();
+            hubCodes.forEach(function(code) {
+                var marker = airportMarkers[code];
+                if (marker && !map.hasLayer(marker)) {
+                    marker.addTo(map);
+                }
+            });
+        }
+    };
+}

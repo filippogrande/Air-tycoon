@@ -287,21 +287,29 @@ router.get('/aircraft-data', async (req, res) => {
     }
 });
 
-// GET /api/game/airport-data - Restituisce tutti gli aeroporti
-router.get('/airport-data', async (req, res) => {
+// GET /api/game/companies/:id/hubs - Ottieni tutti gli aeroporti hub della compagnia
+router.get('/companies/:id/hubs', async (req, res) => {
     try {
-        const airports = await db.query('SELECT * FROM airports ORDER BY iata_code ASC');
+        const { id } = req.params;
+        const hubs = await db.query(`
+            SELECT a.*
+            FROM company_hubs ch
+            JOIN airports a ON ch.airport_id = a.id
+            WHERE ch.company_id = $1
+            ORDER BY a.name ASC
+        `, [id]);
         res.json({
             success: true,
-            data: airports.rows
+            data: hubs.rows
         });
     } catch (error) {
-        console.error('Error fetching airport data:', error);
+        console.error('Error fetching company hubs:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch airport data'
+            error: 'Failed to fetch company hubs'
         });
     }
 });
+
 
 module.exports = router;
