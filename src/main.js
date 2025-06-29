@@ -64,8 +64,9 @@ document.addEventListener('DOMContentLoaded', function() {
     waitForLeaflet(function() {
         console.log('✅ Leaflet caricato');
         const companyId = loadGameCompanyIdOrShowError(showError);
-if (!companyId) return;
-loadCoreDataAndStartGame(companyId);
+console.log('[DEBUG] companyId restituito da loadGameCompanyIdOrShowError:', companyId, typeof companyId);
+        if (!companyId) return;
+        loadCoreDataAndStartGame(companyId);
     });
 });
 
