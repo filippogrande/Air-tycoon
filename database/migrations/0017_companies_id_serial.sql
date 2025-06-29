@@ -4,20 +4,18 @@
 -- 1. Rinominare la colonna id attuale (UUID) per backup temporaneo
 ALTER TABLE companies RENAME COLUMN id TO id_old;
 
--- 1b. Rimuovere il vincolo PRIMARY KEY dalla vecchia colonna id_old
+-- 2. Rimuovere tutte le foreign key che puntano a companies.id_old
+ALTER TABLE fleet DROP CONSTRAINT IF EXISTS fleet_company_id_fkey;
+ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_company_id_fkey;
+ALTER TABLE company_hubs DROP CONSTRAINT IF EXISTS company_hubs_company_id_fkey;
+ALTER TABLE game_saves DROP CONSTRAINT IF EXISTS game_saves_company_id_fkey;
+ALTER TABLE financial_records DROP CONSTRAINT IF EXISTS financial_records_company_id_fkey;
+
+-- 3. Ora puoi rimuovere la primary key
 ALTER TABLE companies DROP CONSTRAINT companies_pkey;
 
--- 2. Aggiungere nuova colonna id SERIAL PRIMARY KEY
+-- 4. Aggiungere nuova colonna id SERIAL PRIMARY KEY
 ALTER TABLE companies ADD COLUMN id SERIAL PRIMARY KEY;
-
--- 3. Aggiornare tutte le tabelle che referenziano companies.id
--- Esempio per fleet
-ALTER TABLE fleet ADD COLUMN company_id_new INTEGER;
-UPDATE fleet SET company_id_new = (SELECT id FROM companies WHERE id_old = fleet.company_id);
-ALTER TABLE fleet DROP CONSTRAINT IF EXISTS fleet_company_id_fkey;
-ALTER TABLE fleet DROP COLUMN company_id;
-ALTER TABLE fleet RENAME COLUMN company_id_new TO company_id;
-ALTER TABLE fleet ADD CONSTRAINT fleet_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
 
 -- Esempio per routes
 ALTER TABLE routes ADD COLUMN company_id_new INTEGER;
