@@ -13,20 +13,13 @@ window.SaveLoad = {
     SYNC_INTERVAL_MS: 3 * 60 * 1000, // 3 minuti
     
     // Inizializza il sistema di salvataggio con l'ID della compagnia
-    initialize: function(companyId, forceLocalStorageOnly = false) {
-        // Se l'id non è un UUID valido, fallback solo localStorage
-        if (!companyId || /^company_/.test(companyId)) {
+    initialize: function(companyId) {
+        if (!companyId || isNaN(Number(companyId))) {
             this._companyId = null;
             this._useDatabase = false;
-            console.warn('⚠️ ID compagnia non valido per il database, uso solo localStorage:', companyId);
-            return;
+            throw new Error('ID compagnia non valido: deve essere un numero.');
         }
-        this._companyId = companyId;
-        if (forceLocalStorageOnly) {
-            this._useDatabase = false;
-            console.log('🔧 SaveLoad inizializzato in modalità solo localStorage');
-            return;
-        }
+        this._companyId = Number(companyId);
         this._useDatabase = true;
         console.log('🔧 SaveLoad inizializzato con compagnia ID:', companyId);
         this._testDatabaseConnection();
@@ -143,47 +136,22 @@ window.SaveLoad = {
                 timestamp: new Date().toISOString(),
                 data: gameData
             };
-            
-            // STRATEGIA DATABASE-FIRST
             if (this._useDatabase && this._companyId) {
                 console.log('🌐 Salvataggio prioritario su database...');
-                // Prima sincronizza la compagnia, poi salva il gioco
                 this._createOrUpdateCompanyInDatabase();
                 return this._saveToDatabaseSync(saveData, saveName);
             } else {
-                // Fallback su localStorage solo se database non disponibile
-                console.log('💾 Fallback: salvataggio solo su localStorage');
-                return this._saveToLocalStorageOnly(saveData);
+                throw new Error('Salvataggio locale non supportato: database richiesto.');
             }
-            
         } catch (error) {
             console.error('❌ Errore durante il salvataggio:', error);
-            // In caso di errore, prova almeno a salvare in localStorage
-            try {
-                return this._saveToLocalStorageOnly({
-                    version: '2.0.0',
-                    timestamp: new Date().toISOString(),
-                    data: gameData
-                });
-            } catch (fallbackError) {
-                console.error('❌ Errore anche nel fallback localStorage:', fallbackError);
-                return false;
-            }
+            throw error;
         }
     },
     
     // Salvataggio solo su localStorage (fallback)
     _saveToLocalStorageOnly: function(saveData) {
-        try {
-            var jsonData = JSON.stringify(saveData);
-            localStorage.setItem(this.SAVE_KEY, jsonData);
-            console.log('💾 Gioco salvato su localStorage (fallback)');
-            this._showSaveNotification('Salvato localmente (database non disponibile)', 'warning');
-            return true;
-        } catch (error) {
-            console.error('❌ Errore salvataggio localStorage:', error);
-            return false;
-        }
+        throw new Error('Salvataggio locale non più supportato.');
     },
     
     // Salvataggio SINCRONO su database (database-first)

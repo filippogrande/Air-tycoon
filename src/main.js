@@ -1,4 +1,5 @@
 // File principale - Avvio del gioco Air Tycoon 2 Clone
+import { loadGameCompanyIdOrShowError } from './load-game.js';
 
 // Polyfill per compatibilità browser
 (function() {
@@ -63,19 +64,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     waitForLeaflet(function() {
         console.log('✅ Leaflet caricato');
-        // Recupera il companyId UUID SOLO da sessionStorage
-        const companyId = sessionStorage.getItem('selectedCompanyId');
-        if (!companyId) {
-            showError('Errore: companyId non trovato. Seleziona una compagnia valida dalla schermata di selezione partita.');
-            return;
-        }
-        // Validazione UUID
-        if (!isValidUUID(companyId)) {
-            showError('Errore: companyId non valido. Seleziona una compagnia valida dalla schermata di selezione partita.');
-            return;
-        }
-        // Carica dati fondamentali e poi avvia il gioco
-        loadCoreDataAndStartGame(companyId);
+        const companyId = loadGameCompanyIdOrShowError(showError);
+if (!companyId) return;
+loadCoreDataAndStartGame(companyId);
     });
 });
 
@@ -112,10 +103,10 @@ function initializeGame(companyId) {
     }
     console.log('✅ Browser compatibile');
     // Verifica presenza e validità companyId
-    if (!isValidUUID(companyId)) {
-        showError('Errore: companyId mancante o non valido. Impossibile avviare il gioco senza un identificativo compagnia valido.');
-        return;
-    }
+    if (!companyId || !/^\d+$/.test(companyId)) {
+    showError('Errore: companyId mancante o non valido. Impossibile avviare il gioco senza un identificativo compagnia valido.');
+    return;
+}
     // Inizializza il gioco
     try {
         console.log('🎮 Creazione istanza Game...');

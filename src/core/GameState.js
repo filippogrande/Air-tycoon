@@ -73,10 +73,10 @@ GameTime.prototype.formatTime = function() {
 
 // Ora definiamo GameState
 function GameState(companyId) {
-    if (!companyId) {
-        throw new Error('GameState richiede un companyId UUID valido!');
+    if (!companyId || isNaN(Number(companyId))) {
+        throw new Error('GameState richiede un companyId numerico valido!');
     }
-    this.companyId = companyId;
+    this.companyId = Number(companyId);
     this.company = {
         id: this.companyId,
         name: "Air Express",

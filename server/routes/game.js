@@ -224,7 +224,7 @@ router.post('/companies/create-or-update', async (req, res) => {
         }
         let result;
         if (!id) {
-            // Crea nuova compagnia con id generato dal DB
+            // Crea nuova compagnia con id SERIAL generato dal DB
             result = await db.query(`
                 INSERT INTO companies (name, money, reputation, founded, base_airport, user_id, game_date, created_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -238,7 +238,7 @@ router.post('/companies/create-or-update', async (req, res) => {
                 ON CONFLICT (company_id, airport_id) DO NOTHING
             `, [companyId, base_airport, founded]);
         } else {
-            // Aggiorna compagnia esistente
+            // Aggiorna compagnia esistente (id numerico)
             result = await db.query(`
                 INSERT INTO companies (id, name, money, reputation, founded, base_airport, user_id, game_date, created_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)

@@ -1,0 +1,55 @@
+-- Migrazione 0017: companies.id da UUID a SERIAL numerico
+-- Data: 2025-06-29
+
+-- 1. Rinominare la colonna id attuale (UUID) per backup temporaneo
+ALTER TABLE companies RENAME COLUMN id TO id_old;
+
+-- 2. Aggiungere nuova colonna id SERIAL PRIMARY KEY
+ALTER TABLE companies ADD COLUMN id SERIAL PRIMARY KEY;
+
+-- 3. Aggiornare tutte le tabelle che referenziano companies.id
+-- Esempio per fleet
+ALTER TABLE fleet ADD COLUMN company_id_new INTEGER;
+UPDATE fleet SET company_id_new = (SELECT id FROM companies WHERE id_old = fleet.company_id);
+ALTER TABLE fleet DROP CONSTRAINT IF EXISTS fleet_company_id_fkey;
+ALTER TABLE fleet DROP COLUMN company_id;
+ALTER TABLE fleet RENAME COLUMN company_id_new TO company_id;
+ALTER TABLE fleet ADD CONSTRAINT fleet_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
+
+-- Esempio per routes
+ALTER TABLE routes ADD COLUMN company_id_new INTEGER;
+UPDATE routes SET company_id_new = (SELECT id FROM companies WHERE id_old = routes.company_id);
+ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_company_id_fkey;
+ALTER TABLE routes DROP COLUMN company_id;
+ALTER TABLE routes RENAME COLUMN company_id_new TO company_id;
+ALTER TABLE routes ADD CONSTRAINT routes_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
+
+-- Esempio per company_hubs
+ALTER TABLE company_hubs ADD COLUMN company_id_new INTEGER;
+UPDATE company_hubs SET company_id_new = (SELECT id FROM companies WHERE id_old = company_hubs.company_id);
+ALTER TABLE company_hubs DROP CONSTRAINT IF EXISTS company_hubs_company_id_fkey;
+ALTER TABLE company_hubs DROP COLUMN company_id;
+ALTER TABLE company_hubs RENAME COLUMN company_id_new TO company_id;
+ALTER TABLE company_hubs ADD CONSTRAINT company_hubs_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
+
+-- Esempio per game_saves
+ALTER TABLE game_saves ADD COLUMN company_id_new INTEGER;
+UPDATE game_saves SET company_id_new = (SELECT id FROM companies WHERE id_old = game_saves.company_id);
+ALTER TABLE game_saves DROP CONSTRAINT IF EXISTS game_saves_company_id_fkey;
+ALTER TABLE game_saves DROP COLUMN company_id;
+ALTER TABLE game_saves RENAME COLUMN company_id_new TO company_id;
+ALTER TABLE game_saves ADD CONSTRAINT game_saves_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
+
+-- Esempio per financial_records
+ALTER TABLE financial_records ADD COLUMN company_id_new INTEGER;
+UPDATE financial_records SET company_id_new = (SELECT id FROM companies WHERE id_old = financial_records.company_id);
+ALTER TABLE financial_records DROP CONSTRAINT IF EXISTS financial_records_company_id_fkey;
+ALTER TABLE financial_records DROP COLUMN company_id;
+ALTER TABLE financial_records RENAME COLUMN company_id_new TO company_id;
+ALTER TABLE financial_records ADD CONSTRAINT financial_records_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id);
+
+-- 4. (Opzionale) Rimuovere la vecchia colonna id_old
+ALTER TABLE companies DROP COLUMN id_old;
+
+-- Log
+SELECT 'Migrazione 0017 - companies.id SERIAL numerico - COMPLETATA' as status;

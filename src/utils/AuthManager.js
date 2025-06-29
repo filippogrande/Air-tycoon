@@ -295,19 +295,6 @@ AuthManager.prototype.verifyPassword = function(password, hash) {
     return this.hashPassword(password) === hash;
 };
 
-// Guest mode
-AuthManager.prototype.loginAsGuest = function() {
-    this.currentUser = {
-        id: 'guest_' + Date.now(),
-        email: 'guest@localhost',
-        isGuest: true,
-        saves: {}
-    };
-    
-    console.log('🎮 Login come ospite');
-    return { success: true, message: 'Accesso come ospite' };
-};
-
 // Esporta
 window.AuthManager = AuthManager;
 console.log('✅ AuthManager caricato');
