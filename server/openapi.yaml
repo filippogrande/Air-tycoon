@@ -92,52 +92,6 @@ paths:
       responses:
         "200":
           description: Compagnia aggiornata
-  /api/game/save/{id}:
-    get:
-      tags: [Game]
-      summary: Carica un salvataggio specifico
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Dati salvataggio
-  /api/game/save:
-    post:
-      tags: [Game]
-      summary: Salva una partita (crea o aggiorna un salvataggio)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                company_id:
-                  type: integer
-                save_name:
-                  type: string
-                game_data:
-                  type: object
-      responses:
-        "200":
-          description: Salvataggio effettuato
-  /api/game/saves/{company_id}:
-    get:
-      tags: [Game]
-      summary: Lista di tutti i salvataggi per una compagnia
-      parameters:
-        - in: path
-          name: company_id
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Lista salvataggi
   /api/game/companies/{id}/latest-save:
     get:
       tags: [Game]

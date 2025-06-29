@@ -242,34 +242,6 @@ router.post('/companies/create-or-update', async (req, res) => {
     }
 });
 
-// GET /api/game/save/:id - Carica salvataggio
-router.get('/save/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        const save = await db.query(`
-            SELECT * FROM game_saves WHERE id = $1
-        `, [id]);
-        
-        if (save.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                error: 'Save not found'
-            });
-        }
-        
-        res.json({
-            success: true,
-            data: save.rows[0]
-        });
-    } catch (error) {
-        console.error('Error loading save:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to load save'
-        });
-    }
-});
 
 // GET /api/game/companies/:id/latest-save - Ottieni ultimo salvataggio compagnia
 router.get('/companies/:id/latest-save', async (req, res) => {
@@ -302,65 +274,3 @@ router.get('/companies/:id/latest-save', async (req, res) => {
         });
     }
 });
-
-// POST /api/game/save - Salva partita
-router.post('/save', async (req, res) => {
-    try {
-        const { company_id, save_name, game_data } = req.body;
-        
-        if (!company_id || !save_name || !game_data) {
-            return res.status(400).json({
-                success: false,
-                error: 'Company ID, save name and game data are required'
-            });
-        }
-        
-        const result = await db.query(`
-            INSERT INTO game_saves (company_id, save_name, game_data)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (company_id, save_name) 
-            DO UPDATE SET 
-                game_data = EXCLUDED.game_data,
-                updated_at = CURRENT_TIMESTAMP
-            RETURNING *
-        `, [company_id, save_name, JSON.stringify(game_data)]);
-        
-        res.json({
-            success: true,
-            data: result.rows[0]
-        });
-    } catch (error) {
-        console.error('Error saving game:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to save game'
-        });
-    }
-});
-
-// GET /api/game/saves/:company_id - Lista salvataggi per compagnia
-router.get('/saves/:company_id', async (req, res) => {
-    try {
-        const { company_id } = req.params;
-        
-        const saves = await db.query(`
-            SELECT id, company_id, save_name, created_at, updated_at
-            FROM game_saves 
-            WHERE company_id = $1
-            ORDER BY updated_at DESC
-        `, [company_id]);
-        
-        res.json({
-            success: true,
-            data: saves.rows
-        });
-    } catch (error) {
-        console.error('Error fetching saves:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch saves'
-        });
-    }
-});
-
-module.exports = router;
