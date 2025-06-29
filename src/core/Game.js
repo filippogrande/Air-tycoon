@@ -61,19 +61,9 @@ function Game(companyId) {
 
 Game.prototype.init = function() {
     console.log('🛫 Air Tycoon 2 Clone - Inizializzazione...');
-    
     try {
-        console.log('🔄 Caricamento dati salvati...');
-        // Carica dati salvati se esistenti
-        var savedData = SaveLoad.loadGame();
-        if (savedData) {
-            this.state.loadFromData(savedData);
-            console.log('💾 Dati salvati caricati');
-        } else {
-            console.log('🆕 Avvio nuovo gioco...');
-            this.setupNewGame();
-        }
-        
+        // Avvio sempre nuova partita
+        this.setupNewGame();
         // Inizializza UI
         console.log('🎨 Inizializzazione UI...');
         try {
@@ -83,7 +73,6 @@ Game.prototype.init = function() {
             console.error('❌ Errore inizializzazione UI:', error);
             throw error;
         }
-        
         console.log('🗺️ Inizializzazione WorldMap...');
         try {
             this.worldMap.init();
@@ -92,7 +81,6 @@ Game.prototype.init = function() {
             console.error('❌ Errore inizializzazione WorldMap:', error);
             throw error;
         }
-        
         console.log('🔄 Aggiornamento UI...');
         try {
             this.updateUI();
@@ -101,7 +89,6 @@ Game.prototype.init = function() {
             console.error('❌ Errore aggiornamento UI:', error);
             throw error;
         }
-        
         // Avvia il game loop
         console.log('▶️ Avvio game loop...');
         try {
@@ -111,15 +98,7 @@ Game.prototype.init = function() {
             console.error('❌ Errore avvio game loop:', error);
             throw error;
         }
-        
-        // Auto-save ogni 30 secondi
-        var self = this;
-        setInterval(function() {
-            self.saveGame();
-        }, 30000);
-        
         console.log('✅ Gioco inizializzato correttamente');
-        
     } catch (error) {
         console.error('❌ Errore durante l\'inizializzazione:', error);
         throw error;
@@ -193,31 +172,13 @@ Game.prototype.updateUI = function() {
 };
 
 Game.prototype.saveGame = function() {
-    try {
-        var saveData = this.state.toSaveData();
-        SaveLoad.saveGame(saveData);
-        console.log('💾 Auto-save completato');
-        return true;
-    } catch (error) {
-        console.error('❌ Errore durante il salvataggio:', error);
-        return false;
-    }
+    // Funzione vuota: salvataggio disabilitato
+    return false;
 };
 
 Game.prototype.loadGame = function() {
-    try {
-        var savedData = SaveLoad.loadGame();
-        if (savedData) {
-            this.state.loadFromData(savedData);
-            this.updateUI();
-            console.log('📂 Gioco caricato');
-            return true;
-        }
-        return false;
-    } catch (error) {
-        console.error('❌ Errore durante il caricamento:', error);
-        return false;
-    }
+    // Funzione vuota: caricamento disabilitato
+    return false;
 };
 
 // Avanza di un mese nel gioco
@@ -393,7 +354,6 @@ Game.prototype.newGame = function() {
         this.state = new GameState();
         this.setupNewGame();
         this.updateUI();
-        SaveLoad.deleteSave();
         console.log('🆕 Nuova partita avviata');
         return true;
     } catch (error) {
