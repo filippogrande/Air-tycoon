@@ -1,5 +1,4 @@
 // File principale - Avvio del gioco Air Tycoon 2 Clone
-import { loadGameCompanyIdOrShowError } from './load-game.js';
 
 // Polyfill per compatibilità browser
 (function() {

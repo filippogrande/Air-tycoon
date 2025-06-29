@@ -1,10 +1,10 @@
 // src/load-game.js
 
-export function isValidCompanyId(id) {
+function isValidCompanyId(id) {
     return /^\d+$/.test(id) && Number.isSafeInteger(Number(id)) && Number(id) > 0;
 }
 
-export function loadGameCompanyIdOrShowError(showError) {
+function loadGameCompanyIdOrShowError(showError) {
     const companyId = sessionStorage.getItem('selectedCompanyId');
     if (!companyId) {
         showError('Errore: companyId non trovato. Seleziona una compagnia valida dalla schermata di selezione partita.');
@@ -16,3 +16,6 @@ export function loadGameCompanyIdOrShowError(showError) {
     }
     return companyId;
 }
+
+// Espone la funzione come globale
+window.loadGameCompanyIdOrShowError = loadGameCompanyIdOrShowError;
