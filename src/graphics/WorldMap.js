@@ -206,6 +206,20 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
     console.log('✅ Creati marker per', airports.length, 'aeroporti');
 };
 
+// Crea popup per un aeroporto
+WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
+    // Usa RouteUIManager se disponibile, altrimenti fallback
+    if (typeof RouteUIManager !== 'undefined') {
+        return RouteUIManager.createAirportPopup(airport, isPlayerHub);
+    }
+    // Fallback semplice
+    return '<div class="airport-popup">' +
+           '<h3>' + (airport.name || 'Nome non disponibile') + '</h3>' +
+           '<p><strong>Codice:</strong> ' + (airport.code || 'N/A') + '</p>' +
+           '<button onclick="game.worldMap.createRouteFromAirport(\'' + airport.code + '\')">Crea Rotta</button>' +
+           '</div>';
+};
+
 // Crea marker per un aeroporto
 WorldMap.prototype.createAirportMarker = function(airport) {
     var self = this;
