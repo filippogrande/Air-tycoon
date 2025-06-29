@@ -116,20 +116,36 @@ WorldMap.prototype.initializeRouteUI = function() {
 WorldMap.prototype.loadAirports = function() {
     var self = this;
     console.log('✈️ Caricamento aeroporti dalla API backend...');
-    // Ottieni la data di gioco dal backend (tramite /companies/:id)
+    // Ottieni la data di gioco dal backend (tramite /api/game/companies/:id)
     var companyId = this.game && this.game.companyId ? this.game.companyId : 1; // fallback id 1
-    fetch('/companies/' + companyId)
+    fetch('/api/game/companies/' + companyId)
         .then(res => res.json())
-        .then(company => {
-            var gameDate = company && company.game_date ? company.game_date : null;
+        .then(response => {
+            if (!response.success || !response.data || !response.data.company) {
+                console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
+                return fetch('/api/game/airport-data')
+                    .then(res => res.json())
+                    .then(resp => resp.data || []);
+            }
+            var gameDate = response.data.company.game_date;
             if (!gameDate) {
                 console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
-                return fetch('/api/airports?limit=2000')
-                    .then(res => res.json());
+                return fetch('/api/game/airport-data')
+                    .then(res => res.json())
+                    .then(resp => resp.data || []);
             }
-            // Chiedi solo aeroporti aperti alla data di gioco
-            return fetch('/api/airports?limit=2000&open_at=' + encodeURIComponent(gameDate))
-                .then(res => res.json());
+            // Carica tutti gli aeroporti e filtra quelli aperti alla data di gioco
+            return fetch('/api/game/airport-data')
+                .then(res => res.json())
+                .then(resp => {
+                    var airports = resp.data || [];
+                    // Filtro: aperti alla data di gioco (open_date <= gameDate)
+                    var filtered = airports.filter(function(airport) {
+                        if (!airport.open_date) return true; // se manca la data, considera aperto
+                        return new Date(airport.open_date) <= new Date(gameDate);
+                    });
+                    return filtered;
+                });
         })
         .then(airports => {
             if (!Array.isArray(airports) || airports.length === 0) {
@@ -141,11 +157,6 @@ WorldMap.prototype.loadAirports = function() {
         .catch(error => {
             console.error('❌ Errore caricamento aeroporti dal backend:', error);
         });
-};
-
-// Fallback statico rimosso: ora sempre da backend
-WorldMap.prototype._loadAirportsStaticFallback = function() {
-    console.error('❌ Fallback statico aeroporti disabilitato: usa solo backend');
 };
 
 // Renderizza aeroporti sulla mappa
