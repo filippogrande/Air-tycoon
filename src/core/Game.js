@@ -1,12 +1,12 @@
 // Game compatibile con tutti i browser
 console.log('📂 Caricamento Game.js...');
 
-function Game() {
+function Game(companyId) {
     console.log('🎮 Inizializzazione Game...');
     
     try {
         // Inizializza componenti
-        this.state = new GameState();
+        this.state = new GameState(companyId);
         console.log('✅ GameState creato');
         
         this.fleetManager = new FleetManager(this.state);
