@@ -1,0 +1,42 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API - System
+  version: 1.0.0
+  description: |
+    API di sistema e informazioni generali.
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check del server
+      description: Restituisce lo stato del server e la versione.
+      responses:
+        "200":
+          description: Server attivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                  version:
+                    type: string
+  /:
+    get:
+      tags: [System]
+      summary: Redirect al gioco
+      description: Reindirizza a /game/index.html
+      responses:
+        "302":
+          description: Redirect
+  /docs:
+    get:
+      tags: [System]
+      summary: Documentazione Swagger interattiva
+      description: Mostra la documentazione interattiva delle API.
+      responses:
+        "200":
+          description: Pagina Swagger UI

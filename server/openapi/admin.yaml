@@ -1,0 +1,47 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API - Admin
+  version: 1.0.0
+  description: |
+    API amministrative e statistiche database.
+paths:
+  /api/admin/tables:
+    get:
+      tags: [Admin]
+      summary: Lista tutte le tabelle disponibili
+      responses:
+        "200":
+          description: Lista tabelle
+  /api/admin/tables/{tableName}:
+    get:
+      tags: [Admin]
+      summary: Visualizza contenuto di una tabella
+      parameters:
+        - in: path
+          name: tableName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contenuto tabella
+  /api/admin/schema/{tableName}:
+    get:
+      tags: [Admin]
+      summary: Mostra schema di una tabella
+      parameters:
+        - in: path
+          name: tableName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Schema tabella
+  /api/admin/stats:
+    get:
+      tags: [Admin]
+      summary: Statistiche generali del database
+      responses:
+        "200":
+          description: Statistiche database

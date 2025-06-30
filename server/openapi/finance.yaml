@@ -1,0 +1,123 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API - Finance
+  version: 1.0.0
+  description: |
+    API per operazioni finanziarie, transazioni e report.
+paths:
+  /api/finance/company/{company_id}:
+    get:
+      tags: [Finance]
+      summary: Ottieni record finanziari di una compagnia
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: start_date
+          schema:
+            type: string
+        - in: query
+          name: end_date
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista record finanziari
+  /api/finance/summary/{company_id}:
+    get:
+      tags: [Finance]
+      summary: Ottieni riassunto finanziario
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: period
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Riassunto finanziario
+  /api/finance/transaction:
+    post:
+      tags: [Finance]
+      summary: Aggiungi transazione finanziaria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id:
+                  type: integer
+                type:
+                  type: string
+                amount:
+                  type: number
+                description:
+                  type: string
+                category:
+                  type: string
+                flight_id:
+                  type: integer
+                aircraft_id:
+                  type: integer
+      responses:
+        "201":
+          description: Transazione aggiunta
+  /api/finance/profit-loss/{company_id}:
+    get:
+      tags: [Finance]
+      summary: Report profitti e perdite
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: start_date
+          schema:
+            type: string
+        - in: query
+          name: end_date
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report profitti e perdite
+  /api/finance/cash-flow/{company_id}:
+    get:
+      tags: [Finance]
+      summary: Report flusso di cassa
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: months
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Report flusso di cassa

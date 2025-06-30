@@ -1,0 +1,106 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API (modulare)
+  version: 1.0.0
+  description: |
+    Documentazione OpenAPI suddivisa per gruppi: Game, Auth, Airports, ecc.
+servers:
+  - url: http://localhost:3001
+paths:
+  # Game
+  /api/game/companies:
+    $ref: "./game.yaml#/paths/~1api~1game~1companies"
+  /api/game/companies/{id}:
+    $ref: "./game.yaml#/paths/~1api~1game~1companies~1{id}"
+  /api/game/companies/create-or-update:
+    $ref: "./game.yaml#/paths/~1api~1game~1companies~1create-or-update"
+  /api/game/companies/{id}/hubs:
+    $ref: "./game.yaml#/paths/~1api~1game~1companies~1{id}~1hubs"
+  /api/game/aircraft-data:
+    $ref: "./game.yaml#/paths/~1api~1game~1aircraft-data"
+  /api/game/airport-data:
+    $ref: "./game.yaml#/paths/~1api~1game~1airport-data"
+  # Auth
+  /api/auth/register:
+    $ref: "./auth.yaml#/paths/~1api~1auth~1register"
+  /api/auth/login:
+    $ref: "./auth.yaml#/paths/~1api~1auth~1login"
+  /api/auth/verify:
+    $ref: "./auth.yaml#/paths/~1api~1auth~1verify"
+  # Airports
+  /api/airports:
+    $ref: "./airports.yaml#/paths/~1api~1airports"
+  /api/airports/{id}:
+    $ref: "./airports.yaml#/paths/~1api~1airports~1{id}"
+  /api/airports/near/{lat}/{lng}:
+    $ref: "./airports.yaml#/paths/~1api~1airports~1near~1{lat}~1{lng}"
+  /api/airports/countries:
+    $ref: "./airports.yaml#/paths/~1api~1airports~1countries"
+  # Admin
+  /api/admin/tables:
+    $ref: "./admin.yaml#/paths/~1api~1admin~1tables"
+  /api/admin/tables/{tableName}:
+    $ref: "./admin.yaml#/paths/~1api~1admin~1tables~1{tableName}"
+  /api/admin/schema/{tableName}:
+    $ref: "./admin.yaml#/paths/~1api~1admin~1schema~1{tableName}"
+  /api/admin/stats:
+    $ref: "./admin.yaml#/paths/~1api~1admin~1stats"
+  # System
+  /health:
+    $ref: "./system.yaml#/paths/~1health"
+  /:
+    $ref: "./system.yaml#/paths/~1"
+  /docs:
+    $ref: "./system.yaml#/paths/~1docs"
+  # Finance
+  /api/finance/company/{company_id}:
+    $ref: "./finance.yaml#/paths/~1api~1finance~1company~1{company_id}"
+  /api/finance/summary/{company_id}:
+    $ref: "./finance.yaml#/paths/~1api~1finance~1summary~1{company_id}"
+  /api/finance/transaction:
+    $ref: "./finance.yaml#/paths/~1api~1finance~1transaction"
+  /api/finance/profit-loss/{company_id}:
+    $ref: "./finance.yaml#/paths/~1api~1finance~1profit-loss~1{company_id}"
+  /api/finance/cash-flow/{company_id}:
+    $ref: "./finance.yaml#/paths/~1api~1finance~1cash-flow~1{company_id}"
+  # Fleet
+  /api/fleet/aircraft-types:
+    $ref: "./fleet.yaml#/paths/~1api~1fleet~1aircraft-types"
+  /api/fleet/company/{company_id}:
+    $ref: "./fleet.yaml#/paths/~1api~1fleet~1company~1{company_id}"
+  /api/fleet/purchase:
+    $ref: "./fleet.yaml#/paths/~1api~1fleet~1purchase"
+  /api/fleet/{id}:
+    $ref: "./fleet.yaml#/paths/~1api~1fleet~1{id}"
+  /api/fleet/{id}/maintenance:
+    $ref: "./fleet.yaml#/paths/~1api~1fleet~1{id}~1maintenance"
+  # MarketAnalysis
+  /api/routes/market-analysis/{origin}/{destination}:
+    $ref: "./marketanalysis.yaml#/paths/~1api~1routes~1market-analysis~1{origin}~1{destination}"
+  /api/routes/market-analysis:
+    $ref: "./marketanalysis.yaml#/paths/~1api~1routes~1market-analysis"
+  /api/routes/demand-improvements/{origin}/{destination}:
+    $ref: "./marketanalysis.yaml#/paths/~1api~1routes~1demand-improvements~1{origin}~1{destination}"
+  /api/routes/demand-improvements:
+    $ref: "./marketanalysis.yaml#/paths/~1api~1routes~1demand-improvements"
+  # Routes
+  /api/routes/company/{company_id}:
+    $ref: "./routes.yaml#/paths/~1api~1routes~1company~1{company_id}"
+  /api/routes/{id}:
+    $ref: "./routes.yaml#/paths/~1api~1routes~1{id}"
+  /api/routes:
+    $ref: "./routes.yaml#/paths/~1api~1routes"
+  /api/routes/{id}/schedule:
+    $ref: "./routes.yaml#/paths/~1api~1routes~1{id}~1schedule"
+  /api/routes/analysis/{company_id}:
+    $ref: "./routes.yaml#/paths/~1api~1routes~1analysis~1{company_id}"
+components:
+  schemas:
+    Company:
+      $ref: "./game.yaml#/components/schemas/Company"
+    CompanyDetails:
+      $ref: "./game.yaml#/components/schemas/CompanyDetails"
+    AircraftType:
+      $ref: "./game.yaml#/components/schemas/AircraftType"
+    Airport:
+      $ref: "./airports.yaml#/components/schemas/Airport"

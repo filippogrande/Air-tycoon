@@ -1,0 +1,106 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API - Airports
+  version: 1.0.0
+  description: |
+    API relative agli aeroporti.
+paths:
+  /api/airports:
+    get:
+      tags: [Airports]
+      summary: Lista aeroporti (filtrabile)
+      parameters:
+        - in: query
+          name: country
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: continent
+          schema:
+            type: string
+        - in: query
+          name: size
+          schema:
+            type: string
+        - in: query
+          name: before
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista aeroporti
+  /api/airports/{id}:
+    get:
+      tags: [Airports]
+      summary: Dettagli di un aeroporto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dettagli aeroporto
+  /api/airports/near/{lat}/{lng}:
+    get:
+      tags: [Airports]
+      summary: Trova aeroporti vicini
+      parameters:
+        - in: path
+          name: lat
+          required: true
+          schema:
+            type: number
+        - in: path
+          name: lng
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: radius
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista aeroporti vicini
+  /api/airports/countries:
+    get:
+      tags: [Airports]
+      summary: Lista paesi con aeroporti
+      responses:
+        "200":
+          description: Lista paesi
+components:
+  schemas:
+    Airport:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        iata_code:
+          type: string
+        icao_code:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number

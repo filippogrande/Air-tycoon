@@ -1,0 +1,138 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API - Market Analysis
+  version: 1.0.0
+  description: |
+    API per analisi di mercato e miglioramenti domanda sulle rotte.
+paths:
+  /api/routes/market-analysis/{origin}/{destination}:
+    get:
+      tags: [MarketAnalysis]
+      summary: Ottieni l'analisi di mercato per una rotta specifica
+      parameters:
+        - in: path
+          name: origin
+          required: true
+          schema:
+            type: string
+          description: Codice IATA aeroporto di origine
+        - in: path
+          name: destination
+          required: true
+          schema:
+            type: string
+          description: Codice IATA aeroporto di destinazione
+        - in: query
+          name: company_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: analysis_type
+          required: false
+          schema:
+            type: string
+            enum: [standard, premium, detailed]
+      responses:
+        "200":
+          description: Analisi trovata o assente
+        "400":
+          description: Parametri mancanti
+        "404":
+          description: Aeroporti non trovati
+        "500":
+          description: Errore server
+  /api/routes/market-analysis:
+    post:
+      tags: [MarketAnalysis]
+      summary: Acquista una nuova analisi di mercato
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id:
+                  type: integer
+                origin_airport_code:
+                  type: string
+                destination_airport_code:
+                  type: string
+                analysis_type:
+                  type: string
+                  enum: [standard, premium, detailed]
+                cost:
+                  type: number
+      responses:
+        "200":
+          description: Analisi acquistata con successo
+        "400":
+          description: Parametri mancanti o fondi insufficienti
+        "404":
+          description: Compagnia o aeroporti non trovati
+        "409":
+          description: Analisi già esistente
+        "500":
+          description: Errore server
+  /api/routes/demand-improvements/{origin}/{destination}:
+    get:
+      tags: [MarketAnalysis]
+      summary: Ottieni i miglioramenti domanda per una rotta
+      parameters:
+        - in: path
+          name: origin
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: destination
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: company_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista miglioramenti domanda
+        "400":
+          description: Parametri mancanti
+        "404":
+          description: Aeroporti non trovati
+        "500":
+          description: Errore server
+  /api/routes/demand-improvements:
+    post:
+      tags: [MarketAnalysis]
+      summary: Acquista un nuovo miglioramento domanda
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id:
+                  type: integer
+                origin_airport_code:
+                  type: string
+                destination_airport_code:
+                  type: string
+                improvement_type:
+                  type: string
+                  enum:
+                    [detailed_traffic, seasonal_analysis, competitor_analysis]
+                cost:
+                  type: number
+      responses:
+        "200":
+          description: Miglioramento acquistato con successo
+        "400":
+          description: Parametri mancanti o fondi insufficienti
+        "404":
+          description: Compagnia o aeroporti non trovati
+        "500":
+          description: Errore server

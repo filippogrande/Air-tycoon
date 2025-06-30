@@ -1,0 +1,117 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API - Fleet
+  version: 1.0.0
+  description: |
+    API per la gestione della flotta e degli aeromobili.
+paths:
+  /api/fleet/aircraft-types:
+    get:
+      tags: [Fleet]
+      summary: Ottieni tutti i tipi di aeromobili disponibili
+      responses:
+        "200":
+          description: Lista tipi aeromobili
+  /api/fleet/company/{company_id}:
+    get:
+      tags: [Fleet]
+      summary: Ottieni la flotta di una compagnia
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Flotta compagnia
+  /api/fleet/purchase:
+    post:
+      tags: [Fleet]
+      summary: Acquista nuovo aeromobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id:
+                  type: integer
+                aircraft_type_id:
+                  type: integer
+                registration:
+                  type: string
+                purchase_price:
+                  type: number
+      responses:
+        "201":
+          description: Aeromobile acquistato
+  /api/fleet/{id}:
+    put:
+      tags: [Fleet]
+      summary: Aggiorna aeromobile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                condition:
+                  type: number
+                total_flight_hours:
+                  type: number
+                location_airport_id:
+                  type: integer
+                status:
+                  type: string
+      responses:
+        "200":
+          description: Aeromobile aggiornato
+    delete:
+      tags: [Fleet]
+      summary: Vendi aeromobile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sale_price:
+                  type: number
+      responses:
+        "200":
+          description: Aeromobile venduto
+  /api/fleet/{id}/maintenance:
+    post:
+      tags: [Fleet]
+      summary: Esegui manutenzione su un aeromobile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                maintenance_type:
+                  type: string

@@ -1,0 +1,136 @@
+openapi: 3.0.0
+info:
+  title: Air Tycoon 2 API - Routes
+  version: 1.0.0
+  description: |
+    API per la gestione delle rotte e dei voli.
+paths:
+  /api/routes/company/{company_id}:
+    get:
+      tags: [Routes]
+      summary: Ottieni tutte le rotte di una compagnia
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista rotte
+  /api/routes/{id}:
+    get:
+      tags: [Routes]
+      summary: Ottieni dettagli di una rotta
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dettagli rotta e ultimi voli
+    put:
+      tags: [Routes]
+      summary: Aggiorna una rotta
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                base_price:
+                  type: number
+                frequency_per_week:
+                  type: integer
+                status:
+                  type: string
+      responses:
+        "200":
+          description: Rotta aggiornata
+    delete:
+      tags: [Routes]
+      summary: Elimina una rotta
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rotta eliminata
+  /api/routes:
+    post:
+      tags: [Routes]
+      summary: Crea una nuova rotta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                company_id:
+                  type: integer
+                origin_airport_id:
+                  type: integer
+                destination_airport_id:
+                  type: integer
+                distance_km:
+                  type: number
+                base_price:
+                  type: number
+                frequency_per_week:
+                  type: integer
+      responses:
+        "201":
+          description: Rotta creata
+  /api/routes/{id}/schedule:
+    post:
+      tags: [Routes]
+      summary: Programma un volo su una rotta
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                aircraft_id:
+                  type: integer
+                departure_time:
+                  type: string
+                  format: date-time
+                passenger_load:
+                  type: number
+      responses:
+        "201":
+          description: Volo programmato
+  /api/routes/analysis/{company_id}:
+    get:
+      tags: [Routes]
+      summary: Analisi performance rotte di una compagnia
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analisi performance rotte
