@@ -267,7 +267,6 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
 // Utility per normalizzare la grandezza e restituire icona, dimensione e zIndex
 WorldMap.prototype.getAirportIconProps = function(airport, isPlayerHub) {
     // Normalizza il campo size
-    marker.isPlayerHub = loadPlayerHubs();
     var size = (airport.size || airport.airport_size || '').toLowerCase();
     var iconSize, zIndex, iconHtml;
     console.log('[getAirportIconProps] airport:', airport, 'isPlayerHub:', isPlayerHub, 'size:', size);
