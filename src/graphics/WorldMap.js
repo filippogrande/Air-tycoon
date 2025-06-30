@@ -215,7 +215,6 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
     
     console.log('✅ Creati marker per', airports.length, 'aeroporti');
     // Carica e evidenzia gli hub del player dopo aver creato i marker
-    this.loadPlayerHubs();
 };
 
 // Mapping tipo aeroporto leggibile
@@ -255,39 +254,59 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
            '</div>';
 };
 
-// Crea marker per un aeroporto
-WorldMap.prototype.createAirportMarker = function(airport) {
-    var self = this;
-    // Determinazione hub SOLO dopo fetch asincrona: nessun controllo locale
-    var isPlayerHub = false; // di default, sarà aggiornato da loadPlayerHubs
-    var iconHtml, iconSize, zIndex;
-    
-    // Determina icona e dimensioni basate su tipo e proprietà
+// Utility per normalizzare la grandezza e restituire icona, dimensione e zIndex
+WorldMap.prototype.getAirportIconProps = function(airport, isPlayerHub) {
+    // Normalizza il campo size
+    var size = (airport.size || airport.airport_size || '').toLowerCase();
+    var iconSize, zIndex, iconHtml;
+    console.log('[getAirportIconProps] airport:', airport, 'isPlayerHub:', isPlayerHub, 'size:', size);
     if (isPlayerHub) {
-        // Hub del giocatore - SVG target verde
-        iconHtml = '<svg width="24" height="24" viewBox="0 0 24 24" class="airport-icon player-hub" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="none" stroke="#27ae60" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="#27ae60"/></svg>';
-        iconSize = [24, 24];
-        zIndex = 1200;
+        // Hub del player: bersaglio verde, dimensione coerente con grandezza aeroporto
+        if (size === 'large') {
+            console.log('[getAirportIconProps] HUB: size large');
+            iconSize = [28, 28];
+            zIndex = 1200;
+        } else if (size === 'medium') {
+            console.log('[getAirportIconProps] HUB: size medium');
+            iconSize = [22, 22];
+            zIndex = 1100;
+        } else {
+            console.log('[getAirportIconProps] HUB: size small/other');
+            iconSize = [16, 16];
+            zIndex = 1000;
+        }
+        iconHtml = '<svg width="' + iconSize[0] + '" height="' + iconSize[1] + '" viewBox="0 0 24 24" class="airport-icon player-hub" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="none" stroke="#27ae60" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="#27ae60"/></svg>';
     } else {
-        // Tutti gli altri aeroporti - map-pin con dimensioni diverse
-        iconHtml = '<div class="airport-icon standard-airport"></div>';
-        if (airport.size === 'large') {
+        // Aeroporto normale: pin
+        if (size === 'large') {
+            console.log('[getAirportIconProps] NORMAL: size large');
             iconSize = [20, 25];
             zIndex = 800;
-        } else if (airport.size === 'medium') {
+        } else if (size === 'medium') {
+            console.log('[getAirportIconProps] NORMAL: size medium');
             iconSize = [14, 18];
             zIndex = 700;
         } else {
+            console.log('[getAirportIconProps] NORMAL: size small/other');
             iconSize = [10, 12];
             zIndex = 600;
         }
+        iconHtml = '<div class="airport-icon standard-airport"></div>';
     }
-    
+    return { iconHtml, iconSize, zIndex };
+};
+
+// Crea marker per un aeroporto
+WorldMap.prototype.createAirportMarker = function(airport) {
+    var self = this;
+    // Di default non è hub
+    var isPlayerHub = false;
+    var props = this.getAirportIconProps(airport, isPlayerHub);
     var airportIcon = L.divIcon({
         className: 'airport-marker',
-        html: iconHtml,
-        iconSize: iconSize,
-        iconAnchor: [iconSize[0]/2, iconSize[1]/2]
+        html: props.iconHtml,
+        iconSize: props.iconSize,
+        iconAnchor: [props.iconSize[0]/2, props.iconSize[1]/2]
     });
     
     // Conversione sicura di lat/lon a numeri
@@ -297,7 +316,7 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     var marker = L.marker([lat, lon], {
         icon: airportIcon,
         title: (airport.name || 'Aeroporto sconosciuto') + ' (' + (airport.code || 'N/A') + ')',
-        zIndexOffset: zIndex
+        zIndexOffset: props.zIndex
     });
     
     // Popup con informazioni aeroporto
@@ -991,13 +1010,13 @@ WorldMap.prototype.loadPlayerHubs = function() {
                 var marker = self.airportMarkers[code];
                 if (marker) {
                     marker.isPlayerHub = true;
-                    // Aggiorna icona e popup
-                    var iconHtml = '<svg width="24" height="24" viewBox="0 0 24 24" class="airport-icon player-hub" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="none" stroke="#27ae60" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="#27ae60"/></svg>';
+                    // Aggiorna icona e popup usando la funzione centralizzata
+                    var props = self.getAirportIconProps(marker.airportData, true);
                     var airportIcon = L.divIcon({
                         className: 'airport-marker',
-                        html: iconHtml,
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
+                        html: props.iconHtml,
+                        iconSize: props.iconSize,
+                        iconAnchor: [props.iconSize[0]/2, props.iconSize[1]/2]
                     });
                     marker.setIcon(airportIcon);
                     marker.setPopupContent(self.createAirportPopup(marker.airportData, true));
