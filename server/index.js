@@ -24,7 +24,6 @@ const MigrationSystem = require('../database/migration-system');
 
 // Swagger/OpenAPI
 const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
 
 // INIZIALIZZA EXPRESS PRIMA DI USARE app
 const app = express();
@@ -32,8 +31,8 @@ const PORT = process.env.PORT || 3001;
 
 // Servi la cartella openapi come statica
 app.use('/openapi', express.static(path.join(__dirname, 'openapi')));
-// Carica la documentazione aggregata
-const swaggerDocument = YAML.load(path.join(__dirname, 'openapi/index.yaml'));
+// Configura Swagger UI per caricare index.yaml direttamente dal browser
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(null, { swaggerUrl: '/openapi/index.yaml' }));
 
 // =====================================================
 // MIDDLEWARE
@@ -103,7 +102,7 @@ app.use('/db-viewer', dbViewerRoutes);
 console.log('✅ Route API caricate');
 
 // Documentazione Swagger
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(null, { swaggerUrl: '/openapi/index.yaml' }));
 
 // Servire file statici del gioco dalla root del progetto
 app.use('/game', express.static(path.join(__dirname, '..')));
