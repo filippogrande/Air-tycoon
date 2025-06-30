@@ -113,56 +113,64 @@ WorldMap.prototype.initializeRouteUI = function() {
     }
 };
 
-// Carica aeroporti sulla mappa (solo quelli aperti alla data di gioco)
+// Carica aeroporti e hub in modo sincrono: prima hub, poi aeroporti
 WorldMap.prototype.loadAirports = function() {
     var self = this;
-    console.log('✈️ Caricamento aeroporti dalla API backend...');
-    // Ottieni la data di gioco dal backend (tramite /api/game/companies/:id)
-    var companyId = this.game && this.game.companyId ? this.game.companyId : 1; // fallback id 1
-    fetch('/api/game/companies/' + companyId)
+    console.log('✈️ Caricamento hub e aeroporti dalla API backend...');
+    var companyId = this.game && this.game.companyId ? this.game.companyId : 1;
+    // 1. Carica hub del player
+    fetch('/api/game/companies/' + companyId + '/hubs')
         .then(res => res.json())
-        .then(response => {
-            if (!response.success || !response.data || !response.data.company) {
-                console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
-                return fetch('/api/airports?limit=2000')
-                    .then(res => res.json());
+        .then(hubResponse => {
+            var hubCodes = [];
+            if (hubResponse.success && Array.isArray(hubResponse.data)) {
+                hubCodes = hubResponse.data.map(hub => hub.iata_code || hub.icao_code || hub.code);
             }
-            var gameDate = response.data.company.game_date;
-            if (!gameDate) {
-                console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
-                return fetch('/api/airports?limit=2000')
-                    .then(res => res.json());
-            }
-            // Chiedi solo aeroporti aperti alla data di gioco
-            return fetch('/api/airports?limit=2000&before=' + encodeURIComponent(gameDate))
-                .then(res => res.json());
+            // 2. Carica aeroporti (con data di gioco se disponibile)
+            return fetch('/api/game/companies/' + companyId)
+                .then(res => res.json())
+                .then(response => {
+                    if (!response.success || !response.data || !response.data.company) {
+                        console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
+                        return fetch('/api/airports?limit=2000')
+                            .then(res => res.json())
+                            .then(airports => ({ airports, hubCodes }));
+                    }
+                    var gameDate = response.data.company.game_date;
+                    if (!gameDate) {
+                        console.warn('⚠️ Data di gioco non trovata, carico tutti gli aeroporti');
+                        return fetch('/api/airports?limit=2000')
+                            .then(res => res.json())
+                            .then(airports => ({ airports, hubCodes }));
+                    }
+                    // Chiedi solo aeroporti aperti alla data di gioco
+                    return fetch('/api/airports?limit=2000&before=' + encodeURIComponent(gameDate))
+                        .then(res => res.json())
+                        .then(airports => ({ airports, hubCodes }));
+                });
         })
-        .then(airports => {
-            // L'API /api/airports restituisce direttamente l'array
+        .then(({ airports, hubCodes }) => {
             if (!Array.isArray(airports) || airports.length === 0) {
                 console.warn('⚠️ Nessun aeroporto ricevuto dal backend');
                 return;
             }
-            self._renderAirportsOnMap(airports);
+            self._renderAirportsOnMap(airports, hubCodes);
         })
         .catch(error => {
-            console.error('❌ Errore caricamento aeroporti dal backend:', error);
+            console.error('❌ Errore caricamento aeroporti/hub dal backend:', error);
         });
 };
 
 // Renderizza aeroporti sulla mappa
-WorldMap.prototype._renderAirportsOnMap = function(airports) {
-    console.log('🗺️ Rendering aeroporti sulla mappa:', airports.length);
-    // Aggiorna window.AirportData con i dati reali dal backend
+WorldMap.prototype._renderAirportsOnMap = function(airports, hubCodes) {
+    console.log('🗺️ Rendering aeroporti sulla mappa:', airports.length, 'hubCodes:', hubCodes);
     window.AirportData = window.AirportData || {};
     window.AirportData.airports = airports;
-    // Ricostruisci l'indice per getAirportByCode
     window.AirportData._airportByCode = {};
+    hubCodes = hubCodes || [];
     for (var i = 0; i < airports.length; i++) {
         var airport = airports[i];
-        // Normalizza codice aeroporto (preferisci IATA, fallback ICAO)
         var code = airport.iata_code || airport.icao_code || airport.code;
-        // Conversione sicura di lat/lon a float
         var lat = parseFloat(airport.latitude);
         var lon = parseFloat(airport.longitude);
         var latOk = !isNaN(lat);
@@ -174,7 +182,8 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
             console.warn('⚠️ Aeroporto con dati invalidi:', airport);
             continue;
         }
-        // Passa i valori normalizzati a createAirportMarker
+        // Determina se è hub
+        var isPlayerHub = hubCodes.includes(code);
         var marker = this.createAirportMarker({
             ...airport,
             code: code,
@@ -182,8 +191,9 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
             longitude: lon,
             businessLevel: airport.businessLevel !== undefined ? airport.businessLevel : airport.business_level,
             touristLevel: airport.touristLevel !== undefined ? airport.touristLevel : airport.tourist_level,
-            size: airport.size || airport.airport_size // Normalizza sempre il campo size
-        });
+            size: airport.size || airport.airport_size
+        }, isPlayerHub);
+        marker.isPlayerHub = isPlayerHub;
         this.airportMarkers[code] = marker;
     }
     // Definisci o sovrascrivi getAirportByCode per usare solo i dati reali
@@ -257,6 +267,7 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
 // Utility per normalizzare la grandezza e restituire icona, dimensione e zIndex
 WorldMap.prototype.getAirportIconProps = function(airport, isPlayerHub) {
     // Normalizza il campo size
+    marker.isPlayerHub = loadPlayerHubs();
     var size = (airport.size || airport.airport_size || '').toLowerCase();
     var iconSize, zIndex, iconHtml;
     console.log('[getAirportIconProps] airport:', airport, 'isPlayerHub:', isPlayerHub, 'size:', size);
@@ -297,10 +308,8 @@ WorldMap.prototype.getAirportIconProps = function(airport, isPlayerHub) {
 };
 
 // Crea marker per un aeroporto
-WorldMap.prototype.createAirportMarker = function(airport) {
+WorldMap.prototype.createAirportMarker = function(airport, isPlayerHub) {
     var self = this;
-    // Di default non è hub
-    var isPlayerHub = false;
     var props = this.getAirportIconProps(airport, isPlayerHub);
     var airportIcon = L.divIcon({
         className: 'airport-marker',
@@ -331,7 +340,7 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     // Salva riferimento airport nel marker
     marker.airportData = airport;
     marker._nameLabel = null;
-    marker.isPlayerHub = false; // sarà aggiornato da loadPlayerHubs
+    marker.isPlayerHub = isPlayerHub;
     return marker;
 };
 
