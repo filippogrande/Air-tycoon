@@ -290,10 +290,31 @@ function fetchAndShowGameDate(companyId) {
     fetch('/api/game/companies/' + companyId)
         .then(res => res.json())
         .then(response => {
-            if (response.success && response.data && response.data.company && response.data.company.game_date) {
-                updateGameDateInHeader(response.data.company.game_date);
+            if (response.success && response.data && response.data.company) {
+                // Aggiorna data
+                if (response.data.company.game_date) {
+                    updateGameDateInHeader(response.data.company.game_date);
+                }
+                // Aggiorna soldi e reputazione
+                updateCompanyStatsInHeader(response.data.company);
             }
         });
+}
+
+// Funzione per aggiornare soldi e reputazione nell'header
+function updateCompanyStatsInHeader(company) {
+    // Aggiorna soldi
+    var moneyEl = document.getElementById('money');
+    if (moneyEl && company.money !== undefined) {
+        // Formatta con separatore migliaia e simbolo €
+        let euro = Number(company.money) || 0;
+        moneyEl.textContent = `💰 ${euro.toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}`;
+    }
+    // Aggiorna reputazione
+    var repEl = document.getElementById('reputation');
+    if (repEl && company.reputation !== undefined) {
+        repEl.textContent = `⭐ ${company.reputation}`;
+    }
 }
 
 // Debug: Espone oggetti globali per testing (solo in development)
