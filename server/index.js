@@ -25,7 +25,10 @@ const MigrationSystem = require('../database/migration-system');
 // Swagger/OpenAPI
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
-const swaggerDocument = YAML.load(path.join(__dirname, 'openapi.yaml'));
+// Servi la cartella openapi come statica
+app.use('/openapi', express.static(path.join(__dirname, 'openapi')));
+// Carica la documentazione aggregata
+const swaggerDocument = YAML.load(path.join(__dirname, 'openapi/index.yaml'));
 
 const app = express();
 const PORT = process.env.PORT || 3001;
