@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const companyId = loadGameCompanyIdOrShowError(showError);
 console.log('[DEBUG] companyId restituito da loadGameCompanyIdOrShowError:', companyId, typeof companyId);
         if (!companyId) return;
+        // Mostra la data di gioco nell'header
+        fetchAndShowGameDate(companyId);
         loadCoreDataAndStartGame(companyId);
     });
 });
@@ -258,6 +260,37 @@ function showError(message) {
             errorDiv.parentNode.removeChild(errorDiv);
         }
     }, 5000);
+}
+
+// --- Mostra la data di gioco nell'header ---
+function updateGameDateInHeader(dateString) {
+    var el = document.getElementById('game-date');
+    if (!el) return;
+    if (!dateString) {
+        el.textContent = '';
+        return;
+    }
+    // Formatta la data in formato italiano (es. 30/06/2025)
+    var d = new Date(dateString);
+    if (!isNaN(d.getTime())) {
+        var day = d.getDate().toString().padStart(2, '0');
+        var month = (d.getMonth() + 1).toString().padStart(2, '0');
+        var year = d.getFullYear();
+        el.textContent = `📅 ${day}/${month}/${year}`;
+    } else {
+        el.textContent = `📅 ${dateString}`;
+    }
+}
+
+// --- Carica la data di gioco dopo aver caricato la compagnia ---
+function fetchAndShowGameDate(companyId) {
+    fetch('/api/game/companies/' + companyId)
+        .then(res => res.json())
+        .then(response => {
+            if (response.success && response.data && response.data.company && response.data.company.game_date) {
+                updateGameDateInHeader(response.data.company.game_date);
+            }
+        });
 }
 
 // Debug: Espone oggetti globali per testing (solo in development)
