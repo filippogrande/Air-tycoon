@@ -270,13 +270,16 @@ function updateGameDateInHeader(dateString) {
         el.textContent = '';
         return;
     }
-    // Formatta la data in formato italiano (es. 30/06/2025)
+    // Formatta la data come "Gennaio 1950"
     var d = new Date(dateString);
     if (!isNaN(d.getTime())) {
-        var day = d.getDate().toString().padStart(2, '0');
-        var month = (d.getMonth() + 1).toString().padStart(2, '0');
+        var mesi = [
+            'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+            'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+        ];
+        var month = mesi[d.getMonth()];
         var year = d.getFullYear();
-        el.textContent = `📅 ${day}/${month}/${year}`;
+        el.textContent = `📅 ${month} ${year}`;
     } else {
         el.textContent = `📅 ${dateString}`;
     }
