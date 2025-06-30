@@ -122,6 +122,7 @@ WorldMap.prototype.loadAirports = function() {
     fetch('/api/game/companies/' + companyId + '/hubs')
         .then(res => res.json())
         .then(hubResponse => {
+            console.log('[loadAirports] Risposta hubs:', hubResponse);
             var hubCodes = [];
             if (hubResponse.success && Array.isArray(hubResponse.data)) {
                 hubCodes = hubResponse.data.map(hub => hub.iata_code || hub.icao_code || hub.code);
