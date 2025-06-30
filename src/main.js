@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function() {
     waitForLeaflet(function() {
         console.log('✅ Leaflet caricato');
         const companyId = loadGameCompanyIdOrShowError(showError);
-console.log('[DEBUG] companyId restituito da loadGameCompanyIdOrShowError:', companyId, typeof companyId);
         if (!companyId) return;
         // Mostra la data di gioco nell'header
         fetchAndShowGameDate(companyId);
@@ -105,7 +104,6 @@ function initializeGame(companyId) {
     }
     // Conversione companyId a numero
     const companyIdNum = Number(companyId);
-    console.log('[DEBUG] companyId passato a Game:', companyIdNum, '| typeof:', typeof companyIdNum);
     // Inizializza il gioco
     try {
         console.log('🎮 Creazione istanza Game...');

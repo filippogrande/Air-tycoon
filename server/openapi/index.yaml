@@ -18,8 +18,6 @@ paths:
     $ref: "./game.yaml#/paths/~1api~1game~1companies~1{id}~1hubs"
   /api/game/aircraft-data:
     $ref: "./game.yaml#/paths/~1api~1game~1aircraft-data"
-  /api/game/airport-data:
-    $ref: "./game.yaml#/paths/~1api~1game~1airport-data"
   # Auth
   /api/auth/register:
     $ref: "./auth.yaml#/paths/~1api~1auth~1register"

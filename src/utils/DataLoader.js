@@ -1,5 +1,5 @@
-// Sistema di caricamento dati con sincronizzazione periodica SERVER → localStorage
-console.log('📂 Caricamento DataLoader con sincronizzazione periodica...');
+// Sistema di caricamento dati (senza sincronizzazione periodica)
+console.log('📂 Caricamento DataLoader...');
 
 window.DataLoader = {
     _useDatabase: true,
@@ -14,7 +14,7 @@ window.DataLoader = {
         console.log('🔧 Inizializzazione DataLoader...');
         this._loadCacheFromLocalStorage();
         this._testDatabaseConnection();
-        this._startPeriodicSync();
+        // this._startPeriodicSync(); // Disabilitato: sincronizzazione periodica non più necessaria
     },
     
     // Carica cache da localStorage
@@ -46,19 +46,6 @@ window.DataLoader = {
         } catch (error) {
             console.warn('⚠️ Errore salvataggio cache dati:', error);
         }
-    },
-    
-    // Avvia sincronizzazione periodica
-    _startPeriodicSync: function() {
-        if (this._syncInterval) {
-            clearInterval(this._syncInterval);
-        }
-        
-        this._syncInterval = setInterval(() => {
-            this._performPeriodicSync();
-        }, this.SYNC_INTERVAL_MS);
-        
-        console.log('🔄 Sincronizzazione periodica avviata (ogni 5 minuti)');
     },
     
     // Esegue sincronizzazione periodica
@@ -113,23 +100,13 @@ window.DataLoader = {
             });
     },
     
-    // Carica aeroporti (CACHE-FIRST con sincronizzazione periodica)
+    // Carica aeroporti (NO CACHE, solo da server o fallback statico)
     loadAirports: function() {
-        // Prima: controlla cache
-        if (this._cache.airports && this._isCacheValid('airports')) {
-            console.log('📂 Caricamento aeroporti da cache locale');
-            return Promise.resolve(this._cache.airports);
-        }
-        
-        // Seconda: se cache scaduta o vuota, carica da server
         if (this._useDatabase) {
             return this._loadAirportsFromDatabase()
                 .then(airports => {
                     if (airports && airports.length > 0) {
-                        this._cache.airports = airports;
-                        this._lastSync.airports = Date.now();
-                        this._saveCacheToLocalStorage();
-                        console.log('🌐 Aeroporti caricati da database e cache aggiornata:', airports.length);
+                        console.log('🌐 Aeroporti caricati da database:', airports.length);
                         return airports;
                     } else {
                         return this._loadAirportsFromStatic();
@@ -183,13 +160,6 @@ window.DataLoader = {
                     throw new Error('Formato dati non valido');
                 }
             });
-    },
-    
-    // Carica aeroporti dai dati statici (fallback)
-    _loadAirportsFromStatic: function() {
-        console.log('💾 Caricamento aeroporti da dati statici (fallback)');
-        this._cache.airports = createAirportData();
-        return Promise.resolve(this._cache.airports);
     },
     
     // Carica aeromobili (sempre statici per ora)

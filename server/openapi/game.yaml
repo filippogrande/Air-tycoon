@@ -173,24 +173,6 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AircraftType"
-  /api/game/airport-data:
-    get:
-      tags: [Game]
-      summary: Restituisce tutti gli aeroporti disponibili
-      responses:
-        "200":
-          description: Lista aeroporti
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Airport"
 components:
   schemas:
     Company:
