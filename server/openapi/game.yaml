@@ -32,8 +32,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       responses:
         "200":
           description: Dettagli compagnia
@@ -137,8 +136,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       responses:
         "200":
           description: Lista hub

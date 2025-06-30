@@ -35,6 +35,7 @@ Object.defineProperty(WorldMap.prototype, 'routeCreationState', {
     }
 });
 
+
 WorldMap.prototype.init = function() {
     console.log('🗺️ Inizializzazione WorldMap con Leaflet...');
     
@@ -213,6 +214,8 @@ WorldMap.prototype._renderAirportsOnMap = function(airports) {
     }
     
     console.log('✅ Creati marker per', airports.length, 'aeroporti');
+    // Carica e evidenzia gli hub del player dopo aver creato i marker
+    this.loadPlayerHubs();
 };
 
 // Mapping tipo aeroporto leggibile
@@ -255,7 +258,8 @@ WorldMap.prototype.createAirportPopup = function(airport, isPlayerHub) {
 // Crea marker per un aeroporto
 WorldMap.prototype.createAirportMarker = function(airport) {
     var self = this;
-    var isPlayerHub = this.game.hubManager && this.game.hubManager.hasHub(airport.code);
+    // Determinazione hub SOLO dopo fetch asincrona: nessun controllo locale
+    var isPlayerHub = false; // di default, sarà aggiornato da loadPlayerHubs
     var iconHtml, iconSize, zIndex;
     
     // Determina icona e dimensioni basate su tipo e proprietà
@@ -308,6 +312,7 @@ WorldMap.prototype.createAirportMarker = function(airport) {
     // Salva riferimento airport nel marker
     marker.airportData = airport;
     marker._nameLabel = null;
+    marker.isPlayerHub = false; // sarà aggiornato da loadPlayerHubs
     return marker;
 };
 
@@ -955,65 +960,20 @@ WorldMap.prototype.createRouteFromPanel = function() {
 // Aggiorna tutti i popup degli aeroporti
 WorldMap.prototype.updateAllAirportPopups = function() {
     console.log('🔄 Aggiornamento popup aeroporti...');
-    
     var self = this;
-    
-    // Aggiorna tutti i marker degli aeroporti
     for (var code in this.airportMarkers) {
         var marker = this.airportMarkers[code];
         if (marker && marker.airportData) {
             var airport = marker.airportData;
-            var isPlayerHub = this.game.hubManager && this.game.hubManager.hasHub(airport.code);
+            var isPlayerHub = marker.isPlayerHub === true; // solo flag aggiornato da loadPlayerHubs
             var newContent = self.createAirportPopup(airport, isPlayerHub);
-            
-            // Aggiorna il contenuto del popup bindato
             marker.setPopupContent(newContent);
         }
     }
-    
     console.log('✅ Popup aeroporti aggiornati');
 };
 
-// Conferma creazione rotta
-WorldMap.prototype.confirmCreateRoute = function() {
-    console.log('✅ Conferma creazione rotta...');
-    
-    if (!this.routeCreationState.originAirport || !this.routeCreationState.destinationAirport) {
-        console.warn('⚠️ Origine o destinazione mancante');
-        return false;
-    }
-    
-    var origin = this.routeCreationState.originAirport;
-    var destination = this.routeCreationState.destinationAirport;
-    
-    // Crea la rotta usando il RouteManager
-    if (typeof RouteManager !== 'undefined') {
-        var success = RouteManager.createRoute(origin, destination);
-        
-        if (success) {
-            console.log('✅ Rotta creata con successo!');
-            
-            // Chiudi pannelli
-            this.closeRouteCreationPanel();
-            
-            // Reset stato
-            this.resetRouteCreationState();
-            
-            // Aggiorna visualizzazione mappa
-            this.updateRouteDisplay();
-            
-            return true;
-        } else {
-            console.error('❌ Errore nella creazione della rotta');
-            return false;
-        }
-    }
-    
-    console.warn('⚠️ RouteManager non disponibile');
-    return false;
-};
-
-// Carica e visualizza gli hub del player sulla mappa
+// Carica e visualizza gli hub del player sulla mappa SOLO tramite API
 WorldMap.prototype.loadPlayerHubs = function() {
     var self = this;
     var companyId = this.game && this.game.companyId ? this.game.companyId : 1;
@@ -1025,12 +985,22 @@ WorldMap.prototype.loadPlayerHubs = function() {
                 return;
             }
             var hubs = response.data;
-            // Evidenzia i marker hub sulla mappa
+            // Evidenzia i marker hub sulla mappa SOLO dopo fetch
             hubs.forEach(function(hub) {
                 var code = hub.iata_code || hub.icao_code || hub.code;
                 var marker = self.airportMarkers[code];
                 if (marker) {
                     marker.isPlayerHub = true;
+                    // Aggiorna icona e popup
+                    var iconHtml = '<svg width="24" height="24" viewBox="0 0 24 24" class="airport-icon player-hub" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="none" stroke="#27ae60" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="#27ae60"/></svg>';
+                    var airportIcon = L.divIcon({
+                        className: 'airport-marker',
+                        html: iconHtml,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    });
+                    marker.setIcon(airportIcon);
+                    marker.setPopupContent(self.createAirportPopup(marker.airportData, true));
                     // Forza la visibilità dell'hub
                     marker.addTo(self.map);
                 }
@@ -1040,23 +1010,3 @@ WorldMap.prototype.loadPlayerHubs = function() {
             console.error('❌ Errore caricamento hub dal backend:', error);
         });
 };
-
-// --- Forza la visibilità degli hub del player anche con MapVisibilityManager ---
-// Patcha updateAirportVisibility se esiste
-if (typeof MapVisibilityManager !== 'undefined' && MapVisibilityManager.updateAirportVisibility) {
-    var _oldUpdateAirportVisibility = MapVisibilityManager.updateAirportVisibility;
-    MapVisibilityManager.updateAirportVisibility = function(game, map, airportMarkers, zoom) {
-        // Mantieni il contesto corretto per le funzioni this.*
-        _oldUpdateAirportVisibility.call(MapVisibilityManager, game, map, airportMarkers, zoom);
-        // Forza la visibilità degli hub del player
-        if (game && game.hubManager && game.hubManager.getPlayerHubCodes) {
-            var hubCodes = game.hubManager.getPlayerHubCodes();
-            hubCodes.forEach(function(code) {
-                var marker = airportMarkers[code];
-                if (marker && !map.hasLayer(marker)) {
-                    marker.addTo(map);
-                }
-            });
-        }
-    };
-}
