@@ -414,6 +414,19 @@ function setupGameMenuEvents() {
                         console.warn('⚠️ Errore nel salvataggio automatico:', error);
                     }
                 }
+                // Pulisci solo i dati di gioco, NON il login
+                try {
+                    // Esempio: rimuovi solo chiavi specifiche (companyId, save, ecc.)
+                    localStorage.removeItem('companyId');
+                    localStorage.removeItem('gameState');
+                    localStorage.removeItem('currentSave');
+                    sessionStorage.removeItem('companyId');
+                    sessionStorage.removeItem('gameState');
+                    sessionStorage.removeItem('currentSave');
+                    console.log('🧹 Dati di gioco rimossi, login preservato');
+                } catch (e) {
+                    console.warn('⚠️ Errore pulizia dati di gioco:', e);
+                }
                 window.location.href = 'game-select.html';
             }
         });
@@ -433,16 +446,14 @@ function setupGameMenuEvents() {
         logoutFromGameBtn.addEventListener('click', function() {
             console.log('🚪 Logout dal gioco...');
             if (confirm('Vuoi davvero fare il logout? Assicurati di aver salvato la partita.')) {
-                // Salva automaticamente prima del logout
-                if (game && game.saveGame) {
-                    try {
-                        game.saveGame();
-                        console.log('💾 Partita salvata automaticamente prima del logout');
-                    } catch (error) {
-                        console.warn('⚠️ Errore nel salvataggio automatico:', error);
-                    }
+                // Pulisci tutti i dati locali (localStorage, sessionStorage)
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    console.log('🧹 Dati locali eliminati');
+                } catch (e) {
+                    console.warn('⚠️ Errore pulizia storage:', e);
                 }
-                
                 // Effettua logout
                 var authManager = new AuthManager();
                 authManager.logout();
@@ -776,6 +787,19 @@ function setupGameMenuEvents() {
         returnToGameSelectBtn.addEventListener('click', function() {
             console.log('🔙 Ritorno alla selezione giochi...');
             if (confirm('Vuoi davvero tornare alla selezione dei giochi? Assicurati di aver salvato la partita.')) {
+                // Pulisci solo i dati di gioco, NON il login
+                try {
+                    // Esempio: rimuovi solo chiavi specifiche (companyId, save, ecc.)
+                    localStorage.removeItem('companyId');
+                    localStorage.removeItem('gameState');
+                    localStorage.removeItem('currentSave');
+                    sessionStorage.removeItem('companyId');
+                    sessionStorage.removeItem('gameState');
+                    sessionStorage.removeItem('currentSave');
+                    console.log('🧹 Dati di gioco rimossi, login preservato');
+                } catch (e) {
+                    console.warn('⚠️ Errore pulizia dati di gioco:', e);
+                }
                 window.location.href = 'game-select.html';
             }
         });
@@ -795,6 +819,14 @@ function setupGameMenuEvents() {
         logoutFromGameBtn.addEventListener('click', function() {
             console.log('🚪 Logout dal gioco...');
             if (confirm('Vuoi davvero fare il logout? Assicurati di aver salvato la partita.')) {
+                // Pulisci tutti i dati locali (localStorage, sessionStorage)
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    console.log('🧹 Dati locali eliminati');
+                } catch (e) {
+                    console.warn('⚠️ Errore pulizia storage:', e);
+                }
                 // Effettua logout
                 var authManager = new AuthManager();
                 authManager.logout();
