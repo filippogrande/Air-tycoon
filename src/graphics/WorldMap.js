@@ -117,7 +117,9 @@ WorldMap.prototype.initializeRouteUI = function() {
 WorldMap.prototype.loadAirports = function() {
     var self = this;
     console.log('✈️ Caricamento hub e aeroporti dalla API backend...');
-    var companyId = this.game && this.game.companyId ? this.game.companyId : 1;
+    var companyId = (this.game && this.game.companyId)
+        ? this.game.companyId
+        : (sessionStorage.getItem('selectedCompanyId') || 1);
     // 1. Carica hub del player
     fetch('/api/game/companies/' + companyId + '/hubs')
         .then(res => res.json())
