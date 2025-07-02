@@ -5,7 +5,7 @@ info:
   description: |
     Documentazione OpenAPI suddivisa per gruppi: Game, Auth, Airports, ecc.
 servers:
-  - url: http://localhost:3001
+  - url: http://192.168.1.100:3001
 paths:
   # Game
   /api/game/companies:
