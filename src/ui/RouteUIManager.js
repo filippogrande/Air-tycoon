@@ -1660,7 +1660,53 @@ var RouteUIManager = {
         }
     },
 
-    // ...existing code...
+    // Aggiorna il conteggio delle nazioni sorvolate nella schermata di configurazione rotta
+    updateCountriesCount: async function(originAirport, destinationAirport) {
+        var el = document.getElementById("countries-count");
+        // Log sempre i parametri ricevuti per debug
+        console.log(
+            "[updateCountriesCount] Chiamata con:",
+            originAirport,
+            destinationAirport
+        );
+        if (!el) return;
+        if (!originAirport || !destinationAirport) {
+            el.textContent = "--";
+            return;
+        }
+        // Usa iata_code per la chiamata API
+        const originIata = originAirport.iata_code;
+        const destIata = destinationAirport.iata_code;
+        if (!originIata || !destIata) {
+            el.textContent = "--";
+            return;
+        }
+        el.textContent = "..."; // loading
+        try {
+            const response = await fetch("/api/routes/countries_count", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    origin_iata: originIata,
+                    destination_iata: destIata,
+                }),
+            });
+            if (!response.ok) throw new Error("Errore API");
+            const data = await response.json();
+            console.log(
+                "[updateCountriesCount] Risposta API /api/routes/countries_count:",
+                data
+            ); // LOG DI DEBUG
+            if (data.success && typeof data.count === "number") {
+                el.textContent = data.count;
+            } else {
+                el.textContent = "--";
+            }
+        } catch (e) {
+            el.textContent = "--";
+            console.error("[updateCountriesCount] Errore:", e);
+        }
+    },
 };
 
 // Export per uso globale
