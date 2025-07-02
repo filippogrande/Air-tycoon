@@ -306,6 +306,12 @@
   // Aggiorna il conteggio delle nazioni sorvolate nella schermata di configurazione rotta
   async function updateCountriesCount(originAirport, destinationAirport) {
     var el = document.getElementById("countries-count");
+    // Log sempre i parametri ricevuti per debug
+    console.log(
+      "[updateCountriesCount] Chiamata con:",
+      originAirport,
+      destinationAirport
+    );
     if (!el) return;
     if (!originAirport || !destinationAirport) {
       el.textContent = "--";
@@ -341,6 +347,7 @@
       }
     } catch (e) {
       el.textContent = "--";
+      console.error("[updateCountriesCount] Errore:", e);
     }
   }
 
