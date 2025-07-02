@@ -361,4 +361,24 @@ router.post('/:id/maintenance', async (req, res) => {
     }
 });
 
+// GET /api/fleet/available?year=YYYY - Restituisce tutti i tipi di aerei disponibili in un certo anno
+router.get('/available', async (req, res) => {
+    try {
+        const { year } = req.query;
+        if (!year) {
+            return res.status(400).json({ success: false, error: 'year richiesto' });
+        }
+        // Prendi tutti i tipi di aerei prodotti fino a quell'anno e non ritirati prima di quell'anno
+        const aircraftTypes = await db.query(`
+            SELECT * FROM aircraft_types 
+            WHERE (year_introduced IS NULL OR year_introduced <= $1)
+              AND (year_retired IS NULL OR year_retired > $1)
+        `, [year]);
+        res.json({ success: true, data: aircraftTypes.rows });
+    } catch (error) {
+        console.error('Error fetching available aircraft types:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch available aircraft types' });
+    }
+});
+
 module.exports = router;

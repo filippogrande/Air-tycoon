@@ -510,4 +510,59 @@ router.post('/countries_count', async (req, res) => {
     }
 });
 
+// POST /api/routes/flight_time_range
+// Body: { origin_iata, destination_iata, year }
+// Risponde con { min_time_hours, max_time_hours, aircraft_min, aircraft_max }
+router.post('/flight_time_range', async (req, res) => {
+    try {
+        const { origin_iata, destination_iata, year } = req.body;
+        if (!origin_iata || !destination_iata || !year) {
+            return res.status(400).json({ success: false, error: 'origin_iata, destination_iata e year richiesti' });
+        }
+        // Prendi lat/lon dei due aeroporti
+        const airports = await db.query(
+            `SELECT iata_code, latitude, longitude FROM airports WHERE iata_code = $1 OR iata_code = $2`,
+            [origin_iata, destination_iata]
+        );
+        if (airports.rows.length !== 2) {
+            return res.status(404).json({ success: false, error: 'Aeroporti non trovati' });
+        }
+        const [start, end] = airports.rows[0].iata_code === origin_iata ? airports.rows : airports.rows.reverse();
+        // Calcola distanza
+        const totalDistance = calculateDistance(start.latitude, start.longitude, end.latitude, end.longitude);
+        // Ottieni aerei disponibili tramite API fleet
+        const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+        const fleetRes = await fetch(`http://localhost:3001/api/fleet/available?year=${year}`);
+        if (!fleetRes.ok) {
+            return res.status(500).json({ success: false, error: 'Errore nel recupero aerei disponibili' });
+        }
+        const fleetData = await fleetRes.json();
+        const aircrafts = fleetData.data || [];
+        if (aircrafts.length === 0) {
+            return res.status(404).json({ success: false, error: 'Nessun aereo disponibile per quell\'anno' });
+        }
+        // Trova il più veloce e il più lento
+        let min = null, max = null;
+        for (const a of aircrafts) {
+            if (!a.cruise_speed || a.cruise_speed <= 0) continue;
+            if (!min || a.cruise_speed < min.cruise_speed) min = a;
+            if (!max || a.cruise_speed > max.cruise_speed) max = a;
+        }
+        if (!min || !max) {
+            return res.status(404).json({ success: false, error: 'Nessun aereo valido per il calcolo' });
+        }
+        // Calcola tempi in ore
+        const min_time_hours = totalDistance / max.cruise_speed;
+        const max_time_hours = totalDistance / min.cruise_speed;
+        res.json({
+            success: true,
+            min_time_hours: Number(min_time_hours.toFixed(2)),
+            max_time_hours: Number(max_time_hours.toFixed(2))
+        });
+    } catch (error) {
+        console.error('Error calculating flight time range:', error);
+        res.status(500).json({ success: false, error: 'Failed to calculate flight time range' });
+    }
+});
+
 module.exports = router;

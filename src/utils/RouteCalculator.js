@@ -17,19 +17,6 @@ var RouteCalculator = {
         return R * c;
     },
     
-    // Calcola tempo di volo stimato
-    calculateFlightTime: function(distance, averageSpeed) {
-        averageSpeed = averageSpeed || 800; // km/h default
-        var flightHours = distance / averageSpeed;
-        var hours = Math.floor(flightHours);
-        var minutes = Math.round((flightHours - hours) * 60);
-        return {
-            hours: hours,
-            minutes: minutes,
-            formatted: hours + 'h ' + minutes + 'm'
-        };
-    },
-    
     // Calcola fattore di traffico di un aeroporto
     getAirportTrafficFactor: function(airport) {
         var sizeFactor = 1.0;
@@ -111,32 +98,46 @@ var RouteCalculator = {
     },
     
     // Calcola tutte le stime per una rotta con errori
-    calculateRouteEstimates: function(origin, destination, analysisLevel) {
+    calculateRouteEstimates: async function(origin, destination, analysisLevel, year) {
         var distance = this.calculateDistance(
             origin.latitude, origin.longitude,
             destination.latitude, destination.longitude
         );
-        
         // Definisci errori per livello di analisi
         var errors = {
             basic: { passenger: 30, cargo: 25 },
             improved: { passenger: 10, cargo: 8 }
         };
-        
         var currentError = errors[analysisLevel] || errors.basic;
-        
         // Calcola stime
         var realPassengers = this.calculatePassengers(origin, destination, distance, 0);
         var realCargo = this.calculateCargo(origin, destination, distance, 0);
-        
         var displayPassengers = this.calculatePassengers(origin, destination, distance, currentError.passenger);
         var displayCargo = this.calculateCargo(origin, destination, distance, currentError.cargo);
-        
-        var flightTime = this.calculateFlightTime(distance);
-        
+        // Ottieni tempo di volo reale dal backend
+        var min_time = null, max_time = null;
+        try {
+            var response = await fetch('/api/routes/flight_time_range', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    origin_iata: origin.iata_code,
+                    destination_iata: destination.iata_code,
+                    year: year || new Date().getFullYear()
+                })
+            });
+            if (response.ok) {
+                var data = await response.json();
+                min_time = data.min_time_hours;
+                max_time = data.max_time_hours;
+            }
+        } catch (e) {
+            console.warn('Impossibile ottenere tempo di volo reale dal backend:', e);
+        }
         return {
             distance: distance,
-            flightTime: flightTime,
+            min_time_hours: min_time,
+            max_time_hours: max_time,
             realPassengers: realPassengers,
             realCargo: realCargo,
             displayPassengers: displayPassengers,
