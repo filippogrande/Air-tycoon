@@ -330,6 +330,10 @@
       });
       if (!response.ok) throw new Error("Errore API");
       const data = await response.json();
+      console.log(
+        "[updateCountriesCount] Risposta API /api/routes/countries_count:",
+        data
+      ); // LOG DI DEBUG
       if (data.success && typeof data.count === "number") {
         el.textContent = data.count;
       } else {

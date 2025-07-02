@@ -272,19 +272,15 @@ WorldMap.prototype.getAirportIconProps = function(airport, isPlayerHub) {
     // Normalizza il campo size
     var size = (airport.size || airport.airport_size || '').toLowerCase();
     var iconSize, zIndex, iconHtml;
-    console.log('[getAirportIconProps] airport:', airport, 'isPlayerHub:', isPlayerHub, 'size:', size);
     if (isPlayerHub) {
         // Hub del player: bersaglio verde, dimensione coerente con grandezza aeroporto
         if (size === 'large') {
-            console.log('[getAirportIconProps] HUB: size large');
             iconSize = [28, 28];
             zIndex = 1200;
         } else if (size === 'medium') {
-            console.log('[getAirportIconProps] HUB: size medium');
             iconSize = [22, 22];
             zIndex = 1100;
         } else {
-            console.log('[getAirportIconProps] HUB: size small/other');
             iconSize = [16, 16];
             zIndex = 1000;
         }
@@ -292,15 +288,12 @@ WorldMap.prototype.getAirportIconProps = function(airport, isPlayerHub) {
     } else {
         // Aeroporto normale: pin
         if (size === 'large') {
-            console.log('[getAirportIconProps] NORMAL: size large');
             iconSize = [20, 25];
             zIndex = 800;
         } else if (size === 'medium') {
-            console.log('[getAirportIconProps] NORMAL: size medium');
             iconSize = [14, 18];
             zIndex = 700;
         } else {
-            console.log('[getAirportIconProps] NORMAL: size small/other');
             iconSize = [10, 12];
             zIndex = 600;
         }
