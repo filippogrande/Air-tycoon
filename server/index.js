@@ -107,6 +107,11 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(null, { swaggerUrl: '/openapi/
 // Servire file statici del gioco dalla root del progetto
 app.use('/game', express.static(path.join(__dirname, '..')));
 
+// Servi la cartella Client come statica per il frontend
+app.use('/Client', express.static(path.join(__dirname, '../Client')));
+// (Opzionale) Servi direttamente le pagine come root
+// app.use('/', express.static(path.join(__dirname, '../Client/pages')));
+
 // =====================================================
 // ERROR HANDLING
 // =====================================================
