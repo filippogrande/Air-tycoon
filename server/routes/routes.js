@@ -437,7 +437,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // POST /api/routes/countries_count
 // Body: { origin_iata, destination_iata }
 // Risponde con { countries: [country_code, ...], count: N }
-router.post('/routes/countries_count', async (req, res) => {
+router.post('/countries_count', async (req, res) => {
     try {
         let { origin_iata, destination_iata } = req.body;
         if (!origin_iata || !destination_iata) {
