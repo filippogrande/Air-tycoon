@@ -551,6 +551,9 @@ var RouteUIManager = {
         
         // Popola aeroplani compatibili
         this.updateCompatibleAircraft();
+
+        // Aggiorna il conteggio delle nazioni sorvolate
+        this.updateCountriesCount(origin, destination);
     },
     
     // Aggiorna costi nel pannello configurazione
