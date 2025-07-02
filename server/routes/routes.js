@@ -458,30 +458,34 @@ router.post('/countries_count', async (req, res) => {
         // Ordina i punti secondo l'ordine alfabetico
         const points = airports.rows.sort((a, b) => a.iata_code.localeCompare(b.iata_code));
         const [start, end] = points;
-        // Interpola N punti tra i due aeroporti (inclusi estremi)
-        const N = 10;
+        // Calcola distanza totale
+        const totalDistance = calculateDistance(start.latitude, start.longitude, end.latitude, end.longitude);
+        // Distanza tra i punti intermedi (in km)
+        const stepKm = 50; // puoi cambiare qui la risoluzione
+        const numSteps = Math.max(1, Math.ceil(totalDistance / stepKm));
         const lats = [];
         const lons = [];
-        for (let i = 0; i <= N; i++) {
-            lats.push(start.latitude + (end.latitude - start.latitude) * i / N);
-            lons.push(start.longitude + (end.longitude - start.longitude) * i / N);
+        for (let i = 0; i <= numSteps; i++) {
+            lats.push(start.latitude + (end.latitude - start.latitude) * i / numSteps);
+            lons.push(start.longitude + (end.longitude - start.longitude) * i / numSteps);
         }
-        // Per ogni punto, cerca in cache o chiama Nominatim
+        // Per ogni punto, cerca in cache o chiama Nominatim (con delay 1s tra chiamate)
         const countryCodes = new Set();
-        for (let i = 0; i <= N; i++) {
+        for (let i = 0; i <= numSteps; i++) {
             const lat = lats[i];
             const lon = lons[i];
             // Cerca in cache
             const cacheRes = await db.query(
-                'SELECT country_code FROM geocoding_cache WHERE ROUND(latitude,2) = $1 AND ROUND(longitude,2) = $2 LIMIT 1',
-                [Math.round(lat * 100) / 100, Math.round(lon * 100) / 100]
+                'SELECT country_code FROM geocoding_cache WHERE ROUND(latitude,1) = $1 AND ROUND(longitude,1) = $2 LIMIT 1',
+                [Math.round(lat * 10) / 10, Math.round(lon * 10) / 10]
             );
             if (cacheRes.rows.length > 0 && cacheRes.rows[0].country_code) {
                 countryCodes.add(cacheRes.rows[0].country_code);
             } else {
-                // Chiamata a Nominatim
+                // Chiamata a Nominatim con rate limit
                 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
                 const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+                await new Promise(r => setTimeout(r, 1000)); // Delay 1s tra chiamate
                 const response = await fetch(url, { headers: { 'User-Agent': 'AirTycoon/1.0' } });
                 if (response.ok) {
                     const data = await response.json();
@@ -493,7 +497,7 @@ router.post('/countries_count', async (req, res) => {
                             `INSERT INTO geocoding_cache (latitude, longitude, country, country_code)
                              VALUES ($1, $2, $3, $4)
                              ON CONFLICT (latitude, longitude) DO NOTHING`,
-                            [Math.round(lat * 100) / 100, Math.round(lon * 100) / 100, code, code]
+                            [Math.round(lat * 10) / 10, Math.round(lon * 10) / 10, code, code]
                         );
                     }
                 }
