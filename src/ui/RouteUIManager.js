@@ -194,7 +194,7 @@ var RouteUIManager = {
 
         // Aggiorna display
         document.getElementById('route-distance').textContent = Math.round(estimates.distance);
-        document.getElementById('flight-time').textContent = estimates.flightTime.formatted;
+        document.getElementById('flight-time').textContent = estimates.flightTimeFormatted || '--';
         document.getElementById('estimated-passengers').textContent = estimates.displayPassengers.toLocaleString();
         document.getElementById('estimated-cargo').textContent = estimates.displayCargo.toLocaleString();
 
