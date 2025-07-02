@@ -134,10 +134,15 @@ var RouteCalculator = {
         } catch (e) {
             console.warn('Impossibile ottenere tempo di volo reale dal backend:', e);
         }
+        // Formatta sempre come "min–max h"
+        var formattedFlightTime = (min_time && max_time)
+            ? (Number(min_time).toFixed(1) + '–' + Number(max_time).toFixed(1) + ' h')
+            : '--';
         return {
             distance: distance,
             min_time_hours: min_time,
             max_time_hours: max_time,
+            flightTimeFormatted: formattedFlightTime,
             realPassengers: realPassengers,
             realCargo: realCargo,
             displayPassengers: displayPassengers,

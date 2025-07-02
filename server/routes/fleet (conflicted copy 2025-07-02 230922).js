@@ -373,7 +373,6 @@ router.get('/available', async (req, res) => {
             SELECT * FROM aircraft_types 
             WHERE (year_introduced IS NULL OR year_introduced <= $1)
               AND (year_retired IS NULL OR year_retired > $1)
-            ORDER BY cruise_speed DESC
         `, [year]);
         res.json({ success: true, data: aircraftTypes.rows });
     } catch (error) {

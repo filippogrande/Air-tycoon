@@ -161,7 +161,7 @@ var RouteUIManager = {
         createBtn.disabled = !(hasOrigin && hasDestination);
     },
      // Mostra informazioni rotta
-    updateRouteInfo: function(origin, destination) {
+    updateRouteInfo: async function(origin, destination) {
         if (!origin || !destination) {
             this.hideRouteInfo();
             return;
@@ -179,24 +179,35 @@ var RouteUIManager = {
                 displayPassengers: demandEstimate.passengers,
                 displayCargo: demandEstimate.cargo
             };
-            
-            // Calcola tempo di volo usando RouteCalculator
-            if (typeof RouteCalculator !== 'undefined') {
-                var routeCalc = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
-                estimates.flightTime = routeCalc.flightTime;
-            } else {
-                estimates.flightTime = { formatted: 'N/A' };
-            }
         } else {
             // Fallback al RouteCalculator
-            estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+            estimates = {};
+        }
+
+        // Calcola tempo di volo usando RouteCalculator (asincrono)
+        if (typeof RouteCalculator !== 'undefined') {
+            var routeEstimates = await RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+            estimates.min_time_hours = routeEstimates.min_time_hours;
+            estimates.max_time_hours = routeEstimates.max_time_hours;
+            estimates.distance = routeEstimates.distance;
+            estimates.displayPassengers = routeEstimates.displayPassengers;
+            estimates.displayCargo = routeEstimates.displayCargo;
         }
 
         // Aggiorna display
-        document.getElementById('route-distance').textContent = Math.round(estimates.distance);
-        document.getElementById('flight-time').textContent = estimates.flightTime.formatted;
-        document.getElementById('estimated-passengers').textContent = estimates.displayPassengers.toLocaleString();
-        document.getElementById('estimated-cargo').textContent = estimates.displayCargo.toLocaleString();
+        document.getElementById('route-distance').textContent = Math.round(estimates.distance || 0);
+        // Logica visualizzazione tempo volo
+        var flightTimeText = '--';
+        if (estimates.min_time_hours && estimates.max_time_hours) {
+            if (estimates.min_time_hours === estimates.max_time_hours) {
+                flightTimeText = estimates.min_time_hours + ' h';
+            } else {
+                flightTimeText = estimates.min_time_hours + '–' + estimates.max_time_hours + ' h';
+            }
+        }
+        document.getElementById('flight-time').textContent = flightTimeText;
+        document.getElementById('estimated-passengers').textContent = estimates.displayPassengers ? estimates.displayPassengers.toLocaleString() : '--';
+        document.getElementById('estimated-cargo').textContent = estimates.displayCargo ? estimates.displayCargo.toLocaleString() : '--';
 
         routeInfoPanel.style.display = 'block';
     },
@@ -509,49 +520,44 @@ var RouteUIManager = {
     },
     
     // Popola i dati nel pannello configurazione
-    populateRouteConfigData: function() {
+    populateRouteConfigData: async function() {
         var origin = this.routeCreationState.originAirport;
         var destination = this.routeCreationState.destinationAirport;
-        
         if (!origin || !destination) return;
-        
         // Aggiorna origine e destinazione
         var originSpan = document.getElementById('config-origin');
         var destinationSpan = document.getElementById('config-destination');
-        
         if (originSpan) originSpan.textContent = origin.name + ' (' + origin.code + ')';
         if (destinationSpan) destinationSpan.textContent = destination.name + ' (' + destination.code + ')';
-        
         // Popola stime domanda usando DemandEstimationManager
         this.populateDemandEstimates(origin, destination);
-        
         // Setup event listener per miglioramento analisi
         this.setupDemandAnalysisButton(origin, destination);
-        
         // Setup event listener per analisi di mercato
         this.setupMarketAnalysisButton(origin, destination);
-        
         // Popola informazioni aeroporti
         this.populateAirportInfo(origin, destination);
-        
-        // Calcola dati rotta
+        // Calcola dati rotta (asincrono)
         if (typeof RouteCalculator !== 'undefined') {
-            var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
-            
+            var estimates = await RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
             // Aggiorna distanza e tempo di volo
             var distanceSpan = document.getElementById('config-distance');
             var flightTimeSpan = document.getElementById('config-flight-time');
-            
-            if (distanceSpan) distanceSpan.textContent = Math.round(estimates.distance);
-            if (flightTimeSpan) flightTimeSpan.textContent = estimates.flightTime.formatted;
+            if (distanceSpan) distanceSpan.textContent = Math.round(estimates.distance || 0);
+            var flightTimeText = '--';
+            if (estimates.min_time_hours && estimates.max_time_hours) {
+                if (estimates.min_time_hours === estimates.max_time_hours) {
+                    flightTimeText = estimates.min_time_hours + ' h';
+                } else {
+                    flightTimeText = estimates.min_time_hours + '–' + estimates.max_time_hours + ' h';
+                }
+            }
+            if (flightTimeSpan) flightTimeSpan.textContent = flightTimeText;
         }
-        
         // Calcola costi
         this.updateRouteConfigCosts();
-        
         // Popola aeroplani compatibili
         this.updateCompatibleAircraft();
-
         // Aggiorna il conteggio delle nazioni sorvolate
         this.updateCountriesCount(origin, destination);
     },
@@ -1228,12 +1234,6 @@ var RouteUIManager = {
                 MarketAnalysisAPI.updateLocalMoney(marketAnalysisCost);
                 
                 // Aggiorna UI pulsante
-                self.updateMarketAnalysisButton(origin, destination);
-                
-                // Mostra notifica
-                if (game.uiManager && game.uiManager.showNotification) {
-                    game.uiManager.showNotification(
-                        '📊 Analisi di mercato completata! -€' + marketAnalysisCost.toLocaleString(),
                         'success'
                     );
                 } else {
