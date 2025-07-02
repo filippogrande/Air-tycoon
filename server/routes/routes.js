@@ -368,6 +368,60 @@ router.get('/analysis/:company_id', async (req, res) => {
     }
 });
 
+// Arrotonda lat/lon a 2 decimali per caching
+function roundCoord(coord, decimals = 2) {
+    return Math.round(coord * Math.pow(10, decimals)) / Math.pow(10, decimals);
+}
+
+// GET /api/geocoding_cache?lat=...&lon=...
+router.get('/geocoding_cache', async (req, res) => {
+    try {
+        const { lat, lon } = req.query;
+        if (!lat || !lon) {
+            return res.status(400).json({ success: false, error: 'lat and lon required' });
+        }
+        const roundedLat = roundCoord(Number(lat), 2);
+        const roundedLon = roundCoord(Number(lon), 2);
+        const result = await db.query(
+            'SELECT country_code FROM geocoding_cache WHERE ROUND(latitude,2) = $1 AND ROUND(longitude,2) = $2 LIMIT 1',
+            [roundedLat, roundedLon]
+        );
+        if (result.rows.length > 0) {
+            res.json({ success: true, country_code: result.rows[0].country_code });
+        } else {
+            res.json({ success: false, country_code: null });
+        }
+    } catch (error) {
+        console.error('Error reading geocoding_cache:', error);
+        res.status(500).json({ success: false, error: 'Failed to read geocoding_cache' });
+    }
+});
+
+// POST /api/geocoding_cache
+// Body: { lat, lon, country_code }
+router.post('/geocoding_cache', async (req, res) => {
+    try {
+        const { lat, lon, country_code } = req.body;
+        if (!lat || !lon || !country_code) {
+            return res.status(400).json({ success: false, error: 'lat, lon, country_code required' });
+        }
+        const roundedLat = roundCoord(Number(lat), 2);
+        const roundedLon = roundCoord(Number(lon), 2);
+        // Upsert: se già presente, non inserire duplicato
+        const result = await db.query(
+            `INSERT INTO geocoding_cache (latitude, longitude, country, country_code)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (latitude, longitude) DO NOTHING
+             RETURNING *`,
+            [roundedLat, roundedLon, country_code, country_code]
+        );
+        res.json({ success: true, country_code: country_code });
+    } catch (error) {
+        console.error('Error writing geocoding_cache:', error);
+        res.status(500).json({ success: false, error: 'Failed to write geocoding_cache' });
+    }
+});
+
 // Funzione helper per calcolare distanza tra coordinate
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Raggio della Terra in km
@@ -379,5 +433,77 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
 }
+
+// POST /api/routes/countries_count
+// Body: { origin_iata, destination_iata }
+// Risponde con { countries: [country_code, ...], count: N }
+router.post('/routes/countries_count', async (req, res) => {
+    try {
+        let { origin_iata, destination_iata } = req.body;
+        if (!origin_iata || !destination_iata) {
+            return res.status(400).json({ success: false, error: 'origin_iata e destination_iata richiesti' });
+        }
+        // Ordina alfabeticamente per simmetria
+        if (origin_iata > destination_iata) {
+            [origin_iata, destination_iata] = [destination_iata, origin_iata];
+        }
+        // Prendi lat/lon dei due aeroporti
+        const airports = await db.query(
+            `SELECT iata_code, latitude, longitude FROM airports WHERE iata_code = $1 OR iata_code = $2`,
+            [origin_iata, destination_iata]
+        );
+        if (airports.rows.length !== 2) {
+            return res.status(404).json({ success: false, error: 'Aeroporti non trovati' });
+        }
+        // Ordina i punti secondo l'ordine alfabetico
+        const points = airports.rows.sort((a, b) => a.iata_code.localeCompare(b.iata_code));
+        const [start, end] = points;
+        // Interpola N punti tra i due aeroporti (inclusi estremi)
+        const N = 10;
+        const lats = [];
+        const lons = [];
+        for (let i = 0; i <= N; i++) {
+            lats.push(start.latitude + (end.latitude - start.latitude) * i / N);
+            lons.push(start.longitude + (end.longitude - start.longitude) * i / N);
+        }
+        // Per ogni punto, cerca in cache o chiama Nominatim
+        const countryCodes = new Set();
+        for (let i = 0; i <= N; i++) {
+            const lat = lats[i];
+            const lon = lons[i];
+            // Cerca in cache
+            const cacheRes = await db.query(
+                'SELECT country_code FROM geocoding_cache WHERE ROUND(latitude,2) = $1 AND ROUND(longitude,2) = $2 LIMIT 1',
+                [Math.round(lat * 100) / 100, Math.round(lon * 100) / 100]
+            );
+            if (cacheRes.rows.length > 0 && cacheRes.rows[0].country_code) {
+                countryCodes.add(cacheRes.rows[0].country_code);
+            } else {
+                // Chiamata a Nominatim
+                const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+                const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+                const response = await fetch(url, { headers: { 'User-Agent': 'AirTycoon/1.0' } });
+                if (response.ok) {
+                    const data = await response.json();
+                    const code = data.address && data.address.country_code ? data.address.country_code.toUpperCase() : null;
+                    if (code) {
+                        countryCodes.add(code);
+                        // Salva in cache
+                        await db.query(
+                            `INSERT INTO geocoding_cache (latitude, longitude, country, country_code)
+                             VALUES ($1, $2, $3, $4)
+                             ON CONFLICT (latitude, longitude) DO NOTHING`,
+                            [Math.round(lat * 100) / 100, Math.round(lon * 100) / 100, code, code]
+                        );
+                    }
+                }
+            }
+        }
+        res.json({ success: true, countries: Array.from(countryCodes), count: countryCodes.size });
+    } catch (error) {
+        console.error('Error calculating countries count:', error);
+        res.status(500).json({ success: false, error: 'Failed to calculate countries count' });
+    }
+});
 
 module.exports = router;
