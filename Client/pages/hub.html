@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Tycoon 2 Clone</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/ui.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Header con informazioni compagnia -->
+        <header id="game-header">
+            <div class="company-info">
+                <h1 id="company-name">Air Express</h1>
+                <div class="stats">
+                    <span id="money">💰 00,000</span>
+                    <span id="reputation">⭐ 0</span>
+                    <span id="game-date" class="game-date"></span>
+                    <button id="settings-button" title="Impostazioni"></button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Menu principale -->
+        <nav id="main-menu">
+            <button class="menu-btn active" data-tab="world">🌍 Mappa</button>
+            <button class="menu-btn" data-tab="fleet">✈️ Flotta</button>
+            <button class="menu-btn" data-tab="routes">🛣️ Rotte</button>
+            <button class="menu-btn" data-tab="finances">💼 Finanze</button>
+            <button class="menu-btn" data-tab="infrastructure">🏗️ Infrastrutture</button>
+            <button class="menu-btn" data-tab="research">🔬 Ricerca</button>
+        </nav>
+
+        <!-- Area principale del gioco -->
+        <main id="game-main">
+            <!-- Mappa del mondo -->
+            <div id="world-tab" class="tab-content active">
+                <div id="world-map"></div>
+                
+                <!-- Bottone per aprire pannello creazione rotte -->
+                <button id="open-route-panel" class="route-trigger-btn">
+                    ✈️ Crea Rotta
+                </button>
+                
+                <!-- I pannelli di creazione rotte vengono caricati dinamicamente da RouteUIManager -->
+            </div>
+
+            <!-- Gestione flotta -->
+            <div id="fleet-tab" class="tab-content">
+                <div class="fleet-header">
+                    <h2>La Tua Flotta</h2>
+                    <button id="buy-aircraft">Acquista Aeromobile</button>
+                </div>
+                <div id="aircraft-list" class="aircraft-grid"></div>
+            </div>
+
+            <!-- Gestione rotte -->
+            <div id="routes-tab" class="tab-content">
+                <div class="routes-header">
+                    <h2>Rotte Attive</h2>
+                    <button id="add-route">Aggiungi Rotta</button>
+                </div>
+                <div id="routes-list"></div>
+            </div>
+
+            <!-- Finanze -->
+            <div id="finances-tab" class="tab-content"></div>
+
+            <!-- Infrastrutture -->
+            <div id="infrastructure-tab" class="tab-content"></div>
+
+            <!-- Ricerca -->
+            <div id="research-tab" class="tab-content"></div>
+        </main>
+
+        <!-- Modal per acquisto aeromobili -->
+        <div id="aircraft-modal"></div>
+
+        <!-- Modal per creazione rotte -->
+        <div id="route-modal"></div>
+        
+        <!-- Menu di gioco -->
+        <div id="game-menu-modal"></div>
+
+        <!-- Overlay Impostazioni -->
+        <div id="settings-overlay"></div>
+        
+        <!-- Script per caricare dinamicamente i template delle modali -->
+        <script>
+        // Carica dinamicamente i template HTML delle modali
+        const modalTemplates = [
+            { id: 'aircraft-modal', path: 'pages/modals/aircraft-modal.html' },
+            { id: 'route-modal', path: 'pages/modals/route-modal.html' },
+            { id: 'game-menu-modal', path: 'pages/modals/game-menu-modal.html' },
+            { id: 'settings-overlay', path: 'pages/modals/settings-overlay.html' }
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            modalTemplates.forEach(modal => {
+                fetch(modal.path)
+                    .then(res => res.text())
+                    .then(html => {
+                        const container = document.getElementById(modal.id);
+                        if (container) container.innerHTML = html;
+                    });
+            });
+        });
+        </script>
+        
+        <!-- Scripts -->
+        <script src="src/pages/hubPage.js" type="module"></script>
+        <!-- Gli altri script (manager, utils, main.js) rimangono per ora, ma la logica di pagina è ora in hubPage.js -->
+    </div>
+</body>
+</html>
