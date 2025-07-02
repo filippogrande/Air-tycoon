@@ -92,6 +92,8 @@ paths:
     $ref: "./routes.yaml#/paths/~1api~1routes~1{id}~1schedule"
   /api/routes/analysis/{company_id}:
     $ref: "./routes.yaml#/paths/~1api~1routes~1analysis~1{company_id}"
+  /api/routes/countries_count:
+    $ref: "./routes.yaml#/paths/~1api~1routes~1countries_count"
 components:
   schemas:
     Company:

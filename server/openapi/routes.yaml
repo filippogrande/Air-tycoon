@@ -134,3 +134,49 @@ paths:
       responses:
         "200":
           description: Analisi performance rotte
+  /api/routes/countries_count:
+    post:
+      tags: [Routes]
+      summary: Conta le nazioni sorvolate tra due aeroporti
+      description: |
+        Restituisce il numero e la lista dei codici paese (ISO 3166-1 alpha-2) sorvolati da una rotta tra due aeroporti, calcolando punti intermedi ogni ~50 km e arrotondando le coordinate a 1 decimale (~11 km). Le richieste a Nominatim sono rate-limited a 1 richiesta/secondo e viene usata una cache locale per ridurre le chiamate.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                origin_iata:
+                  type: string
+                  description: Codice IATA aeroporto di partenza
+                destination_iata:
+                  type: string
+                  description: Codice IATA aeroporto di arrivo
+              required:
+                - origin_iata
+                - destination_iata
+      responses:
+        "200":
+          description: Lista dei paesi sorvolati e conteggio
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  countries:
+                    type: array
+                    items:
+                      type: string
+                    description: Lista codici paese (ISO 3166-1 alpha-2)
+                  count:
+                    type: integer
+                    description: Numero di paesi sorvolati
+        "400":
+          description: Parametri mancanti o non validi
+        "404":
+          description: Aeroporti non trovati
+        "500":
+          description: Errore interno o errore calcolo
