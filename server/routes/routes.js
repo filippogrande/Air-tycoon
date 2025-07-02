@@ -409,11 +409,11 @@ router.post('/geocoding_cache', async (req, res) => {
         const roundedLon = roundCoord(Number(lon), 2);
         // Upsert: se già presente, non inserire duplicato
         const result = await db.query(
-            `INSERT INTO geocoding_cache (latitude, longitude, country, country_code)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO geocoding_cache (latitude, longitude, country_code)
+             VALUES ($1, $2, $3)
              ON CONFLICT (latitude, longitude) DO NOTHING
              RETURNING *`,
-            [roundedLat, roundedLon, country_code, country_code]
+            [roundedLat, roundedLon, country_code]
         );
         res.json({ success: true, country_code: country_code });
     } catch (error) {
@@ -494,10 +494,10 @@ router.post('/countries_count', async (req, res) => {
                         countryCodes.add(code);
                         // Salva in cache
                         await db.query(
-                            `INSERT INTO geocoding_cache (latitude, longitude, country, country_code)
-                             VALUES ($1, $2, $3, $4)
+                            `INSERT INTO geocoding_cache (latitude, longitude, country_code)
+                             VALUES ($1, $2, $3)
                              ON CONFLICT (latitude, longitude) DO NOTHING`,
-                            [Math.round(lat * 10) / 10, Math.round(lon * 10) / 10, code, code]
+                            [Math.round(lat * 10) / 10, Math.round(lon * 10) / 10, code]
                         );
                     }
                 }
