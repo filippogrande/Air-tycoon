@@ -1,2 +1,86 @@
-<!-- Pagina selezione partita (ex game-select.html) -->
-<!-- ...contenuto originale di game-select.html da spostare qui... -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Tycoon 2 - Seleziona Salvataggio</title>
+    <link rel="stylesheet" href="../../styles/game-select.css">
+</head>
+<body>
+    <div class="game-select-container">
+        <div class="background-animation">
+            <div class="airplane">✈️</div>
+            <div class="clouds">
+                <div class="cloud">☁️</div>
+                <div class="cloud">☁️</div>
+                <div class="cloud">☁️</div>
+            </div>
+        </div>
+        
+        <header class="header">
+            <div class="user-info">
+                <h1>🛫 Air Tycoon 2</h1>
+                <div class="user-details">
+                    <span id="welcome-text">Benvenuto, <strong id="user-name"></strong></span>
+                    <button id="logout-btn" class="logout-btn">🚪 Logout</button>
+                </div>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <div class="saves-section">
+                <div class="section-header">
+                    <h2>💾 I tuoi Salvataggi</h2>
+                    <button id="new-game-btn" class="action-btn primary">
+                        🆕 Nuovo Gioco
+                    </button>
+                </div>
+                
+                <div id="saves-container" class="saves-grid">
+                    <!-- I salvataggi verranno inseriti qui dinamicamente -->
+                </div>
+                
+                <div id="no-saves" class="no-saves hidden">
+                    <div class="no-saves-content">
+                        <div class="no-saves-icon">📂</div>
+                        <h3>Nessun salvataggio trovato</h3>
+                        <p>Inizia una nuova partita per creare il tuo primo salvataggio!</p>
+                        <button id="start-first-game" class="action-btn primary">
+                            🚀 Inizia Prima Partita
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Modal per nuovo gioco -->
+        <div id="new-game-modal"></div>
+        
+        <!-- Modal conferma eliminazione -->
+        <div id="delete-modal"></div>
+        
+        <!-- Modal selezione hub di partenza step-by-step -->
+        <div id="select-hub-modal"></div>
+        
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-content">
+                <div class="loading-spinner">✈️</div>
+                <p id="loading-text">Caricamento...</p>
+            </div>
+        </div>
+        
+        <!-- Message toast -->
+        <div id="message-toast" class="message-toast hidden">
+            <span id="toast-text"></span>
+            <button id="toast-close" class="toast-close">×</button>
+        </div>
+    </div>
+    
+    <!-- Script per caricare dinamicamente i template delle modali -->
+    <script src="../../src/pages/selectPage.js" type="module"></script>
+    <script src="../../src/utils/AuthManager.js"></script>
+    <script src="../../src/data/SimpleData.js"></script>
+    <script src="../../src/game-select.js"></script>
+  </body>
+</html>

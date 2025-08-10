@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verifica autenticazione
     if (!authManager.loadCurrentUser()) {
         console.log('❌ Utente non autenticato, reindirizzo al login...');
-        window.location.href = 'auth.html';
+        window.location.href = 'pages/auth/login.html';
         return;
     }
     
@@ -224,7 +224,7 @@ function setupEventListeners() {
         showLoading('Logout in corso...');
         setTimeout(function() {
             authManager.logout();
-            window.location.href = 'auth.html';
+            window.location.href = 'pages/auth/login.html';
         }, 500);
     });
     

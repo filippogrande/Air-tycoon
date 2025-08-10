@@ -1,26 +1,301 @@
-<!-- /Client/pages/templates/route-panels.html -->
+<!-- Template per pannelli creazione rotte -->
 
-<template id="route-create-panel">
-  <div class="route-panel">
-    <h3>Crea Nuova Rotta</h3>
-    <form id="route-create-form">
-      <label for="origin-airport">Aeroporto di partenza</label>
-      <select id="origin-airport"></select>
-      <label for="destination-airport">Destinazione</label>
-      <select id="destination-airport"></select>
-      <label for="route-aircraft">Aeromobile</label>
-      <select id="route-aircraft"></select>
-      <button type="submit">Conferma Rotta</button>
-    </form>
-  </div>
-</template>
+<!-- Pannello creazione rotte -->
+<div id="route-creation-panel" class="route-panel">
+  <h3>✈️ Crea Rotta</h3>
 
-<template id="route-edit-panel">
-  <div class="route-panel">
-    <h3>Modifica Rotta</h3>
-    <form id="route-edit-form">
-      <!-- Campi per modifica rotta -->
-      <button type="submit">Salva Modifiche</button>
-    </form>
+  <!-- Sezione selezione aeroplano all'inizio -->
+  <div class="aircraft-selection-compact" id="aircraft-selection-compact">
+    <h4>✈️ Seleziona Aeroplano</h4>
+    <div class="aircraft-selector">
+      <select id="aircraft-selector-main" class="aircraft-dropdown">
+        <option value="">Nessun aereoplano selezionato</option>
+        <!-- Opzioni aeroplani verranno popolate dinamicamente -->
+      </select>
+    </div>
   </div>
-</template>
+
+  <div class="route-slots">
+    <div class="route-slot" id="origin-slot">
+      <div class="slot-header">
+        <label>Da:</label>
+        <button
+          id="lock-origin-btn"
+          class="lock-btn"
+          title="Blocca origine per confrontare destinazioni"
+        >
+          🔓
+        </button>
+      </div>
+      <div class="airport-slot" id="origin-airport" data-slot="origin">
+        <span class="placeholder">Seleziona aeroporto di partenza</span>
+      </div>
+    </div>
+    <div class="route-divider"></div>
+    <div class="route-slot" id="destination-slot">
+      <div class="slot-header">
+        <label>A:</label>
+        <button
+          id="clear-destination-btn"
+          class="clear-btn"
+          title="Cambia destinazione rapidamente"
+        >
+          🔄
+        </button>
+      </div>
+      <div
+        class="airport-slot"
+        id="destination-airport"
+        data-slot="destination"
+      >
+        <span class="placeholder">Seleziona aeroporto di arrivo</span>
+      </div>
+    </div>
+  </div>
+  <div class="route-info" id="route-info" style="display: none">
+    <div class="route-details">
+      <p>
+        <strong>📏 Distanza:</strong> <span id="route-distance">--</span> km
+      </p>
+      <p><strong>⏱️ Tempo volo:</strong> <span id="flight-time">--</span></p>
+      <p>
+        <strong>👥 Passeggeri stimati/giorno:</strong>
+        <span id="estimated-passengers">--</span>
+      </p>
+      <p>
+        <strong>📦 Cargo stimato/giorno:</strong>
+        <span id="estimated-cargo">--</span> t
+      </p>
+    </div>
+  </div>
+
+  <div class="route-actions">
+    <button id="create-route-btn" class="btn-primary" disabled>
+      Configura Rotta
+    </button>
+    <button id="cancel-route-btn" class="btn-secondary">Annulla</button>
+  </div>
+</div>
+
+<!-- Schermata configurazione rotta dettagliata -->
+<div id="route-config-panel" class="route-config-panel">
+  <div class="route-config-content">
+    <h3>⚙️ Configurazione Rotta</h3>
+
+    <div class="route-summary">
+      <div class="route-path">
+        <span id="config-origin">--</span> →
+        <span id="config-destination">--</span>
+      </div>
+      <div class="route-basic-info">
+        <span>📏 <span id="config-distance">--</span> km</span>
+        <span>⏱️ <span id="config-flight-time">--</span></span>
+      </div>
+
+      <!-- Informazioni aeroporti -->
+      <div class="airports-info">
+        <div class="airport-info-row">
+          <div class="airport-details origin-details">
+            <div class="airport-data">
+              <span class="runway-info"
+                >🛣️ <span id="origin-runway-length">--</span>m</span
+              >
+              <span class="airport-size"
+                >🏢 <span id="origin-airport-size">--</span></span
+              >
+              <span class="business-level"
+                >💼 Business: <span id="origin-business-level">--</span>%</span
+              >
+              <span class="tourist-level"
+                >🏖️ Turistico: <span id="origin-tourist-level">--</span>%</span
+              >
+            </div>
+          </div>
+
+          <div class="airport-details destination-details">
+            <div class="airport-data">
+              <span class="runway-info"
+                >🛣️ <span id="destination-runway-length">--</span>m</span
+              >
+              <span class="airport-size"
+                >🏢 <span id="destination-airport-size">--</span></span
+              >
+            </div>
+            <div class="traffic-levels">
+              <span class="business-level"
+                >💼 Business:
+                <span id="destination-business-level">--</span>%</span
+              >
+              <span class="tourist-level"
+                >🏖️ Turistico:
+                <span id="destination-tourist-level">--</span>%</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-grid">
+      <!-- Colonna sinistra -->
+      <div class="config-left-column">
+        <div class="route-type-selection">
+          <h4>Tipo di Rotta</h4>
+          <div class="route-type-buttons">
+            <button
+              id="route-type-passenger"
+              class="route-type-btn-compact active"
+              data-type="passenger"
+            >
+              <div class="route-type-icon">👥</div>
+              <div class="route-type-title">Passeggeri</div>
+            </button>
+            <button
+              id="route-type-cargo"
+              class="route-type-btn-compact"
+              data-type="cargo"
+            >
+              <div class="route-type-icon">📦</div>
+              <div class="route-type-title">Cargo</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="demand-analysis">
+          <h4>Analisi Domanda</h4>
+          <div class="demand-estimates" id="demand-estimates">
+            <div class="estimate-row">
+              <span class="estimate-label">👥 Passeggeri/giorno:</span>
+              <span class="estimate-value" id="config-passengers">--</span>
+            </div>
+            <div class="estimate-row">
+              <span class="estimate-label">📦 Cargo/giorno:</span>
+              <span class="estimate-value" id="config-cargo">--</span>
+            </div>
+          </div>
+          <button
+            id="improve-analysis-btn"
+            class="analysis-action-btn improve-btn"
+          >
+            <div class="btn-icon">🔍</div>
+            <div class="btn-content">
+              <div class="btn-title">Migliora Stima Domanda</div>
+              <div class="btn-subtitle">Analisi dettagliata del traffico</div>
+              <div class="btn-price">€5,000</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Colonna centrale -->
+      <div class="config-center-column">
+        <div class="market-analysis">
+          <h4>Analisi di Mercato</h4>
+          <div class="market-locked" id="market-locked">
+            <p class="locked-message">
+              🔒 Richiede analisi di mercato professionale
+            </p>
+            <button
+              id="market-analysis-btn"
+              class="analysis-action-btn market-btn"
+            >
+              <div class="btn-icon">📊</div>
+              <div class="btn-content">
+                <div class="btn-title">Analisi di Mercato</div>
+                <div class="btn-subtitle">
+                  Studio competitivo e profittabilità
+                </div>
+                <div class="btn-price">€15,000</div>
+              </div>
+            </button>
+          </div>
+          <div
+            class="market-unlocked"
+            id="market-unlocked"
+            style="display: none"
+          >
+            <div class="estimate-row">
+              <span class="estimate-label">✈️ Costo per volo:</span>
+              <span class="cost-value"
+                >€<span id="cost-per-flight">--</span></span
+              >
+            </div>
+            <div class="estimate-row">
+              <span class="estimate-label">📈 Ricavi stimati/mese:</span>
+              <span class="revenue-value"
+                >€<span id="config-monthly-revenue">--</span></span
+              >
+            </div>
+            <div class="estimate-row profit-row">
+              <span class="estimate-label"
+                ><strong>💎 Profitto stimato/mese:</strong></span
+              >
+              <span class="profit-value"
+                ><strong>€<span id="estimated-profit">--</span></strong></span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="cost-analysis">
+          <h4>Costi Operativi</h4>
+          <div class="cost-breakdown">
+            <div class="cost-row">
+              <span>💰 Costo creazione rotta:</span>
+              <span class="cost-value"
+                >€<span id="route-creation-cost">--</span></span
+              >
+            </div>
+            <div class="cost-row">
+              <span>🌍 Nazioni sorvolate:</span>
+              <span class="info-value"
+                ><span id="countries-count">--</span></span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonna destra -->
+      <div class="config-right-column">
+        <div class="aircraft-compatibility">
+          <h4>Aeroplani Compatibili</h4>
+          <div id="compatible-aircraft" class="aircraft-list">
+            <!-- Lista aeroplani compatibili verrà popolata dinamicamente -->
+          </div>
+          <div
+            id="no-aircraft-warning"
+            class="aircraft-warning"
+            style="display: none"
+          >
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-content">
+              <div class="warning-title">Nessun aereo compatibile</div>
+              <div class="warning-message">
+                Non possiedi nessun aereo che può fare questa rotta
+              </div>
+              <button class="buy-aircraft-btn">🛒 Acquista Aereo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-actions">
+      <button id="confirm-create-route" class="btn-primary" disabled>
+        Crea Rotta
+      </button>
+      <button id="back-to-selection" class="btn-secondary">← Indietro</button>
+    </div>
+  </div>
+  <!-- Chiusura route-config-content -->
+</div>
+
+<div id="airport-info" class="info-panel hidden">
+  <h3 id="airport-name"></h3>
+  <p id="airport-details"></p>
+  <div class="airport-actions">
+    <button id="create-route">Crea Rotta</button>
+    <button id="view-routes">Vedi Rotte</button>
+  </div>
+</div>

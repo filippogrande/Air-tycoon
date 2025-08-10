@@ -1,0 +1,34 @@
+<!-- Modale Selezione Hub di Partenza -->
+<div id="select-hub-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🌍 Scegli il tuo Hub di Partenza</h3>
+            <button id="close-hub-modal" class="close-btn">×</button>
+        </div>
+        <form id="select-hub-form" class="modal-body">
+            <div class="input-group">
+                <label for="continent-select">Continente</label>
+                <select id="continent-select" required>
+                    <option value="">Seleziona continente...</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="country-select">Nazione</label>
+                <select id="country-select" required disabled>
+                    <option value="">Seleziona nazione...</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="airport-select">Aeroporto</label>
+                <select id="airport-select" name="startingAirport" required disabled>
+                    <option value="">Seleziona aeroporto...</option>
+                </select>
+                <small class="input-help">Sono disponibili aeroporti di tipo <b>large</b> e <b>medium</b>. La dimensione è indicata tra parentesi.</small>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="cancel-hub-select" class="action-btn secondary">❌ Annulla</button>
+                <button type="submit" class="action-btn primary" disabled id="confirm-hub-btn">✅ Conferma Hub</button>
+            </div>
+        </form>
+    </div>
+</div>

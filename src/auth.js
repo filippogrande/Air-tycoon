@@ -216,7 +216,7 @@ function hideMessage() {
 
 function redirectToGameSelect() {
     console.log('🎮 Reindirizzamento alla selezione gioco...');
-    window.location.href = 'game-select.html';
+    window.location.href = 'pages/game/select.html';
 }
 
 console.log('✅ auth.js caricato');
