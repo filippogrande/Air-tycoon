@@ -104,8 +104,82 @@ console.log('✅ Route API caricate');
 // Documentazione Swagger
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(null, { swaggerUrl: '/openapi/index.yaml' }));
 
+<<<<<<< Updated upstream
 // Servire file statici del gioco dalla root del progetto
 app.use('/game', express.static(path.join(__dirname, '..')));
+=======
+// Middleware compat: molte pagine vengono servite sotto /game/<folder>/... e referenziano asset con percorsi relativi
+// Es: /game/auth/styles/auth.css  -> servire Client/styles/auth.css
+//      /game/auth/src/utils/AuthManager.js -> servire Client/src/utils/AuthManager.js
+app.get('/game/:folder/:assetType/*', (req, res, next) => {
+    const assetType = req.params.assetType; // styles | src | assets
+    const rest = req.path.split('/').slice(4).join('/');
+    let baseDir;
+    if (assetType === 'styles') baseDir = path.join(__dirname, '../Client/styles');
+    else if (assetType === 'src') baseDir = path.join(__dirname, '../Client/src');
+    else if (assetType === 'assets') baseDir = path.join(__dirname, '../Client/assets');
+    else return next();
+
+    const filePath = path.join(baseDir, rest);
+    res.sendFile(filePath, err => {
+        if (err) {
+            // If not found, continue to next middleware/404
+            next();
+        }
+    });
+});
+
+// Servire le pagine del gioco dalla cartella Client/pages
+// NOTE: /game/index.html viene mappato esplicitamente a hub.html
+app.use('/game', express.static(path.join(__dirname, '../Client/pages')));
+// Backwards-compatible mapping: some client code uses /game/pages/... (double 'pages')
+// Provide a permissive static route so /game/pages/auth/login.html -> Client/pages/auth/login.html
+app.use('/game/pages', express.static(path.join(__dirname, '../Client/pages')));
+// Redirect any /game/pages/* requests to /game/* to normalize URLs in the browser
+app.get('/game/pages/*', (req, res) => {
+    const newPath = req.originalUrl.replace('/game/pages/', '/game/');
+    res.redirect(302, newPath);
+});
+
+// Normalize nested occurrences like /game/:segment/pages/* -> /game/*
+// Example: /game/auth/pages/game/select.html -> /game/game/select.html
+app.get('/game/:segment/pages/*', (req, res) => {
+    try {
+        const seg = req.params.segment;
+        const prefix = `/game/${seg}/pages/`;
+        const newPath = req.originalUrl.replace(prefix, '/game/');
+        return res.redirect(302, newPath);
+    } catch (err) {
+        return res.status(400).json({ error: 'Bad request' });
+    }
+});
+// Backwards-compat: redirect accidental double /game/game/index.html to canonical hub
+app.get('/game/game/index.html', (req, res) => {
+    return res.redirect(302, '/game/index.html');
+});
+
+app.get('/game/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../Client/pages/hub.html'));
+});
+
+// Compatibility: some pages reference assets under /game/src, /game/styles or /game/assets
+// Map those directly to the canonical Client folders so requests like /game/src/auth.js succeed.
+app.use('/game/src', express.static(path.join(__dirname, '../Client/src')));
+app.use('/game/styles', express.static(path.join(__dirname, '../Client/styles')));
+app.use('/game/assets', express.static(path.join(__dirname, '../Client/assets')));
+
+// Serve static assets referenced by hub.html
+app.use('/styles', express.static(path.join(__dirname, '../Client/styles')));
+app.use('/src', express.static(path.join(__dirname, '../Client/src')));
+app.use('/assets', express.static(path.join(__dirname, '../Client/assets')));
+
+// Serve main src folder for game scripts
+// Legacy compatibility - serve Client/src as /main-src
+app.use('/main-src', express.static(path.join(__dirname, '../Client/src')));
+
+// also expose entire Client under /Client for backwards compatibility
+app.use('/Client', express.static(path.join(__dirname, '../Client')));
+>>>>>>> Stashed changes
 
 // Servi la cartella Client come statica per il frontend
 app.use('/Client', express.static(path.join(__dirname, '../Client')));

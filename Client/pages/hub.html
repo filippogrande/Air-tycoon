@@ -28,6 +28,7 @@
             </div>
         </header>
 
+<<<<<<< Updated upstream
         <!-- Menu principale -->
         <nav id="main-menu">
             <button class="menu-btn active" data-tab="world">🌍 Mappa</button>
@@ -36,6 +37,18 @@
             <button class="menu-btn" data-tab="finances">💼 Finanze</button>
             <button class="menu-btn" data-tab="infrastructure">🏗️ Infrastrutture</button>
             <button class="menu-btn" data-tab="research">🔬 Ricerca</button>
+=======
+        <!-- Navigation Bar -->
+        <nav id="game-nav">
+            <div class="nav-tabs">
+                <button class="menu-btn active" data-tab="world">🌍 Mondo</button>
+                <button class="menu-btn" data-tab="fleet">✈️ Flotta</button>
+                <button class="menu-btn" data-tab="routes">🛣️ Rotte</button>
+                <button class="menu-btn" data-tab="finances">💰 Finanze</button>
+                <button class="menu-btn" data-tab="research">🔬 Ricerca</button>
+                <button class="menu-btn" data-tab="infrastructure">🏗️ Infrastrutture</button>
+            </div>
+>>>>>>> Stashed changes
         </nav>
 
         <!-- Area principale del gioco -->
@@ -81,7 +94,7 @@
         </main>
 
         <!-- Modal per acquisto aeromobili -->
-        <div id="aircraft-modal"></div>
+        <div id="aircraft-modal-container"></div>
 
         <!-- Modal per creazione rotte -->
         <div id="route-modal"></div>
@@ -96,7 +109,7 @@
         <script>
         // Carica dinamicamente i template HTML delle modali
         const modalTemplates = [
-            { id: 'aircraft-modal', path: 'modals/aircraft-modal.html' },
+            { id: 'aircraft-modal-container', path: 'modals/aircraft-modal.html' },
             { id: 'route-modal', path: 'modals/route-modal.html' },
             { id: 'game-menu-modal', path: 'modals/game-menu-modal.html' },
             { id: 'settings-overlay', path: 'modals/settings-overlay.html' }
@@ -114,9 +127,87 @@
         });
         </script>
         
+<<<<<<< Updated upstream
         <!-- Scripts -->
         <script src="../src/pages/hubPage.js" type="module"></script>
         <!-- Gli altri script (manager, utils, main.js) rimangono per ora, ma la logica di pagina è ora in hubPage.js -->
+=======
+    <!-- Scripts - Ordine ottimizzato per caricamento pulito -->
+    
+    <!-- Leaflet JS: deve essere caricato per primo -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    
+    <!-- Core utilities consolidate -->
+    <script src="/main-src/utils/core-utils.js"></script>
+    
+    <!-- Entità base -->
+    <script src="/main-src/entities/Aircraft.js"></script>
+    <script src="/main-src/entities/Airport.js"></script>
+    <script src="/main-src/entities/Route.js"></script>
+    
+    <!-- Core system -->
+    <script src="/main-src/core/GameState.js"></script>
+    <script src="/main-src/core/Game.js"></script>
+    
+    <!-- Manager -->
+    <script src="/main-src/managers/FleetManager.js"></script>
+    <script src="/main-src/managers/RouteManager.js"></script>
+    <script src="/main-src/managers/FinanceManager.js"></script>
+    <script src="/main-src/managers/HubManager.js"></script>
+    <script src="/main-src/managers/DemandEstimationManager.js"></script>
+    <script src="/main-src/managers/InfrastructureManager.js"></script>
+    
+    <!-- UI e Utils -->
+    <script src="/main-src/utils/RouteCalculator.js"></script>
+    <script src="/main-src/utils/MapVisibilityManager.js"></script>
+    <script src="/main-src/utils/SaveLoad.js"></script>
+    <script src="/main-src/ui/UIManager.js"></script>
+    <script src="/main-src/graphics/WorldMap.js"></script>
+    <script src="/main-src/ui/RouteUIManager.js"></script>
+    <script src="/main-src/ui/FleetTab-compatible.js"></script>
+    
+    <!-- UI Events (convertiti a script normali) -->
+    <script src="/main-src/ui/SettingsOverlay.js"></script>
+    <script src="/main-src/ui/gameMenuEvents.js"></script>
+    
+    <!-- Page Logic -->
+    <script src="/main-src/pages/hubPage-simple.js"></script>
+    
+    <!-- Engines -->
+    <script src="/main-src/simulation/EconomyEngine.js"></script>
+    
+    <!-- Main initialization (versione semplificata) -->
+    <script src="/main-src/main-simple.js"></script>
+    
+    <!-- Setup UI base dopo l'inizializzazione -->
+    <script>
+        // Setup base dei tab quando il DOM è pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup tab navigation
+            const tabBtns = document.querySelectorAll('.menu-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    
+                    // Rimuovi classe active da tutti
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(t => t.classList.remove('active'));
+                    
+                    // Aggiungi active al selezionato
+                    this.classList.add('active');
+                    const tabElement = document.getElementById(tabName + '-tab');
+                    if (tabElement) {
+                        tabElement.classList.add('active');
+                    }
+                });
+            });
+            
+            console.log('📋 Hub UI base inizializzata');
+        });
+    </script>
+>>>>>>> Stashed changes
     </div>
 </body>
 </html>
