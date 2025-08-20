@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40">
+  <rect width="160" height="40" rx="6" fill="#1e88e5" />
+  <g transform="translate(8,6)">
+    <path d="M0 18 L10 8 L30 12 L20 22 Z" fill="#fff" />
+    <text x="40" y="22" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#fff">Air Tycoon</text>
+  </g>
+</svg>

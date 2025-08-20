@@ -208,5 +208,27 @@ router.get('/companies/:id/hubs', async (req, res) => {
     }
 });
 
+// DELETE /api/game/companies/:id - Elimina una compagnia (usato per UI di amministrazione/utente)
+router.delete('/companies/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Rimuovi company_hubs, fleet, routes e la compagnia stessa in una transazione
+        await db.query('BEGIN');
+        await db.query('DELETE FROM company_hubs WHERE company_id = $1', [id]);
+        await db.query('DELETE FROM fleet WHERE company_id = $1', [id]);
+        await db.query('DELETE FROM routes WHERE company_id = $1', [id]);
+        const del = await db.query('DELETE FROM companies WHERE id = $1 RETURNING id', [id]);
+        await db.query('COMMIT');
+        if (del.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Company not found' });
+        }
+        return res.json({ success: true, data: { id } });
+    } catch (error) {
+        try { await db.query('ROLLBACK'); } catch(e){}
+        console.error('Error deleting company:', error);
+        return res.status(500).json({ success: false, error: 'Failed to delete company' });
+    }
+});
+
 
 module.exports = router;

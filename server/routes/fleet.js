@@ -368,13 +368,14 @@ router.get('/available', async (req, res) => {
         if (!year) {
             return res.status(400).json({ success: false, error: 'year richiesto' });
         }
-        // Prendi tutti i tipi di aerei prodotti fino a quell'anno e non ritirati prima di quell'anno
-        const aircraftTypes = await db.query(`
-            SELECT * FROM aircraft_types 
-            WHERE (year_introduced IS NULL OR year_introduced <= $1)
-              AND (year_retired IS NULL OR year_retired > $1)
-            ORDER BY cruise_speed DESC
-        `, [year]);
+            // Prendi tutti i tipi di aerei prodotti fino a quell'anno e non ritirati prima di quell'anno
+            // Nota: lo schema utilizza 'market_entry_year' e 'market_exit_year'
+            const aircraftTypes = await db.query(`
+                            SELECT * FROM aircraft_types 
+                            WHERE (market_entry_year IS NULL OR market_entry_year <= $1)
+                                AND (market_exit_year IS NULL OR market_exit_year > $1)
+                            ORDER BY cruise_speed DESC
+                    `, [year]);
         res.json({ success: true, data: aircraftTypes.rows });
     } catch (error) {
         console.error('Error fetching available aircraft types:', error);

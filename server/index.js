@@ -104,10 +104,6 @@ console.log('✅ Route API caricate');
 // Documentazione Swagger
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(null, { swaggerUrl: '/openapi/index.yaml' }));
 
-<<<<<<< Updated upstream
-// Servire file statici del gioco dalla root del progetto
-app.use('/game', express.static(path.join(__dirname, '..')));
-=======
 // Middleware compat: molte pagine vengono servite sotto /game/<folder>/... e referenziano asset con percorsi relativi
 // Es: /game/auth/styles/auth.css  -> servire Client/styles/auth.css
 //      /game/auth/src/utils/AuthManager.js -> servire Client/src/utils/AuthManager.js
@@ -172,17 +168,30 @@ app.use('/game/assets', express.static(path.join(__dirname, '../Client/assets'))
 app.use('/styles', express.static(path.join(__dirname, '../Client/styles')));
 app.use('/src', express.static(path.join(__dirname, '../Client/src')));
 app.use('/assets', express.static(path.join(__dirname, '../Client/assets')));
-
-// Serve main src folder for game scripts
-// Legacy compatibility - serve Client/src as /main-src
-app.use('/main-src', express.static(path.join(__dirname, '../Client/src')));
-
 // also expose entire Client under /Client for backwards compatibility
 app.use('/Client', express.static(path.join(__dirname, '../Client')));
->>>>>>> Stashed changes
 
 // Servi la cartella Client come statica per il frontend
 app.use('/Client', express.static(path.join(__dirname, '../Client')));
+// Diagnostic middleware: log any requests that contain '/stc/' which appears to be a common typo
+// This helps capture browser requests like '/game/stc/auth.js' and the Referer/Initiator.
+app.use((req, res, next) => {
+    try {
+        if (req.originalUrl && req.originalUrl.includes('/stc/')) {
+            console.log('⚠️ Detected /stc/ request ->', {
+                time: new Date().toISOString(),
+                url: req.originalUrl,
+                method: req.method,
+                ip: req.ip,
+                referer: req.get('referer'),
+                ua: req.get('user-agent')
+            });
+        }
+    } catch (err) {
+        // ignore
+    }
+    next();
+});
 // (Opzionale) Servi direttamente le pagine come root
 // app.use('/', express.static(path.join(__dirname, '../Client/pages')));
 
@@ -259,8 +268,8 @@ db.testConnection()
             }
         
         
-        // Avvia server
-        app.listen(PORT, () => {
+        // Avvia server, bind esplicito a 0.0.0.0 per assicurare che sia raggiungibile fuori dal container
+        app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 Server Air Tycoon 2 avviato su porta ${PORT}`);
             console.log(`🌐 Health check: http://localhost:${PORT}/health`);
             console.log(`📊 API base URL: http://localhost:${PORT}/api`);

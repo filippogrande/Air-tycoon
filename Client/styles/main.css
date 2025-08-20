@@ -38,6 +38,18 @@ body {
     margin-right: 60px; /* Spazio per il tasto impostazioni */
 }
 
+.logo-wrap {
+    display: flex;
+    align-items: center;
+    margin-right: 12px;
+}
+
+#site-logo {
+    height: 40px;
+    width: auto;
+    display: block;
+}
+
 #company-name {
     font-size: 24px;
     color: #2c3e50;

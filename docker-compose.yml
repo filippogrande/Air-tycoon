@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:14
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-air_tycoon_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-air_tycoon}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "3001:3001"
+      - "3002:3001"
+    environment:
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-air_tycoon_user}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DB_NAME: ${DB_NAME:-air_tycoon}
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-3001}
+      RUN_MIGRATIONS: "${RUN_MIGRATIONS:-1}"
+      RUN_SEED: "${RUN_SEED:-1}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:3000}"
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+  # Command removed so the entrypoint controls server startup (schema -> migrations -> seed -> run)
+
+volumes:
+  db_data:

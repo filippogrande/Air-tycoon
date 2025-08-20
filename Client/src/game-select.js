@@ -1,30 +1,51 @@
-<<<<<<< Updated upstream
-// ...contenuto originale di game-select.js da spostare qui...
-=======
-// Script per la selezione dei salvataggi
-console.log('🎮 Caricamento game-select.js...');
+// Script per la selezione dei salvataggi (module)
+import { AuthManager } from '/src/utils/AuthManager.js';
+
+console.debug('🎮 Caricamento game-select.js...');
 
 let authManager;
 let currentUser;
 let selectedSaveToDelete = null;
+let selectedDeleteType = 'save'; // 'save' (local) or 'company' (server)
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎮 Inizializzazione pagina selezione giochi...');
+    console.debug('🎮 Inizializzazione pagina selezione giochi...');
     
     authManager = new AuthManager();
     
     // Verifica autenticazione
     if (!authManager.loadCurrentUser()) {
-        console.log('❌ Utente non autenticato, reindirizzo al login...');
+    console.debug('❌ Utente non autenticato, reindirizzo al login...');
         window.location.href = 'pages/auth/login.html';
         return;
     }
     
     currentUser = authManager.getCurrentUser();
-    console.log('✅ Utente autenticato:', currentUser.email);
+    console.debug('✅ Utente autenticato:', currentUser.email);
     
     initializeGameSelectPage();
 });
+
+// If selectPage injected modals before this script loaded, process them now
+if (typeof window !== 'undefined' && Array.isArray(window.__injectedModals)) {
+    window.__injectedModals.forEach(id => {
+        try { if (window.onModalInjected) window.onModalInjected(id); } catch (e) { /* ignore */ }
+    });
+    // clear them after processing
+    window.__injectedModals = [];
+}
+
+// Listen to custom event dispatched by selectPage when a modal is injected
+document.addEventListener('modalInjected', function(e) {
+    try {
+        const id = e && e.detail && e.detail.id;
+        if (id && window.onModalInjected) window.onModalInjected(id);
+    } catch (err) { /* ignore */ }
+});
+
+// AirportData must be provided by `Client/src/data/SimpleData.js` at build time.
+// No runtime fallback is used — if AirportData is missing, fail fast so bugs
+// are visible during development.
 
 function initializeGameSelectPage() {
     // Mostra nome utente
@@ -33,13 +54,14 @@ function initializeGameSelectPage() {
     // Carica salvataggi
     loadUserSaves();
     
-    // Popola aeroporti di partenza
-    populateStartingAirports();
+    // Nota: Non carichiamo AirportData automaticamente a pagina aperta.
+    // I dati aeroportuali vengono caricati on-demand quando l'utente apre la
+    // modal "Nuovo Gioco" per evitare lavoro inutile e problemi di timing.
     
     // Setup event listeners
     setupEventListeners();
     
-    console.log('✅ Pagina selezione giochi inizializzata');
+    console.debug('✅ Pagina selezione giochi inizializzata');
 }
 
 function updateUserInfo() {
@@ -70,7 +92,7 @@ async function loadUserSaves() {
                 savesContainer.appendChild(card);
             });
         }
-        console.log('📂 Caricate', companies.length, 'compagnie dal server');
+    console.debug('📂 Caricate', companies.length, 'compagnie dal server');
     } catch (e) {
         savesContainer.style.display = 'none';
         noSavesDiv.classList.remove('hidden');
@@ -92,6 +114,9 @@ function createCompanyCard(company) {
         <div class="save-header">
             <div class="save-title">
                 <h3>${company.name}</h3>
+            </div>
+            <div class="save-actions">
+                <button class="action-btn danger delete-save-btn" onclick="promptDelete('company','${company.id}')" title="Elimina salvataggio">🗑️</button>
             </div>
         </div>
         <div class="save-info">
@@ -120,15 +145,13 @@ function createCompanyCard(company) {
             🎮 Carica Partita
         </button>
     `;
-    // Aggiorna async il codice IATA dell'hub
+
+    // Aggiorna hub async se presente
     if (company.base_airport) {
         fetch(`/api/airports/${company.base_airport}`)
             .then(res => res.json())
             .then(data => {
-                // Corretto: estrai iata_code da data.data.airport
-                const iata = data && data.data && data.data.airport && data.data.airport.iata_code
-                    ? data.data.airport.iata_code
-                    : company.base_airport;
+                const iata = (data && data.data && data.data.airport && data.data.airport.iata_code) ? data.data.airport.iata_code : company.base_airport;
                 const hubSpan = card.querySelector('.hub-value');
                 if (hubSpan) hubSpan.textContent = iata;
             })
@@ -137,21 +160,42 @@ function createCompanyCard(company) {
                 if (hubSpan) hubSpan.textContent = company.base_airport;
             });
     }
+
+    console.debug('[game-select] created company card for', company.id);
     return card;
+}
+
+// Esponi deleteSave su window per compatibilità con handler inline
+if (typeof window !== 'undefined') {
+    window.deleteSave = deleteSave;
+}
+
+// Prompt generico per eliminazione. Esposto globalmente per chiamate inline
+if (typeof window !== 'undefined') {
+    window.promptDelete = function(type, id) {
+        // type: 'save' or 'company'
+        selectedDeleteType = type || 'save';
+        selectedSaveToDelete = id;
+        const modal = document.getElementById('delete-modal');
+        const saveNameSpan = document.getElementById('delete-save-name');
+        if (saveNameSpan) saveNameSpan.textContent = id;
+        if (modal) modal.classList.remove('hidden');
+    };
 }
 
 window.startGameFromCompany = function(companyId) {
     // Salva il companyId selezionato in sessionStorage e reindirizza
     sessionStorage.setItem('selectedCompanyId', companyId);
-    console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage:', companyId, '| typeof:', typeof companyId);
+    console.debug('[DEBUG] Salvato selectedCompanyId in sessionStorage:', companyId, '| typeof:', typeof companyId);
     window.location.href = 'index.html';
 }
 
 function populateStartingAirports(selectedScenario = null) {
     const select = document.getElementById('starting-airport');
-    
+
+    // If AirportData isn't ready yet, bail out silently (we'll try again later)
     if (!window.AirportData || !window.AirportData.airports) {
-        console.warn('⚠️ AirportData non disponibile');
+        console.warn('[game-select] populateStartingAirports skipped: AirportData non pronto');
         return;
     }
     
@@ -189,6 +233,19 @@ function populateStartingAirports(selectedScenario = null) {
         .filter(airport => airport.size === 'large' || airport.size === 'hub')
         .sort((a, b) => (b.passengerTraffic || 0) - (a.passengerTraffic || 0));
     
+    // If the element is a hidden input (modal template uses hidden input + summary/button),
+    // set a sensible default value and update the summary instead of building options.
+    if (select && select.tagName && select.tagName.toUpperCase() !== 'SELECT') {
+        const suitable = suitableAirports[0];
+        if (suitable) {
+            select.value = suitable.code;
+            const summary = document.getElementById('selected-hub-summary');
+            if (summary) summary.textContent = `Hub selezionato: ${suitable.name} (${suitable.code})`;
+        }
+    console.debug(`[game-select] starting-airport is not a <select> element; set default to ${suitableAirports.length>0?suitableAirports[0].code:'none'}`);
+        return;
+    }
+
     select.innerHTML = '<option value="">Seleziona hub di partenza...</option>';
     
     suitableAirports.forEach(airport => {
@@ -212,12 +269,44 @@ function populateStartingAirports(selectedScenario = null) {
         select.appendChild(option);
     });
     
-    console.log(`🏢 Caricati ${suitableAirports.length} aeroporti disponibili per l'anno ${targetYear} (scenario: ${selectedScenario})`);
+    console.debug(`🏢 Caricati ${suitableAirports.length} aeroporti disponibili per l'anno ${targetYear} (scenario: ${selectedScenario})`);
     
     // Evidenzia aeroporti italiani se disponibili
     const italianAirports = suitableAirports.filter(airport => airport.country === 'Italia');
     if (italianAirports.length > 0) {
-        console.log(`🇮🇹 ${italianAirports.length} aeroporti italiani disponibili:`, italianAirports.map(a => a.code).join(', '));
+    console.debug(`🇮🇹 ${italianAirports.length} aeroporti italiani disponibili:`, italianAirports.map(a => a.code).join(', '));
+    }
+}
+
+// Load airports from API (DB) and normalize into window.AirportData
+async function loadAirportDataFromApi() {
+    try {
+        const res = await fetch('/api/airports?size=large&limit=500');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const body = await res.json();
+        const data = Array.isArray(body) ? body : (body && body.data ? body.data : []);
+        const airports = data.map(a => ({
+            code: a.iata_code || a.code || a.id,
+            name: a.name || '',
+            city: a.city || a.city_name || '',
+            country: a.country || a.country_name || '',
+            size: a.airport_size || a.size || (a.passenger_traffic && a.passenger_traffic > 20000000 ? 'large' : 'medium'),
+            passengerTraffic: a.passenger_traffic || a.passengerTraffic || 0,
+            openedYear: a.opened_year || a.openedYear || null,
+            closedYear: a.closed_year || a.closedYear || null
+        }));
+        window.AirportData = window.AirportData || {};
+        window.AirportData.airports = airports;
+        window.AirportData._airportByCode = {};
+        window.AirportData.airports.forEach(ap => { window.AirportData._airportByCode[ap.code] = ap; });
+        window.AirportData.getAirportByCode = function(code) { return window.AirportData._airportByCode[code] || null; };
+    console.debug('✅ Caricati', airports.length, 'aeroporti dal server');
+    return true;
+    } catch (e) {
+    // Non rilanciamo errori: logghiamo e ritorniamo false in modo che il
+    // chiamante possa decidere come procedere senza generare eccezioni.
+    console.warn('[game-select] Caricamento aeroporti fallito:', e.message);
+    return false;
     }
 }
 
@@ -243,12 +332,23 @@ function setupEventListeners() {
     const startFirstBtn = document.getElementById('start-first-game');
     if (startFirstBtn) startFirstBtn.addEventListener('click', showNewGameModal);
     else console.warn('[game-select] start-first-game non trovato');
+
+    // Fallback: delegated click handler in case direct listeners were missed
+    // (covers timing issues or multiple DOM insertions)
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        if (!target) return;
+        if (target.closest && (target.closest('#new-game-btn') || target.closest('#start-first-game'))) {
+            console.debug('[game-select] delegated click detected for new-game/start-first');
+            try { showNewGameModal(); } catch (err) { console.warn('[game-select] showNewGameModal failed:', err.message); }
+        }
+    });
     
     // Scenario change listener - ricarica aeroporti quando cambia lo scenario
     document.addEventListener('change', function(e) {
         if (e.target && e.target.id === 'scenario') {
             const selectedScenario = e.target.value;
-            console.log('📅 Scenario cambiato:', selectedScenario);
+            console.debug('📅 Scenario cambiato:', selectedScenario);
             populateStartingAirports(selectedScenario);
         }
     });
@@ -296,6 +396,12 @@ window.onModalInjected = function(modalId) {
         if (newGameFormEl) newGameFormEl.addEventListener('submit', handleNewGame);
         const openHubBtn = document.getElementById('open-hub-modal-btn');
         if (openHubBtn) openHubBtn.addEventListener('click', function() { const scenario = document.getElementById('scenario')?.value; openSelectHubModal(scenario); });
+        // Dopo che la modal è stata iniettata, popola la select degli aeroporti
+        try {
+            populateStartingAirports();
+        } catch (err) {
+            console.warn('[game-select] populateStartingAirports fallita dopo injection:', err.message);
+        }
     }
 
     if (modalId === 'select-hub-modal') {
@@ -312,7 +418,8 @@ window.onModalInjected = function(modalId) {
     }
 };
 
-function showNewGameModal() {
+async function showNewGameModal() {
+    console.debug('[game-select] showNewGameModal called');
     const modal = document.getElementById('new-game-modal');
     const companyNameInput = document.getElementById('company-name-input');
     const scenarioSelect = document.getElementById('scenario');
@@ -332,12 +439,23 @@ function showNewGameModal() {
         companyNameInput.value = randomSuggestion;
     }
 
-    // Popola aeroporti in base allo scenario di default (se la select esiste)
+    // Carica AirportData on-demand prima di popolare la modal.
+    // Se il caricamento fallisce, logghiamo e lasciamo la modal aprirsi comunque
+    // (l'utente vedrà un messaggio o la select vuota) ma non lanciamo eccezioni.
     const defaultScenario = scenarioSelect ? scenarioSelect.value : 'aviation_dawn';
+    try {
+        const ok = await loadAirportDataFromApi();
+        if (!ok) {
+            console.warn('[game-select] AirportData non disponibile dopo tentativo di caricamento');
+        }
+    } catch (err) {
+        console.warn('[game-select] Errore inatteso durante loadAirportDataFromApi:', err.message);
+    }
+
     try {
         populateStartingAirports(defaultScenario);
     } catch (err) {
-        console.warn('[game-select] populateStartingAirports failed (maybe AirportData not loaded yet)', err.message);
+        console.warn('[game-select] populateStartingAirports failed (AirportData may be missing)', err.message);
     }
 
     if (modal) modal.classList.remove('hidden');
@@ -367,7 +485,7 @@ function handleNewGame(e) {
     showLoading('Creazione nuovo gioco...');
     
     // Simula creazione gioco
-    setTimeout(function() {
+    setTimeout(async function() {
         createNewGame(saveName, companyName, startingAirport, difficulty, scenario);
     }, 1500);
 }
@@ -475,7 +593,7 @@ async function syncGameWithServer(saveName, gameData) {
             throw new Error('Utente non valido per la sincronizzazione');
         }
         
-        console.log('🔄 Inizio sincronizzazione con server...', {
+    console.debug('🔄 Inizio sincronizzazione con server...', {
             userId: user.id,
             saveName: saveName,
             companyName: gameData.company.name
@@ -505,7 +623,7 @@ async function syncGameWithServer(saveName, gameData) {
             user_id: user.id // <--- AGGIUNTO
         };
         
-        console.log('📊 Creazione compagnia sul server...', companyPayload);
+    console.debug('📊 Creazione compagnia sul server...', companyPayload);
         
         const companyResponse = await fetch('/api/game/companies/create-or-update', {
             method: 'POST',
@@ -516,7 +634,7 @@ async function syncGameWithServer(saveName, gameData) {
             body: JSON.stringify(companyPayload)
         });
         
-        console.log('📊 Risposta server compagnia:', companyResponse.status, companyResponse.statusText);
+    console.debug('📊 Risposta server compagnia:', companyResponse.status, companyResponse.statusText);
         
         if (!companyResponse.ok) {
             let errorMessage = `Errore HTTP ${companyResponse.status}`;
@@ -535,12 +653,12 @@ async function syncGameWithServer(saveName, gameData) {
             throw new Error('Risposta compagnia non valida dal server');
         }
         
-        console.log('✅ Compagnia creata/aggiornata:', companyData.data?.name || 'Nome non disponibile');
+    console.debug('✅ Compagnia creata/aggiornata:', companyData.data?.name || 'Nome non disponibile');
         
         // SEMPLIFICATO: salva solo l'UUID in sessionStorage e avvia subito il gioco
         if (companyData.data && companyData.data.id) {
             sessionStorage.setItem('selectedCompanyId', companyData.data.id);
-            console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage (nuovo gioco):', companyData.data.id, '| typeof:', typeof companyData.data.id);
+            console.debug('[DEBUG] Salvato selectedCompanyId in sessionStorage (nuovo gioco):', companyData.data.id, '| typeof:', typeof companyData.data.id);
             window.location.href = 'index.html';
             return;
         }
@@ -573,7 +691,7 @@ function startGame(saveKey) {
         return;
     }
     sessionStorage.setItem('selectedCompanyId', companyId);
-    console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage (startGame):', companyId, '| typeof:', typeof companyId);
+    console.debug('[DEBUG] Salvato selectedCompanyId in sessionStorage (startGame):', companyId, '| typeof:', typeof companyId);
     window.location.href = 'index.html';
 }
 
@@ -598,20 +716,132 @@ function confirmDelete() {
     
     showLoading('Eliminazione salvataggio...');
     
-    setTimeout(function() {
-        const deleteResult = authManager.deleteSave(selectedSaveToDelete);
-        
+    setTimeout(async function() {
+        try {
+            console.debug('[game-select] confirmDelete called for:', selectedSaveToDelete);
+            console.debug('[game-select] authManager currentUser snapshot:', !!authManager && !!authManager.getCurrentUser ? authManager.getCurrentUser() : '(no authManager)');
+        } catch (dbgErr) { console.warn('[game-select] debug read failed:', dbgErr.message); }
+
+        let deleteResult = false;
+        try {
+            if (selectedDeleteType === 'company') {
+                // Call server API to delete company
+                console.debug('[game-select] attempting server-side deletion for company id:', selectedSaveToDelete);
+                try {
+                    const resp = await fetch(`/api/game/companies/${selectedSaveToDelete}`, { method: 'DELETE' });
+                    if (resp.ok) {
+                        deleteResult = true;
+                    } else {
+                        const text = await resp.text();
+                        console.error('[game-select] server delete failed:', resp.status, text);
+                        deleteResult = false;
+                    }
+                } catch (netErr) {
+                    console.error('[game-select] network error deleting company:', netErr.message);
+                    deleteResult = false;
+                }
+            } else {
+                deleteResult = authManager.deleteSave(selectedSaveToDelete);
+                console.debug('[game-select] authManager.deleteSave result:', deleteResult);
+            }
+        } catch (e) {
+            console.error('[game-select] deletion threw:', e && e.message);
+            deleteResult = false;
+        }
+
+        // If deleteResult is false, attempt robust manual fallbacks to remove the save
+        if (!deleteResult) {
+            try {
+                const user = authManager.getCurrentUser ? authManager.getCurrentUser() : (authManager.currentUser || null);
+
+                // 1) Direct key deletion if present
+                if (user && user.saves && user.saves[selectedSaveToDelete]) {
+                console.debug('[game-select] attempting manual deletion fallback for', selectedSaveToDelete);
+                    delete user.saves[selectedSaveToDelete];
+                    const saved = authManager.saveUsers ? authManager.saveUsers() : false;
+                console.debug('[game-select] manual deletion persisted:', saved);
+                    deleteResult = !!saved;
+                } else {
+                    // 2) Search all saves for a matching internal id or name and delete that key
+                    try {
+                        const saves = authManager.getUserSaves ? authManager.getUserSaves() : (user && user.saves ? user.saves : null);
+                        let foundKey = null;
+                        if (saves) {
+                            for (const key in saves) {
+                                if (!Object.prototype.hasOwnProperty.call(saves, key)) continue;
+                                const s = saves[key];
+                                try {
+                                    // match by nested company id
+                                    if (s && s.data && s.data.company && (String(s.data.company.id) === String(selectedSaveToDelete))) {
+                                        foundKey = key;
+                                        break;
+                                    }
+                                    // match by save name
+                                    if (s && s.name && String(s.name) === String(selectedSaveToDelete)) {
+                                        foundKey = key;
+                                        break;
+                                    }
+                                    // match by company name
+                                    if (s && s.data && s.data.company && s.data.company.name && String(s.data.company.name) === String(selectedSaveToDelete)) {
+                                        foundKey = key;
+                                        break;
+                                    }
+                                } catch (inner) { /* ignore per-save errors */ }
+                            }
+                        }
+
+                        if (foundKey) {
+                    console.debug('[game-select] found matching save key via search:', foundKey, 'for', selectedSaveToDelete);
+                            if (user && user.saves && user.saves[foundKey]) {
+                                delete user.saves[foundKey];
+                            } else {
+                                // try users cache if currentUser doesn't hold saves
+                                const email = (authManager.getCurrentUser && authManager.getCurrentUser()?.email) || (authManager.currentUser && authManager.currentUser.email);
+                                if (email && authManager.users && authManager.users[email] && authManager.users[email].saves && authManager.users[email].saves[foundKey]) {
+                                    delete authManager.users[email].saves[foundKey];
+                                }
+                            }
+                            const saved = authManager.saveUsers ? authManager.saveUsers() : false;
+                    console.debug('[game-select] manual deletion (foundKey) persisted:', saved);
+                            deleteResult = !!saved;
+                        } else {
+                            // 3) Try cache stored in authManager.users by email as last resort
+                            try {
+                                const email = (authManager.getCurrentUser && authManager.getCurrentUser()?.email) || (authManager.currentUser && authManager.currentUser.email);
+                                if (email && authManager.users && authManager.users[email] && authManager.users[email].saves && authManager.users[email].saves[selectedSaveToDelete]) {
+                        console.debug('[game-select] attempting manual deletion in authManager.users cache for', selectedSaveToDelete);
+                                    delete authManager.users[email].saves[selectedSaveToDelete];
+                                    const saved = authManager.saveUsers ? authManager.saveUsers() : false;
+                        console.debug('[game-select] manual deletion in users cache persisted:', saved);
+                                    deleteResult = !!saved;
+                                } else {
+                                    console.warn('[game-select] manual deletion fallback: save key not found on currentUser or users cache and search yielded no match');
+                                }
+                            } catch (e) {
+                                console.error('[game-select] error during users-cache fallback:', e && e.message);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[game-select] error during search-based fallback:', e && e.message);
+                    }
+                }
+            } catch (fallbackErr) {
+                console.error('[game-select] manual deletion fallback threw:', fallbackErr && fallbackErr.message);
+            }
+        }
+
         hideLoading();
         hideDeleteModal();
-        
+
         if (deleteResult) {
             showToast('Salvataggio eliminato con successo', 'success');
             loadUserSaves(); // Ricarica la lista
         } else {
-            showToast('Errore durante l\'eliminazione', 'error');
+            showToast('Errore durante l\'eliminazione (controlla console)', 'error');
         }
-        
+
         selectedSaveToDelete = null;
+        
     }, 800);
 }
 
@@ -657,5 +887,4 @@ function hideToast() {
     toast.classList.add('hidden');
 }
 
-console.log('✅ game-select.js caricato');
->>>>>>> Stashed changes
+console.debug('✅ game-select.js caricato');

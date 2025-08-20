@@ -5,26 +5,35 @@
 
 echo "🗑️ Reset database Air Tycoon 2..."
 
-# Variabili database (modifica se necessario)
-DB_HOST="localhost"
-DB_NAME="air_tycoon_2"
-DB_USER="air_tycoon_user"
+# Variabili database (possono essere sovrascritte da env)
+DB_HOST="${DB_HOST:-localhost}"
+DB_NAME="${DB_NAME:-air_tycoon}"
+DB_USER="${DB_USER:-air_tycoon_user}"
+DB_PORT="${DB_PORT:-5432}"
+
+# Modalita' non interattiva: impostare YES=1 per saltare la richiesta di conferma
+NON_INTERACTIVE=${YES:-0}
 
 echo "⚠️ ATTENZIONE: Questo script eliminerà TUTTI i dati del database!"
 echo "Database: $DB_NAME"
 echo "Host: $DB_HOST"
+echo "Port: $DB_PORT"
 echo "User: $DB_USER"
 echo ""
-read -p "Sei sicuro di voler continuare? (y/N): " -n 1 -r
-echo ""
 
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "❌ Operazione annullata"
-    exit 1
+if [ "$NON_INTERACTIVE" -ne 1 ]; then
+    read -p "Sei sicuro di voler continuare? (y/N): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "❌ Operazione annullata"
+            exit 1
+    fi
+else
+    echo "Modalità non interattiva: procedo con il reset"
 fi
 
 echo "🔄 Eliminazione schema esistente..."
-psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+PGPASSWORD="${DB_PASSWORD:-}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 
 if [ $? -eq 0 ]; then
     echo "✅ Schema eliminato e ricreato"
@@ -34,7 +43,7 @@ else
 fi
 
 echo "🔄 Applicazione schema base..."
-psql -h $DB_HOST -U $DB_USER -d $DB_NAME -f database/schema_base.sql
+PGPASSWORD="${DB_PASSWORD:-}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f database/schema_base.sql
 
 if [ $? -eq 0 ]; then
     echo "✅ Schema base applicato con successo"
@@ -45,7 +54,7 @@ fi
 
 echo "🔄 Inserimento dati iniziali..."
 if [ -f "database/initial_data.sql" ]; then
-    psql -h $DB_HOST -U $DB_USER -d $DB_NAME -f database/initial_data.sql
+    PGPASSWORD="${DB_PASSWORD:-}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f database/initial_data.sql
     
     if [ $? -eq 0 ]; then
         echo "✅ Dati iniziali inseriti"
@@ -58,7 +67,7 @@ else
 fi
 
 echo "🔄 Inizializzazione sistema migrazioni..."
-psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "
+PGPASSWORD="${DB_PASSWORD:-}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "
     CREATE TABLE IF NOT EXISTS migration_history (
         id SERIAL PRIMARY KEY,
         version VARCHAR(10) NOT NULL UNIQUE,
