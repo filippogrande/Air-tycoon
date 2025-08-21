@@ -1,4 +1,4 @@
-export function setupSettingsOverlay() {
+function setupSettingsOverlay() {
   const btn = document.getElementById('settings-button');
   const overlay = document.getElementById('settings-overlay');
   if (!btn || !overlay) return;
@@ -43,7 +43,7 @@ export function setupSettingsOverlay() {
 }
 
 // bind handlers for buttons inside the settings overlay
-export function bindSettingsButtons(overlay, game) {
+function bindSettingsButtons(overlay, game) {
   if (!overlay) return;
   if (overlay._settingsButtonsBound) return;
 
@@ -61,7 +61,7 @@ export function bindSettingsButtons(overlay, game) {
             sessionStorage.removeItem('gameState');
             sessionStorage.removeItem('currentSave');
           } catch (e) { /* ignore */ }
-          window.location.href = 'game-select.html';
+          window.location.href = '/game/game/select.html';
         }
       });
     }
@@ -98,4 +98,10 @@ export function bindSettingsButtons(overlay, game) {
   }
 
   overlay._settingsButtonsBound = true;
+}
+
+// Export globale per compatibilità
+if (typeof window !== 'undefined') {
+  window.setupSettingsOverlay = setupSettingsOverlay;
+  window.bindSettingsButtons = bindSettingsButtons;
 }

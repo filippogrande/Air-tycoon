@@ -128,6 +128,13 @@ app.get('/game/:folder/:assetType/*', (req, res, next) => {
 // Servire le pagine del gioco dalla cartella Client/pages
 // NOTE: /game/index.html viene mappato esplicitamente a hub.html
 app.use('/game', express.static(path.join(__dirname, '../Client/pages')));
+
+// Redirect specifico per il percorso vecchio
+app.get('/game/select.html', (req, res) => {
+    console.log('🔄 Redirect /game/select.html -> /game/game/select.html');
+    res.redirect(302, '/game/game/select.html');
+});
+
 // Backwards-compatible mapping: some client code uses /game/pages/... (double 'pages')
 // Provide a permissive static route so /game/pages/auth/login.html -> Client/pages/auth/login.html
 app.use('/game/pages', express.static(path.join(__dirname, '../Client/pages')));
@@ -163,6 +170,9 @@ app.get('/game/index.html', (req, res) => {
 app.use('/game/src', express.static(path.join(__dirname, '../Client/src')));
 app.use('/game/styles', express.static(path.join(__dirname, '../Client/styles')));
 app.use('/game/assets', express.static(path.join(__dirname, '../Client/assets')));
+
+// Sistema unificato - serve tutti i file JS dal percorso Client/src
+app.use('/main-src', express.static(path.join(__dirname, '../Client/src')));
 
 // Serve static assets referenced by hub.html
 app.use('/styles', express.static(path.join(__dirname, '../Client/styles')));

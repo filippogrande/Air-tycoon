@@ -32,17 +32,30 @@
                 <small class="input-help">Ogni scenario offre tecnologie, aerei e condizioni di mercato specifiche dell'epoca</small>
             </div>
             <div class="input-group">
-                <label for="difficulty">🎯 Difficoltà</label>
-                <select id="difficulty" name="difficulty" required>
-                    <option value="easy">🟢 Facile - Budget iniziale alto</option>
-                    <option value="normal" selected>🟡 Normale - Budget bilanciato</option>
-                    <option value="hard">🔴 Difficile - Budget limitato</option>
-                </select>
+                    <!-- Campo difficoltà rimosso per MVP -->
             </div>
             <div class="modal-actions">
                 <button type="button" id="cancel-new-game" class="action-btn secondary">❌ Annulla</button>
                 <button type="submit" class="action-btn primary">🚀 Inizia Gioco</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modale Elimina Salvataggio -->
+<div id="delete-save-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🗑️ Elimina Salvataggio</h3>
+            <button id="close-delete-modal" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+            <p>Sei sicuro di voler eliminare il salvataggio <strong id="delete-save-name"></strong>?</p>
+            <p>Questa azione è irreversibile.</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" id="cancel-delete-save" class="action-btn secondary">Annulla</button>
+            <button type="button" id="confirm-delete-save" class="action-btn danger">Elimina</button>
+        </div>
     </div>
 </div>

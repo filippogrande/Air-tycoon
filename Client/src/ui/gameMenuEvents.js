@@ -1,8 +1,8 @@
 // Gestione eventi menu di gioco per Air Tycoon 2 Clone
 // Estratto da main.js
-import { bindSettingsButtons } from './SettingsOverlay.js';
+// Compatibilità globale - rimuovo import ES6
 
-export function setupGameMenuEvents(game) {
+function setupGameMenuEvents(game) {
     console.debug('🎮 Setup eventi menu di gioco...');
     // Apri menu di gioco
     var gameMenuBtn = document.getElementById('game-menu-btn');
@@ -68,7 +68,7 @@ export function setupGameMenuEvents(game) {
                 } catch (e) {
                     console.warn('⚠️ Errore pulizia dati di gioco:', e);
                 }
-                window.location.href = 'game-select.html';
+                window.location.href = '/game/game/select.html';
             }
         });
     }
@@ -119,7 +119,11 @@ export function setupGameMenuEvents(game) {
                     .then(function(html) {
                         sharedOverlay.innerHTML = html;
                         console.debug('[gameMenuEvents] loaded settings HTML, length=', sharedOverlay.innerHTML.length);
-                        try { bindSettingsButtons(sharedOverlay, game); } catch (e) { console.warn('[gameMenuEvents] bindSettingsButtons failed', e && e.message); }
+                        try { 
+                            if (typeof window.bindSettingsButtons === 'function') {
+                                window.bindSettingsButtons(sharedOverlay, game);
+                            }
+                        } catch (e) { console.warn('[gameMenuEvents] bindSettingsButtons failed', e && e.message); }
                         // attach close on click outside if not already attached
                         if (!sharedOverlay._closeHandlerAttached) {
                             sharedOverlay.addEventListener('click', function(evt) {
@@ -208,7 +212,7 @@ export function setupGameMenuEvents(game) {
     console.debug('✅ Eventi menu di gioco configurati');
 }
 
-export function updateGameMenuInfo(game) {
+function updateGameMenuInfo(game) {
     console.debug('📊 Aggiornamento info menu di gioco...');
     try {
         var authManager = new AuthManager();
@@ -251,4 +255,10 @@ export function updateGameMenuInfo(game) {
     } catch (error) {
         console.error('❌ Errore aggiornamento info menu:', error);
     }
+}
+
+// Export globale per compatibilità
+if (typeof window !== 'undefined') {
+    window.setupGameMenuEvents = setupGameMenuEvents;
+    window.updateGameMenuInfo = updateGameMenuInfo;
 }

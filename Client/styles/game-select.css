@@ -621,3 +621,208 @@ body {
         flex-direction: column;
     }
 }
+
+/* ========== STILI DRILL-DOWN HUB SELECTION ========== */
+
+/* Selected Hub Summary */
+.selected-hub-summary {
+    min-height: 50px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 2px dashed #ced4da;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-style: italic;
+    transition: all 0.3s ease;
+}
+
+.selected-hub-summary.selected {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: 2px solid #28a745;
+    color: white;
+    font-style: normal;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Hub Modal Specific Styles */
+#select-hub-modal .modal-content {
+    max-width: 600px;
+    width: 90%;
+}
+
+#select-hub-modal .input-group {
+    position: relative;
+}
+
+#select-hub-modal .input-group label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+
+#select-hub-modal select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #ced4da;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    padding-right: 45px;
+}
+
+#select-hub-modal select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+#select-hub-modal select:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Animazioni per le transizioni drill-down */
+#select-hub-modal select {
+    opacity: 0.7;
+    transform: translateY(-5px);
+    animation: slideInDown 0.3s ease forwards;
+}
+
+@keyframes slideInDown {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Indicatori di stato per le select */
+#select-hub-modal .input-group::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 40px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dc3545;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#select-hub-modal .input-group.completed::after {
+    background: #28a745;
+    opacity: 1;
+}
+
+/* Stili per opzioni con emoji */
+#select-hub-modal select option {
+    padding: 8px 12px;
+    font-size: 15px;
+}
+
+/* Conferma button states */
+#confirm-hub-btn:disabled {
+    background: #6c757d !important;
+    cursor: not-allowed;
+}
+
+#confirm-hub-btn:not(:disabled) {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-color: #28a745;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+/* Responsive per hub modal */
+@media (max-width: 768px) {
+    #select-hub-modal .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    #select-hub-modal select {
+        font-size: 14px;
+        padding: 10px 12px;
+        padding-right: 40px;
+    }
+    
+    .selected-hub-summary {
+        font-size: 14px;
+        padding: 12px;
+        min-height: 45px;
+    }
+}
+
+/* Bottone cestino per eliminare salvataggio */
+.delete-save-btn {
+    background: none;
+    border: none;
+    color: #c0392b;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: color 0.2s;
+}
+.delete-save-btn:hover {
+    color: #e74c3c;
+}
+.delete-save-btn.red {
+    background: #c0392b;
+    color: #fff;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 1.3rem;
+    border: none;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.delete-save-btn.red:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+/* Modale Elimina Salvataggio */
+#delete-save-modal .modal-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+    justify-content: flex-start;
+    padding-left: 32px;
+    margin-bottom: 32px;
+}
+#delete-save-modal .action-btn {
+    min-width: 120px;
+}
+#delete-save-modal .modal-actions::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 16px;
+}

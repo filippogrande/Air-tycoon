@@ -1,7 +1,7 @@
 // AuthManager (client module) - Gestione autenticazione con SERVER-FIRST
 console.debug('📂 Caricamento AuthManager (module)...');
 
-export class AuthManager {
+class AuthManager {
 	constructor() {
 		this.currentUser = null;
 		this.users = this.loadUsers(); // Carica cache utenti (per compatibilità)

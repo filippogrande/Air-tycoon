@@ -10,6 +10,23 @@ function resolveGameDate() {
             if (typeof s.gameYear !== 'undefined' && typeof s.gameMonth !== 'undefined') {
                 return { year: Number(s.gameYear), month: Number(s.gameMonth) };
             }
+            // support other common shapes used in the codebase
+            if (s.gameDate) {
+                const d = new Date(s.gameDate);
+                if (!isNaN(d)) return { year: d.getFullYear(), month: d.getMonth() + 1 };
+            }
+            if (s.gameTime) {
+                // gameTime may be a Date-like or an object with formatDate()
+                try {
+                    if (typeof s.gameTime.getFullYear === 'function') {
+                        return { year: s.gameTime.getFullYear(), month: s.gameTime.getMonth() + 1 };
+                    }
+                    if (typeof s.gameTime.formatDate === 'function') {
+                        const d2 = new Date(s.gameTime.formatDate());
+                        if (!isNaN(d2)) return { year: d2.getFullYear(), month: d2.getMonth() + 1 };
+                    }
+                } catch (e) { /* ignore */ }
+            }
             if (s.date) {
                 const d = new Date(s.date);
                 if (!isNaN(d)) return { year: d.getFullYear(), month: d.getMonth() + 1 };
@@ -25,7 +42,9 @@ function groupAircraft(types) {
     const byManufacturer = {};
     types.forEach(t => {
         const m = t.manufacturer || 'Unknown';
-        const family = t.family || (t.series || 'Generic');
+        // Prefer using the declared `category` (regional, narrow_body, wide_body, cargo)
+        // as the secondary grouping when available; fall back to family/series if missing.
+        const family = t.category || t.family || t.series || '';
         if (!byManufacturer[m]) byManufacturer[m] = {};
         if (!byManufacturer[m][family]) byManufacturer[m][family] = [];
         byManufacturer[m][family].push(t);
@@ -33,8 +52,55 @@ function groupAircraft(types) {
     return byManufacturer;
 }
 
+function computeCabinAreaMeters(model) {
+    const l = parseFloat(model.cabin_length_meters || model.cabin_length || 0);
+    const w = parseFloat(model.cabin_width_meters || model.cabin_width || 0);
+    if (!l || !w) return null;
+    return l * w;
+}
+
+// Try to fetch the company's canonical game date (same source used by header)
+// Returns { year, month } or null
+async function getCompanyGameDate(companyId) {
+    if (!companyId) return null;
+    try {
+        const r = await loggedFetch(`/api/game/companies/${companyId}`);
+        if (!r.ok) return null;
+        const json = await r.json().catch(() => null);
+        if (!json || !json.success || !json.data || !json.data.company) return null;
+        const c = json.data.company;
+        const dateStr = c.game_date || c.founded || c.created_at || c.createdAt;
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return null;
+        return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    } catch (e) {
+        console.warn('[FleetTab] getCompanyGameDate error', e && e.message);
+        return null;
+    }
+}
+
+// Wrapper around fetch that logs full request and full response (clones response body)
+async function loggedFetch(input, init) {
+    try {
+        console.debug('[loggedFetch] Request ->', { input, init });
+        const res = await fetch(input, init);
+        // clone so we can read body for logging without consuming the original stream
+        const clone = res.clone();
+        let bodyText = null;
+        try {
+            bodyText = await clone.text();
+        } catch (e) { bodyText = '<unreadable>'; }
+        console.debug('[loggedFetch] Response <-', { url: res.url, status: res.status, ok: res.ok, headers: Array.from(res.headers.entries()), body: bodyText });
+        return res;
+    } catch (err) {
+        console.error('[loggedFetch] error', err);
+        throw err;
+    }
+}
+
 // Attempts purchase (module-scope so both modal and tab UI can call it)
-async function attemptPurchase(aircraftType) {
+async function attemptPurchase(aircraftType, includeCampoMod = false) {
     const companyId = sessionStorage.getItem('selectedCompanyId');
     if (!companyId) {
         alert('Nessuna compagnia selezionata.');
@@ -46,13 +112,23 @@ async function attemptPurchase(aircraftType) {
     if (!confirm(`Confermi l'acquisto di ${aircraftType.name || aircraftType.model || aircraftType.id} per la compagnia ${companyId}?`)) return;
 
     try {
+        // includeCampoMod is an explicit flag (true when user picked "con modifica").
+        let basePrice = (typeof aircraftType.purchase_price !== 'undefined' && aircraftType.purchase_price !== null) ? Number(aircraftType.purchase_price) : null;
+        let extra = 0;
+        try {
+            if (includeCampoMod && aircraftType.campo_aviazione_mod_cost) {
+                extra = Number(aircraftType.campo_aviazione_mod_cost) || 0;
+            }
+        } catch (e) { /* ignore */ }
+        const finalPriceToSend = (basePrice !== null) ? (basePrice + extra) : null;
+
         const body = {
             company_id: companyId,
             aircraft_type_id: aircraftType.id,
             registration: registration,
-            purchase_price: aircraftType.purchase_price || null
+            purchase_price: finalPriceToSend
         };
-        const r = await fetch('/api/fleet/purchase', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await loggedFetch('/api/fleet/purchase', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         let json = null;
         try { json = await r.json(); } catch(e) { /* ignore */ }
         if (!r.ok || !json || !json.success) {
@@ -86,8 +162,17 @@ function renderModelsInTab(modelsEl, models, detailsEl) {
         title.textContent = m.name || m.model || ('Model ' + (m.id || ''));
         const info = document.createElement('div'); info.className = 'model-row-info';
         const priceStr = (typeof m.purchase_price !== 'undefined' && m.purchase_price !== null) ? Number(m.purchase_price).toLocaleString('it-IT') + ' €' : '—';
-        const capacityStr = (typeof m.capacity !== 'undefined' && m.capacity !== null) ? m.capacity : 'N/A';
-        info.textContent = `${capacityStr} posti • ${m.range_km || m.range || 'N/A'} km • ${priceStr}`;
+        // Determine capacity/area display: cargo shows capacity (tonnellate), others show cabin area if capacity not set
+        let capacityDisplay = 'N/A';
+        if (m.category === 'cargo' && typeof m.capacity !== 'undefined' && m.capacity !== null) {
+            capacityDisplay = String(m.capacity) + ' t';
+        } else if (typeof m.capacity !== 'undefined' && m.capacity !== null) {
+            capacityDisplay = String(m.capacity) + ' posti';
+        } else {
+            const area = computeCabinAreaMeters(m);
+            capacityDisplay = area ? (Number(area).toFixed(1) + ' m²') : 'N/A';
+        }
+        info.textContent = `${capacityDisplay} • ${m.range_km || m.range || 'N/A'} km • ${priceStr}`;
         row.appendChild(title); row.appendChild(info);
         row.addEventListener('click', () => showModelDetails(detailsEl, m));
         modelsEl.appendChild(row);
@@ -98,40 +183,174 @@ function showModelDetails(detailsEl, model) {
     if (!detailsEl) return;
     detailsEl.innerHTML = '';
     const wrapper = document.createElement('div'); wrapper.className = 'model-details';
+
+    // Image area
     let img;
     if (model.image_path) {
-        // allow storing either full path (/assets/aircraft/x.png) or just filename (a320.png or a320)
         let imageSrc = String(model.image_path || '').trim();
         if (imageSrc && !/^https?:\/\//i.test(imageSrc)) {
-            if (!imageSrc.startsWith('/')) {
-                // treat as filename and prepend folder
-                imageSrc = '/assets/aircraft/' + imageSrc;
-            }
-            // add default extension if missing
+            if (!imageSrc.startsWith('/')) imageSrc = '/assets/aircraft/' + imageSrc;
             if (!/\.[a-z0-9]{2,4}$/i.test(imageSrc)) imageSrc = imageSrc + '.png';
         }
         img = document.createElement('img');
         img.src = imageSrc;
         img.alt = model.name || model.model || 'Aircraft image';
-        img.style.width = '100%'; img.style.height = '160px'; img.style.objectFit = 'cover'; img.style.border = '1px solid #e6e6e6'; img.style.marginBottom = '10px';
+        img.style.width = '100%'; img.style.maxWidth = '100%'; img.style.objectFit = 'contain'; img.style.border = '1px solid #e6e6e6'; img.style.marginBottom = '10px';
     } else {
         img = document.createElement('div'); img.className = 'model-image-placeholder';
         img.style.width = '100%'; img.style.height = '160px'; img.style.background = 'linear-gradient(90deg,#eee,#f7f7f7)'; img.style.border = '1px solid #e6e6e6'; img.style.marginBottom = '10px'; img.textContent = 'Immagine (placeholder)'; img.style.display = 'flex'; img.style.alignItems = 'center'; img.style.justifyContent = 'center'; img.style.color = '#888';
     }
+
     const title = document.createElement('h3'); title.textContent = model.name || model.model || 'Modello';
+
     const specs = document.createElement('div'); specs.className = 'model-specs';
-    const capacityStr = (typeof model.capacity !== 'undefined' && model.capacity !== null) ? model.capacity : 'N/A';
+
+    // capacity / area
+    const capRow = document.createElement('div');
+    if (model.category === 'cargo' && typeof model.capacity !== 'undefined' && model.capacity !== null) {
+        capRow.innerHTML = `<strong>Capacità (t):</strong> ${String(model.capacity)}`;
+    } else if (typeof model.capacity !== 'undefined' && model.capacity !== null) {
+        capRow.innerHTML = `<strong>Posti:</strong> ${String(model.capacity)}`;
+    } else {
+        const area = computeCabinAreaMeters(model);
+        capRow.innerHTML = `<strong>Dimensione (m²):</strong> ${area ? Number(area).toFixed(1) : 'N/A'}`;
+    }
+    specs.appendChild(capRow);
+
+    const rangeRow = document.createElement('div'); rangeRow.innerHTML = `<strong>Range:</strong> ${model.range_km || model.range || 'N/A'} km`;
+    specs.appendChild(rangeRow);
+
     const priceStr = (typeof model.purchase_price !== 'undefined' && model.purchase_price !== null) ? Number(model.purchase_price).toLocaleString('it-IT') + ' €' : '—';
-    specs.innerHTML = `<div><strong>Posti:</strong> ${capacityStr}</div><div><strong>Range:</strong> ${model.range_km || model.range || 'N/A'} km</div><div><strong>Prezzo:</strong> ${priceStr}</div>`;
-    const buy = document.createElement('button'); buy.className = 'buy-aircraft-btn'; buy.type = 'button'; buy.textContent = 'Acquista questo aeromobile';
-    buy.style.marginTop = '12px';
-    buy.addEventListener('click', () => attemptPurchase(model));
-    wrapper.appendChild(img); wrapper.appendChild(title); wrapper.appendChild(specs); wrapper.appendChild(buy);
+    const priceRow = document.createElement('div'); priceRow.innerHTML = `<strong>Prezzo:</strong> ${priceStr}`;
+    specs.appendChild(priceRow);
+
+    specs.appendChild(document.createElement('hr'));
+
+    const fuelStr = (typeof model.fuel_consumption !== 'undefined' && model.fuel_consumption !== null) ? String(model.fuel_consumption) + ' L/h' : 'N/A';
+    const fuelRow = document.createElement('div'); fuelRow.innerHTML = `<strong>Consumo carburante:</strong> ${fuelStr}`;
+    specs.appendChild(fuelRow);
+
+    const maintStr = (typeof model.maintenance_cost_per_hour !== 'undefined' && model.maintenance_cost_per_hour !== null) ? Number(model.maintenance_cost_per_hour).toLocaleString('it-IT') + ' € / h' : 'N/A';
+    const maintRow = document.createElement('div'); maintRow.innerHTML = `<strong>Costo manutenzione:</strong> ${maintStr}`;
+    specs.appendChild(maintRow);
+
+    const marketYear = model.market_entry_year || 'N/A';
+    const marketRow = document.createElement('div'); marketRow.innerHTML = `<strong>Anno ingresso mercato:</strong> ${marketYear}`;
+    specs.appendChild(marketRow);
+
+    // Campo aviazione: preferiamo guardare `campo_aviazione_mod_available` come criterio primario.
+    const modAvailablePrimary = !!model.campo_aviazione_mod_available;
+    // If a modification is available we present the modification block and show Opera da campo aviazione: No
+    // (business data guarantees these won't conflict). Otherwise show the actual can_operate value.
+    const canOperate = modAvailablePrimary ? false : !!model.can_operate_campo_aviazione;
+    const canOperateRow = document.createElement('div'); canOperateRow.innerHTML = `<strong>Opera da campo aviazione:</strong> ${canOperate ? 'Sì' : 'No'}`;
+    specs.appendChild(canOperateRow);
+
+    const campoBlock = document.createElement('div'); campoBlock.id = 'campo-mod-section'; campoBlock.style.marginTop = '6px';
+    if (modAvailablePrimary) {
+        const modAvailableRow = document.createElement('div'); modAvailableRow.innerHTML = `<strong>Modifica campo aviazione disponibile:</strong> Sì`;
+        campoBlock.appendChild(modAvailableRow);
+        const campoModCostRaw = (typeof model.campo_aviazione_mod_cost !== 'undefined' && model.campo_aviazione_mod_cost !== null) ? Number(model.campo_aviazione_mod_cost) : null;
+        if (campoModCostRaw) {
+            const costRow = document.createElement('div'); costRow.innerHTML = `<strong>Costo modifica campo:</strong> ${campoModCostRaw.toLocaleString('it-IT')} €`;
+            campoBlock.appendChild(costRow);
+            // action buttons are rendered in the actions container below to avoid duplication
+        } else {
+            const costRow = document.createElement('div'); costRow.innerHTML = `<strong>Costo modifica campo:</strong> —`;
+            campoBlock.appendChild(costRow);
+        }
+    }
+
+    specs.appendChild(campoBlock);
+
+    // Ownership info placeholder (will be populated)
+    const ownershipEl = document.createElement('div'); ownershipEl.id = 'model-ownership'; ownershipEl.style.marginTop = '8px'; ownershipEl.style.color = '#666'; ownershipEl.style.fontSize = '0.9em';
+    specs.appendChild(ownershipEl);
+
+    // Append built pieces to wrapper then to detailsEl so that later DOM queries work reliably
+    wrapper.appendChild(img);
+    wrapper.appendChild(title);
+    wrapper.appendChild(specs);
+
+    // Actions container: single full-width button, or two half-width buttons when campo-mod available
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '8px';
+    actions.style.marginTop = '12px';
+
+    // determine if campo mod and cost
+    const campoModCostRaw = (typeof model.campo_aviazione_mod_cost !== 'undefined' && model.campo_aviazione_mod_cost !== null) ? Number(model.campo_aviazione_mod_cost) : null;
+    if (modAvailablePrimary && campoModCostRaw) {
+        const buyNormal = document.createElement('button');
+        buyNormal.type = 'button'; buyNormal.className = 'buy-aircraft-btn'; buyNormal.textContent = 'Acquista aereo';
+        buyNormal.style.flex = '1';
+        buyNormal.addEventListener('click', () => attemptPurchase(model, false));
+
+        const buyWithMod = document.createElement('button');
+        buyWithMod.type = 'button'; buyWithMod.className = 'buy-aircraft-btn'; buyWithMod.textContent = 'Acquista aereo con modifica';
+        buyWithMod.style.flex = '1';
+        buyWithMod.addEventListener('click', () => attemptPurchase(model, true));
+
+        actions.appendChild(buyNormal);
+        actions.appendChild(buyWithMod);
+    } else {
+        const buySingle = document.createElement('button');
+        buySingle.type = 'button'; buySingle.className = 'buy-aircraft-btn'; buySingle.textContent = 'Acquista aereo';
+        buySingle.style.width = '100%'; buySingle.style.flex = '1';
+        buySingle.addEventListener('click', () => attemptPurchase(model, false));
+        actions.appendChild(buySingle);
+    }
+
+    wrapper.appendChild(actions);
     detailsEl.appendChild(wrapper);
+
+    // Fetch company fleet to compute how many of this model the player already owns
+    (async function loadOwnership() {
+        try {
+            const companyId = sessionStorage.getItem('selectedCompanyId');
+            if (!ownershipEl) return;
+            if (!companyId) {
+                ownershipEl.innerHTML = '<em>Nessuna compagnia selezionata</em>';
+                return;
+            }
+            ownershipEl.innerHTML = '<em>Caricamento informazioni proprietà...</em>';
+            const r = await loggedFetch(`/api/fleet/company/${companyId}`);
+            if (!r.ok) {
+                ownershipEl.innerHTML = '<em>Impossibile recuperare la flotta della compagnia</em>';
+                return;
+            }
+            const json = await r.json();
+            if (!json || !json.success || !json.data || !Array.isArray(json.data.aircraft)) {
+                ownershipEl.innerHTML = '<em>Dati flotta non disponibili</em>';
+                return;
+            }
+            const fleet = json.data.aircraft;
+            const sameModelCount = fleet.filter(a => Number(a.aircraft_type_id) === Number(model.id)).length;
+            ownershipEl.innerHTML = `<strong>Possieduti:</strong> ${sameModelCount}`;
+            ownershipEl.style.color = '#333';
+            ownershipEl.style.fontWeight = '600';
+        } catch (err) {
+            if (ownershipEl) ownershipEl.innerHTML = '<em>Errore nel recupero proprietà</em>';
+            console.warn('[FleetTab] loadOwnership error', err);
+        }
+    })();
 }
 
-export function initFleetTab() {
-    if (window._fleetTabInitialized) return;
+function initFleetTab() {
+    // If already initialized, don't re-run full init, but re-bind the buy button
+    // in case the DOM was restored (listeners are lost when innerHTML is replaced).
+    if (window._fleetTabInitialized) {
+        try {
+            const buyBtn = document.getElementById('buy-aircraft');
+            if (buyBtn && !buyBtn._bound) {
+                buyBtn.addEventListener('click', function() {
+                    openFleetPurchaseUI('fleet');
+                });
+                buyBtn._bound = true;
+            }
+        } catch (e) { /* ignore */ }
+        return;
+    }
     window._fleetTabInitialized = true;
     console.debug('FleetTab inizializzato (enhanced)');
 
@@ -186,10 +405,13 @@ export function initFleetTab() {
         manufacturersEl.innerHTML = '';
         Object.keys(grouped).sort().forEach(man => {
             const b = document.createElement('div'); b.className = 'manufacturer'; b.textContent = man;
-            b.style.padding = '8px 10px';
-            b.style.cursor = 'pointer';
-            b.style.borderBottom = '1px solid rgba(0,0,0,0.06)';
-            b.style.minHeight = '36px';
+                // increase vertical spacing and add clearer divider
+                b.style.padding = '12px 10px';
+                b.style.cursor = 'pointer';
+                b.style.borderBottom = '1px solid rgba(0,0,0,0.12)';
+                b.style.minHeight = '44px';
+                b.style.display = 'flex';
+                b.style.alignItems = 'center';
             b.addEventListener('click', () => {
                 // highlight
                 manufacturersEl.querySelectorAll('.manufacturer').forEach(n => n.classList.remove('active'));
@@ -254,8 +476,9 @@ export function initFleetTab() {
     async function loadAvailable(year, month) {
         catalog.innerHTML = '<div class="loading">Caricamento catalogo...</div>';
         try {
-            const url = `/api/fleet/available?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
-            const r = await fetch(url);
+                console.debug('[FleetTab] loadAvailable - resolved date', { year, month, gameState: (window.game && window.game.state) });
+                const url = `/api/fleet/available?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
+            const r = await loggedFetch(url);
             if (!r.ok) {
                 // try to read JSON body for better error message
                 let bodyText = null;
@@ -295,7 +518,7 @@ export function initFleetTab() {
 }
 
 // Open purchase UI directly inside the Fleet tab (replaces tab content)
-export async function openFleetPurchaseUI(origin) {
+async function openFleetPurchaseUI(origin) {
     const fleetTab = document.getElementById('fleet-tab');
     if (!fleetTab) return;
 
@@ -305,9 +528,21 @@ export async function openFleetPurchaseUI(origin) {
     // show loading
     fleetTab.innerHTML = '<div class="loading">Caricamento catalogo...</div>';
 
-    const gd = resolveGameDate();
+    // Prefer the company's canonical game_date (same as header) when available
+    const companyId = sessionStorage.getItem('selectedCompanyId');
+    let gd = null;
     try {
-        const r = await fetch(`/api/fleet/available?year=${encodeURIComponent(gd.year)}&month=${encodeURIComponent(gd.month)}`);
+        if (companyId) {
+            gd = await getCompanyGameDate(companyId);
+            if (gd) console.debug('[FleetTab] openFleetPurchaseUI - using company game_date', gd);
+        }
+    } catch (e) { /* ignore */ }
+    if (!gd) {
+        gd = resolveGameDate();
+        try { console.debug('[FleetTab] openFleetPurchaseUI - fallback resolved game date', gd, { gameState: (window.game && window.game.state) }); } catch (e) { }
+    }
+    try {
+    const r = await loggedFetch(`/api/fleet/available?year=${encodeURIComponent(gd.year)}&month=${encodeURIComponent(gd.month)}`);
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const json = await r.json();
         if (!json || !json.success) throw new Error(json && json.error ? json.error : 'Invalid response');
@@ -316,9 +551,9 @@ export async function openFleetPurchaseUI(origin) {
         // render inside fleetTab
         fleetTab.innerHTML = `
             <div class="fleet-purchase-root">
-                <div class="fleet-purchase-header">
-                    <button id="fleet-purchase-back" type="button" class="btn">← Torna</button>
-                    <h2>Acquista Aeromobile</h2>
+                <div class="fleet-purchase-header" style="position:relative;display:flex;align-items:center;gap:12px;padding-right:12px;">
+                    <button id="fleet-purchase-back" type="button" class="buy-aircraft-btn" style="padding:8px 12px;font-size:14px;height:38px;width:auto;min-width:88px;max-width:180px;">← Torna</button>
+                    <h2 style="position:absolute;left:50%;transform:translateX(-50%);margin:0;">Acquista Aeromobile</h2>
                 </div>
                 <div class="fleet-purchase-body" style="display:flex; gap:12px; align-items:flex-start;">
                     <div class="column manufacturers" style="min-width:160px; max-width:240px; overflow:auto;"></div>
@@ -338,6 +573,13 @@ export async function openFleetPurchaseUI(origin) {
         manufacturersEl.innerHTML = '';
         Object.keys(grouped).sort().forEach(man => {
             const b = document.createElement('div'); b.className = 'manufacturer'; b.textContent = man;
+            // increase vertical spacing and add clearer divider (same as modal)
+            b.style.padding = '12px 10px';
+            b.style.cursor = 'pointer';
+            b.style.borderBottom = '1px solid rgba(0,0,0,0.12)';
+            b.style.minHeight = '44px';
+            b.style.display = 'flex';
+            b.style.alignItems = 'center';
             b.addEventListener('click', () => {
                 manufacturersEl.querySelectorAll('.manufacturer').forEach(n => n.classList.remove('active'));
                 b.classList.add('active');
@@ -392,3 +634,11 @@ export async function openFleetPurchaseUI(origin) {
 }
 
 // (renderModelsInTab is defined earlier at module scope)
+
+// Esportazioni globali per compatibilità
+window.initFleetTab = initFleetTab;
+window.openFleetPurchaseUI = openFleetPurchaseUI;
+window.resolveGameDate = resolveGameDate;
+window.groupAircraft = groupAircraft;
+
+console.log('✅ FleetTab caricato con sistema avanzato di acquisto aeromobili');

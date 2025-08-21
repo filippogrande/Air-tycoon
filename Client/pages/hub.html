@@ -18,27 +18,19 @@
         <!-- Header con informazioni compagnia -->
         <header id="game-header">
             <div class="company-info">
-                    <div class="logo-wrap">
-                        <img src="../assets/logo.svg" alt="Air Tycoon" id="site-logo">
-                    </div>
-                    <h1 id="company-name">Air Express</h1>
+                <div class="logo-wrap">
+                    <img src="../assets/logo.svg" alt="Air Tycoon" id="site-logo">
+                </div>
+                <h1 id="company-name">Air Express</h1>
                 <div class="stats">
                     <span id="money">💰 00,000</span>
                     <span id="reputation">⭐ 0</span>
                     <span id="game-date" class="game-date"></span>
                     <button id="settings-button" title="Impostazioni"></button>
+                    <button id="back-to-menu-button" title="Torna al Menu" onclick="window.clearGameSession(); window.location.href='/game/game/select.html'">📋 Menu</button>
                 </div>
             </div>
         </header>
-
-        <!-- Menu principale -->
-        <nav id="main-menu">
-            <button class="menu-btn active" data-tab="world">🌍 Mappa</button>
-            <button class="menu-btn" data-tab="fleet">✈️ Flotta</button>
-            <button class="menu-btn" data-tab="routes">🛣️ Rotte</button>
-            <button class="menu-btn" data-tab="finances">💼 Finanze</button>
-            <button class="menu-btn" data-tab="research">🔬 Ricerca</button>
-        </nav>
 
         <!-- Area principale del gioco -->
         <main id="game-main">
@@ -119,8 +111,86 @@
     <!-- Scripts -->
     <!-- Leaflet JS: ensure the global `L` is available for client modules like WorldMap -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="../src/pages/hubPage.js" type="module"></script>
-        <!-- Gli altri script (manager, utils, main.js) rimangono per ora, ma la logica di pagina è ora in hubPage.js -->
+    
+    <!-- Entità base -->
+    <script src="/main-src/entities/Aircraft.js"></script>
+    <script src="/main-src/entities/Airport.js"></script>
+    <script src="/main-src/entities/Route.js"></script>
+    
+    <!-- Core system -->
+    <script src="/main-src/core/GameState.js"></script>
+    <script src="/main-src/core/Game.js"></script>
+    
+    <!-- Manager -->
+    <script src="/main-src/managers/FleetManager.js"></script>
+    <script src="/main-src/managers/RouteManager.js"></script>
+    <script src="/main-src/managers/FinanceManager.js"></script>
+    <script src="/main-src/managers/HubManager.js"></script>
+    <script src="/main-src/managers/DemandEstimationManager.js"></script>
+    <script src="/main-src/managers/InfrastructureManager.js"></script>
+    
+    <!-- UI e Utils -->
+    <script src="/main-src/utils/core-utils.js"></script>
+    <script src="/main-src/utils/APIClient.js"></script>
+    <script src="/main-src/utils/AuthManager.js"></script>
+    <script src="/main-src/utils/RouteCalculator.js"></script>
+    <script src="/main-src/utils/MapVisibilityManager.js"></script>
+    <script src="/main-src/utils/SaveLoad.js"></script>
+    <script src="/main-src/load-game.js"></script>
+    <script src="/main-src/ui/SettingsOverlay.js"></script>
+    <script src="/main-src/ui/gameMenuEvents.js"></script>
+    
+    <!-- Route System Modules -->
+    <script src="/main-src/ui/modules/RouteStateManager.js"></script>
+    <script src="/main-src/ui/modules/RoutePanelManager.js"></script>
+    <script src="/main-src/ui/modules/RouteAircraftManager.js"></script>
+    <script src="/main-src/ui/modules/RouteDemandAnalysisManager.js"></script>
+    <script src="/main-src/ui/modules/RouteMarketAnalysisManager.js"></script>
+    <script src="/main-src/ui/modules/RouteCreationManager.js"></script>
+    <script src="/main-src/ui/modules/RouteCalculationUtils.js"></script>
+    <script src="/main-src/ui/modules/RouteEventManager.js"></script>
+    
+    <script src="/main-src/ui/RouteUIManager.js"></script>
+    <script src="/main-src/ui/UIManager.js"></script>
+    <script src="/main-src/graphics/WorldMap.js"></script>
+    <script src="/main-src/ui/FleetTab.js"></script>
+    <script src="/main-src/pages/hubPage-simple.js"></script>
+    
+    <!-- Engines -->
+    <script src="/main-src/simulation/EconomyEngine.js"></script>
+    
+    <!-- Main game initialization -->
+    <script src="/main-src/main.js"></script>
+    
+    <!-- Inizializzazione hub semplificata -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup settings overlay se disponibile
+            if (typeof setupSettingsOverlay === 'function') {
+                setupSettingsOverlay();
+            }
+            
+            // Setup semplice per i tab (solo mappa attiva per ora)
+            const tabBtns = document.querySelectorAll('.menu-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    
+                    // Rimuovi classe active da tutti
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(t => t.classList.remove('active'));
+                    
+                    // Aggiungi active al selezionato
+                    this.classList.add('active');
+                    document.getElementById(tabName + '-tab').classList.add('active');
+                });
+            });
+            
+            console.log('📋 Hub UI inizializzata');
+        });
+    </script>
     </div>
 </body>
 </html>

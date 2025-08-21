@@ -120,7 +120,9 @@ function initializeGame(companyId) {
         // Setup eventi UI
         setupUIEvents();
         // Setup eventi del menu di gioco dopo che il game è inizializzato
-        setupGameMenuEvents(game);
+        if (typeof window.setupGameMenuEvents === 'function') {
+            window.setupGameMenuEvents(game);
+        }
     console.debug('✅ Gioco avviato con successo!');
     } catch (error) {
         console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
@@ -268,8 +270,7 @@ function updateCompanyStatsInHeader(company) {
 // Debug: Espone oggetti globali per testing (solo in development)
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     window.debugGame = () => game;
-    window.debugAircraftData = AircraftData;
-    window.debugAirportData = AirportData;
+    // AircraftData e AirportData rimossi - ora usando API del database
     window.debugSaveLoad = SaveLoad;
     
     console.debug('🐛 Modalità debug attiva. Usa window.debugGame() per accedere al gioco.');
@@ -308,8 +309,8 @@ Comandi disponibili:
 // Inizializzazione completata
 console.debug('🎮 Sistema di gioco caricato e pronto!');
 
-// Setup eventi del menu di gioco
-import { setupGameMenuEvents, updateGameMenuInfo } from './ui/gameMenuEvents.js';
+// Setup eventi del menu di gioco - Compatibilità globale
+// Rimosso import ES6, uso funzioni globali
 
 // Aggiorna informazioni nel menu di gioco
 function updateGameMenuInfo() {

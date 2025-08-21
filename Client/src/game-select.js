@@ -1,67 +1,77 @@
-// Script per la selezione dei salvataggi (module)
-import { AuthManager } from '/src/utils/AuthManager.js';
-
-console.debug('🎮 Caricamento game-select.js...');
+// Script per la selezione dei salvataggi - Sistema Unificato
+console.log('🎮 Caricamento game-select.js...');
 
 let authManager;
 let currentUser;
 let selectedSaveToDelete = null;
-let selectedDeleteType = 'save'; // 'save' (local) or 'company' (server)
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.debug('🎮 Inizializzazione pagina selezione giochi...');
+    console.log('🎮 Inizializzazione pagina selezione giochi...');
     
     authManager = new AuthManager();
     
     // Verifica autenticazione
     if (!authManager.loadCurrentUser()) {
-    console.debug('❌ Utente non autenticato, reindirizzo al login...');
+        console.log('❌ Utente non autenticato, reindirizzo al login...');
         window.location.href = 'pages/auth/login.html';
         return;
     }
     
     currentUser = authManager.getCurrentUser();
-    console.debug('✅ Utente autenticato:', currentUser.email);
+    console.log('✅ Utente autenticato:', currentUser.email);
     
     initializeGameSelectPage();
+    
+    setupDeleteModalListeners();
 });
 
-// If selectPage injected modals before this script loaded, process them now
-if (typeof window !== 'undefined' && Array.isArray(window.__injectedModals)) {
-    window.__injectedModals.forEach(id => {
-        try { if (window.onModalInjected) window.onModalInjected(id); } catch (e) { /* ignore */ }
-    });
-    // clear them after processing
-    window.__injectedModals = [];
+function setupDeleteModalListeners() {
+    const closeDeleteModalBtn = document.getElementById('close-delete-modal');
+    if (closeDeleteModalBtn) {
+        closeDeleteModalBtn.addEventListener('click', function() {
+            document.getElementById('delete-save-modal').classList.add('hidden');
+            selectedSaveToDelete = null;
+        });
+    }
+    const cancelDeleteSaveBtn = document.getElementById('cancel-delete-save');
+    if (cancelDeleteSaveBtn) {
+        cancelDeleteSaveBtn.addEventListener('click', function() {
+            document.getElementById('delete-save-modal').classList.add('hidden');
+            selectedSaveToDelete = null;
+        });
+    }
+    const confirmDeleteSaveBtn = document.getElementById('confirm-delete-save');
+    if (confirmDeleteSaveBtn) {
+        confirmDeleteSaveBtn.addEventListener('click', async function() {
+            if (!selectedSaveToDelete) return;
+            showLoading('Eliminazione salvataggio...');
+            try {
+                const res = await fetch(`/api/game/saves/${selectedSaveToDelete}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Errore eliminazione salvataggio');
+                showToast('Salvataggio eliminato', 'success');
+                document.getElementById('delete-save-modal').classList.add('hidden');
+                loadUserSaves();
+            } catch (e) {
+                showToast('Errore: ' + e.message, 'error');
+            } finally {
+                hideLoading();
+                selectedSaveToDelete = null;
+            }
+        });
+    }
 }
 
-// Listen to custom event dispatched by selectPage when a modal is injected
-document.addEventListener('modalInjected', function(e) {
-    try {
-        const id = e && e.detail && e.detail.id;
-        if (id && window.onModalInjected) window.onModalInjected(id);
-    } catch (err) { /* ignore */ }
-});
-
-// AirportData must be provided by `Client/src/data/SimpleData.js` at build time.
-// No runtime fallback is used — if AirportData is missing, fail fast so bugs
-// are visible during development.
-
-function initializeGameSelectPage() {
+async function initializeGameSelectPage() {
     // Mostra nome utente
     updateUserInfo();
     
     // Carica salvataggi
     loadUserSaves();
     
-    // Nota: Non carichiamo AirportData automaticamente a pagina aperta.
-    // I dati aeroportuali vengono caricati on-demand quando l'utente apre la
-    // modal "Nuovo Gioco" per evitare lavoro inutile e problemi di timing.
-    
     // Setup event listeners
     setupEventListeners();
     
-    console.debug('✅ Pagina selezione giochi inizializzata');
+    console.log('✅ Pagina selezione giochi inizializzata');
 }
 
 function updateUserInfo() {
@@ -92,7 +102,7 @@ async function loadUserSaves() {
                 savesContainer.appendChild(card);
             });
         }
-    console.debug('📂 Caricate', companies.length, 'compagnie dal server');
+        console.log('📂 Caricate', companies.length, 'compagnie dal server');
     } catch (e) {
         savesContainer.style.display = 'none';
         noSavesDiv.classList.remove('hidden');
@@ -115,9 +125,9 @@ function createCompanyCard(company) {
             <div class="save-title">
                 <h3>${company.name}</h3>
             </div>
-            <div class="save-actions">
-                <button class="action-btn danger delete-save-btn" onclick="promptDelete('company','${company.id}')" title="Elimina salvataggio">🗑️</button>
-            </div>
+            <button class="delete-save-btn red" title="Elimina salvataggio" onclick="showDeleteSaveModal('${company.id}', '${company.name}')">
+                🗑️
+            </button>
         </div>
         <div class="save-info">
             <p><strong>📅 Fondata:</strong> ${founded}</p>
@@ -145,13 +155,15 @@ function createCompanyCard(company) {
             🎮 Carica Partita
         </button>
     `;
-
-    // Aggiorna hub async se presente
+    // Aggiorna async il codice IATA dell'hub
     if (company.base_airport) {
         fetch(`/api/airports/${company.base_airport}`)
             .then(res => res.json())
             .then(data => {
-                const iata = (data && data.data && data.data.airport && data.data.airport.iata_code) ? data.data.airport.iata_code : company.base_airport;
+                // Corretto: estrai iata_code da data.data.airport
+                const iata = data && data.data && data.data.airport && data.data.airport.iata_code
+                    ? data.data.airport.iata_code
+                    : company.base_airport;
                 const hubSpan = card.querySelector('.hub-value');
                 if (hubSpan) hubSpan.textContent = iata;
             })
@@ -160,154 +172,265 @@ function createCompanyCard(company) {
                 if (hubSpan) hubSpan.textContent = company.base_airport;
             });
     }
-
-    console.debug('[game-select] created company card for', company.id);
     return card;
-}
-
-// Esponi deleteSave su window per compatibilità con handler inline
-if (typeof window !== 'undefined') {
-    window.deleteSave = deleteSave;
-}
-
-// Prompt generico per eliminazione. Esposto globalmente per chiamate inline
-if (typeof window !== 'undefined') {
-    window.promptDelete = function(type, id) {
-        // type: 'save' or 'company'
-        selectedDeleteType = type || 'save';
-        selectedSaveToDelete = id;
-        const modal = document.getElementById('delete-modal');
-        const saveNameSpan = document.getElementById('delete-save-name');
-        if (saveNameSpan) saveNameSpan.textContent = id;
-        if (modal) modal.classList.remove('hidden');
-    };
 }
 
 window.startGameFromCompany = function(companyId) {
     // Salva il companyId selezionato in sessionStorage e reindirizza
     sessionStorage.setItem('selectedCompanyId', companyId);
-    console.debug('[DEBUG] Salvato selectedCompanyId in sessionStorage:', companyId, '| typeof:', typeof companyId);
+    console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage:', companyId, '| typeof:', typeof companyId);
     window.location.href = 'index.html';
 }
 
-function populateStartingAirports(selectedScenario = null) {
-    const select = document.getElementById('starting-airport');
+// ========== SISTEMA DRILL-DOWN GEOGRAFICO ==========
 
-    // If AirportData isn't ready yet, bail out silently (we'll try again later)
-    if (!window.AirportData || !window.AirportData.airports) {
-        console.warn('[game-select] populateStartingAirports skipped: AirportData non pronto');
-        return;
-    }
-    
-    // Se non c'è uno scenario selezionato, prova a prenderlo dal form
-    if (!selectedScenario) {
-        const scenarioSelect = document.getElementById('scenario');
-        selectedScenario = scenarioSelect ? scenarioSelect.value : 'aviation_dawn';
-    }
-    
-    // Mappatura scenario -> anno
-    const scenarioYears = {
-        aviation_dawn: 1950,
-        jet_age: 1970,
-        deregulation: 1990,
-        modern_era: 2024
-    };
-    
-    const targetYear = scenarioYears[selectedScenario] || 1950;
-    
-    // Filtra aeroporti disponibili nell'anno dello scenario
-    // (aperti prima o nell'anno target, e non ancora chiusi)
-    const availableAirports = window.AirportData.airports.filter(airport => {
-        const openedYear = airport.openedYear || 1900; // Default se non specificato
-        const closedYear = airport.closedYear;
-        
-        // Deve essere aperto nell'anno target
-        const isOpen = openedYear <= targetYear;
-        const notClosed = !closedYear || closedYear >= targetYear;
-        
-        return isOpen && notClosed;
-    });
-    
-    // Filtra solo aeroporti grandi/hub per la partenza e ordina per traffico
-    const suitableAirports = availableAirports
-        .filter(airport => airport.size === 'large' || airport.size === 'hub')
-        .sort((a, b) => (b.passengerTraffic || 0) - (a.passengerTraffic || 0));
-    
-    // If the element is a hidden input (modal template uses hidden input + summary/button),
-    // set a sensible default value and update the summary instead of building options.
-    if (select && select.tagName && select.tagName.toUpperCase() !== 'SELECT') {
-        const suitable = suitableAirports[0];
-        if (suitable) {
-            select.value = suitable.code;
-            const summary = document.getElementById('selected-hub-summary');
-            if (summary) summary.textContent = `Hub selezionato: ${suitable.name} (${suitable.code})`;
-        }
-    console.debug(`[game-select] starting-airport is not a <select> element; set default to ${suitableAirports.length>0?suitableAirports[0].code:'none'}`);
-        return;
-    }
+let allAirportsData = null; // Cache globale aeroporti
 
-    select.innerHTML = '<option value="">Seleziona hub di partenza...</option>';
+async function loadAirportsData(selectedScenario = null) {
+    if (allAirportsData) {
+        return allAirportsData; // Usa cache se già caricati
+    }
     
-    suitableAirports.forEach(airport => {
-        const option = document.createElement('option');
-        option.value = airport.code;
-        
-        // Formato con informazioni storiche
-        const eraInfo = airport.openedYear ? `(dal ${airport.openedYear})` : '';
-        const trafficFormatted = airport.passengerTraffic 
-            ? `${(airport.passengerTraffic / 1000000).toFixed(1)}M pax/anno`
-            : '';
-        
-        option.textContent = `${airport.name} (${airport.code}) - ${airport.city}, ${airport.country}`;
-        if (eraInfo) {
-            option.textContent += ` ${eraInfo}`;
-        }
-        if (trafficFormatted) {
-            option.textContent += ` • ${trafficFormatted}`;
+    try {
+        console.log('🛫 Caricamento aeroporti dal database...');
+        const response = await fetch('/api/airports');
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
         }
         
-        select.appendChild(option);
-    });
-    
-    console.debug(`🏢 Caricati ${suitableAirports.length} aeroporti disponibili per l'anno ${targetYear} (scenario: ${selectedScenario})`);
-    
-    // Evidenzia aeroporti italiani se disponibili
-    const italianAirports = suitableAirports.filter(airport => airport.country === 'Italia');
-    if (italianAirports.length > 0) {
-    console.debug(`🇮🇹 ${italianAirports.length} aeroporti italiani disponibili:`, italianAirports.map(a => a.code).join(', '));
+        const airports = await response.json();
+        console.log(`✅ Caricati ${airports.length} aeroporti`);
+        
+        // Se non c'è uno scenario selezionato, prova a prenderlo dal form
+        if (!selectedScenario) {
+            const scenarioSelect = document.getElementById('scenario');
+            selectedScenario = scenarioSelect ? scenarioSelect.value : 'aviation_dawn';
+        }
+        
+        // Mappatura scenario -> anno
+        const scenarioYears = {
+            aviation_dawn: 1950,
+            jet_age: 1970,
+            deregulation: 1990,
+            modern_era: 2024
+        };
+        
+        const targetYear = scenarioYears[selectedScenario] || 1950;
+        
+        // Filtra aeroporti disponibili nell'anno dello scenario
+        const availableAirports = airports.filter(airport => {
+            // Converti date in anni
+            const openedYear = airport.opened_date ? new Date(airport.opened_date).getFullYear() : 1900;
+            const closedYear = airport.closure_date ? new Date(airport.closure_date).getFullYear() : null;
+            
+            // Deve essere aperto nell'anno target
+            const isOpen = openedYear <= targetYear;
+            const notClosed = !closedYear || closedYear >= targetYear;
+            
+            return isOpen && notClosed;
+        });
+        
+        // Filtra solo aeroporti grandi/medium per la partenza
+        const suitableAirports = availableAirports
+            .filter(airport => ['large', 'medium'].includes(airport.airport_size))
+            .sort((a, b) => (b.business_level || 0) - (a.business_level || 0));
+        
+        allAirportsData = suitableAirports;
+        return allAirportsData;
+        
+    } catch (error) {
+        console.error('❌ Errore caricamento aeroporti:', error);
+        throw error;
     }
 }
 
-// Load airports from API (DB) and normalize into window.AirportData
-async function loadAirportDataFromApi() {
+function getContinentsFromAirports(airports) {
+    // Mappa regioni geografiche a continenti
+    const regionToContinentMap = {
+        'Europe': 'Europa',
+        'European': 'Europa',
+        'EU': 'Europa',
+        'North America': 'Nord America',
+        'NA': 'Nord America',
+        'South America': 'Sud America',
+        'SA': 'Sud America',
+        'Asia': 'Asia',
+        'East Asia': 'Asia',
+        'Southeast Asia': 'Asia',
+        'Africa': 'Africa',
+        'Oceania': 'Oceania',
+        'Australia': 'Oceania',
+        'Middle East': 'Medio Oriente',
+        'ME': 'Medio Oriente'
+    };
+
+    const continents = new Set();
+
+    airports.forEach(airport => {
+        // Usa region, country o city come fallback
+        let region = airport.region || '';
+        if (!region && airport.country) {
+            // Prova a dedurre continente da paese
+            if (airport.country === 'Italy' || airport.country === 'France' || airport.country === 'Germany' || airport.country === 'Spain' || airport.country === 'United Kingdom') region = 'Europe';
+            else if (airport.country === 'United States' || airport.country === 'Canada' || airport.country === 'Mexico') region = 'North America';
+            else if (airport.country === 'Brazil' || airport.country === 'Argentina' || airport.country === 'Chile') region = 'South America';
+            else if (airport.country === 'China' || airport.country === 'Japan' || airport.country === 'India' || airport.country === 'Thailand') region = 'Asia';
+            else if (airport.country === 'Egypt' || airport.country === 'South Africa' || airport.country === 'Nigeria') region = 'Africa';
+            else if (airport.country === 'Australia' || airport.country === 'New Zealand') region = 'Oceania';
+            else if (airport.country === 'UAE' || airport.country === 'Saudi Arabia' || airport.country === 'Qatar') region = 'Middle East';
+        }
+        const continent = regionToContinentMap[region] || region;
+        if (continent && continent.length > 2) continents.add(continent);
+    });
+
+    return Array.from(continents).sort();
+}
+
+function getCountriesFromAirports(airports, selectedContinent) {
+    // Mappa inversa per filtrare per continente
+    const continentToRegionMap = {
+        'Europa': 'Europe',
+        'Nord America': 'North America',
+        'Sud America': 'South America',
+        'Asia': 'Asia',
+        'Africa': 'Africa',
+        'Oceania': 'Oceania',
+        'Medio Oriente': 'Middle East'
+    };
+    
+    const targetRegion = continentToRegionMap[selectedContinent];
+    
+    const countries = new Set();
+    
+    airports
+        .filter(airport => airport.region === targetRegion)
+        .forEach(airport => {
+            if (airport.country) {
+                countries.add(airport.country);
+            }
+        });
+    
+    return Array.from(countries).sort();
+}
+
+function getAirportsFromCountry(airports, selectedCountry) {
+    return airports
+        .filter(airport => airport.country === selectedCountry)
+        .sort((a, b) => (b.business_level || 0) - (a.business_level || 0));
+}
+
+async function populateContinents() {
+    const continentSelect = document.getElementById('continent-select');
+    if (!continentSelect) return;
+    
     try {
-        const res = await fetch('/api/airports?size=large&limit=500');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const body = await res.json();
-        const data = Array.isArray(body) ? body : (body && body.data ? body.data : []);
-        const airports = data.map(a => ({
-            code: a.iata_code || a.code || a.id,
-            name: a.name || '',
-            city: a.city || a.city_name || '',
-            country: a.country || a.country_name || '',
-            size: a.airport_size || a.size || (a.passenger_traffic && a.passenger_traffic > 20000000 ? 'large' : 'medium'),
-            passengerTraffic: a.passenger_traffic || a.passengerTraffic || 0,
-            openedYear: a.opened_year || a.openedYear || null,
-            closedYear: a.closed_year || a.closedYear || null
-        }));
-        window.AirportData = window.AirportData || {};
-        window.AirportData.airports = airports;
-        window.AirportData._airportByCode = {};
-        window.AirportData.airports.forEach(ap => { window.AirportData._airportByCode[ap.code] = ap; });
-        window.AirportData.getAirportByCode = function(code) { return window.AirportData._airportByCode[code] || null; };
-    console.debug('✅ Caricati', airports.length, 'aeroporti dal server');
-    return true;
-    } catch (e) {
-    // Non rilanciamo errori: logghiamo e ritorniamo false in modo che il
-    // chiamante possa decidere come procedere senza generare eccezioni.
-    console.warn('[game-select] Caricamento aeroporti fallito:', e.message);
-    return false;
+        const airports = await loadAirportsData();
+        const continents = getContinentsFromAirports(airports);
+        
+        continentSelect.innerHTML = '<option value="">Seleziona continente...</option>';
+        
+        continents.forEach(continent => {
+            const option = document.createElement('option');
+            option.value = continent;
+            option.textContent = `🌍 ${continent}`;
+            continentSelect.appendChild(option);
+        });
+        
+        console.log(`✅ Popolati ${continents.length} continenti`);
+        
+    } catch (error) {
+        console.error('❌ Errore popolamento continenti:', error);
+        continentSelect.innerHTML = '<option value="">Errore caricamento continenti</option>';
     }
+}
+
+function populateCountries(selectedContinent) {
+    const countrySelect = document.getElementById('country-select');
+    const airportSelect = document.getElementById('airport-select');
+    
+    if (!countrySelect || !allAirportsData) return;
+    
+    // Reset campi successivi
+    countrySelect.innerHTML = '<option value="">Seleziona nazione...</option>';
+    countrySelect.disabled = false;
+    
+    airportSelect.innerHTML = '<option value="">Seleziona aeroporto...</option>';
+    airportSelect.disabled = true;
+    
+    const confirmBtn = document.getElementById('confirm-hub-btn');
+    if (confirmBtn) confirmBtn.disabled = true;
+    
+    const countries = getCountriesFromAirports(allAirportsData, selectedContinent);
+    
+    countries.forEach(country => {
+        const option = document.createElement('option');
+        option.value = country;
+        
+        // Aggiungi bandiera/emoji se disponibile
+        const countryFlags = {
+            'United States': '🇺🇸',
+            'United Kingdom': '🇬🇧',
+            'Germany': '🇩🇪',
+            'France': '🇫🇷',
+            'Italy': '🇮🇹',
+            'Spain': '🇪🇸',
+            'Japan': '🇯🇵',
+            'China': '🇨🇳',
+            'Canada': '🇨🇦',
+            'Australia': '🇦🇺',
+            'Brazil': '🇧🇷'
+        };
+        
+        const flag = countryFlags[country] || '🏳️';
+        option.textContent = `${flag} ${country}`;
+        countrySelect.appendChild(option);
+    });
+    
+    console.log(`✅ Popolate ${countries.length} nazioni per ${selectedContinent}`);
+}
+
+function populateAirports(selectedCountry) {
+    const airportSelect = document.getElementById('airport-select');
+    
+    if (!airportSelect || !allAirportsData) return;
+    
+    // Reset
+    airportSelect.innerHTML = '<option value="">Seleziona aeroporto...</option>';
+    airportSelect.disabled = false;
+    
+    const confirmBtn = document.getElementById('confirm-hub-btn');
+    if (confirmBtn) confirmBtn.disabled = true;
+    
+    const airports = getAirportsFromCountry(allAirportsData, selectedCountry);
+    
+    airports.forEach(airport => {
+        const option = document.createElement('option');
+        option.value = airport.iata_code;
+        
+        // Formato con informazioni utili
+        const openedYear = airport.opened_date ? new Date(airport.opened_date).getFullYear() : '';
+        const eraInfo = openedYear ? `(dal ${openedYear})` : '';
+        const sizeIcon = airport.airport_size === 'large' ? '🏢' : '🏬';
+        const businessInfo = airport.business_level ? ` - Business: ${airport.business_level}%` : '';
+        
+        option.textContent = `${sizeIcon} ${airport.name} (${airport.iata_code}) - ${airport.city} ${eraInfo}${businessInfo}`;
+        option.setAttribute('data-airport-name', airport.name);
+        option.setAttribute('data-airport-city', airport.city);
+        option.setAttribute('data-airport-country', airport.country);
+        option.setAttribute('data-business-level', airport.business_level || 0);
+        option.setAttribute('data-tourist-level', airport.tourist_level || 0);
+        option.setAttribute('data-airport-size', airport.airport_size);
+        
+        airportSelect.appendChild(option);
+    });
+    
+    console.log(`✅ Popolati ${airports.length} aeroporti per ${selectedCountry}`);
+}
+
+// Funzione di compatibilità con il sistema esistente
+async function populateStartingAirports(selectedScenario = null) {
+    console.log('🔄 Inizializzando sistema drill-down aeroporti...');
+    await populateContinents();
 }
 
 function setupEventListeners() {
@@ -332,24 +455,87 @@ function setupEventListeners() {
     const startFirstBtn = document.getElementById('start-first-game');
     if (startFirstBtn) startFirstBtn.addEventListener('click', showNewGameModal);
     else console.warn('[game-select] start-first-game non trovato');
-
-    // Fallback: delegated click handler in case direct listeners were missed
-    // (covers timing issues or multiple DOM insertions)
-    document.addEventListener('click', function(e) {
-        const target = e.target;
-        if (!target) return;
-        if (target.closest && (target.closest('#new-game-btn') || target.closest('#start-first-game'))) {
-            console.debug('[game-select] delegated click detected for new-game/start-first');
-            try { showNewGameModal(); } catch (err) { console.warn('[game-select] showNewGameModal failed:', err.message); }
+    
+    // Scenario change listener - ricarica aeroporti quando cambia lo scenario
+    document.addEventListener('change', async function(e) {
+        if (e.target && e.target.id === 'scenario') {
+            const selectedScenario = e.target.value;
+            console.log('📅 Scenario cambiato:', selectedScenario);
+            // Reset cache per ricaricare con nuovo scenario
+            allAirportsData = null;
+            await populateStartingAirports(selectedScenario);
         }
     });
     
-    // Scenario change listener - ricarica aeroporti quando cambia lo scenario
+    // DRILL-DOWN EVENT LISTENERS
+    
+    // Continente selezionato
     document.addEventListener('change', function(e) {
-        if (e.target && e.target.id === 'scenario') {
-            const selectedScenario = e.target.value;
-            console.debug('📅 Scenario cambiato:', selectedScenario);
-            populateStartingAirports(selectedScenario);
+        if (e.target && e.target.id === 'continent-select') {
+            const selectedContinent = e.target.value;
+            if (selectedContinent) {
+                console.log('🌍 Continente selezionato:', selectedContinent);
+                populateCountries(selectedContinent);
+            } else {
+                // Reset se deselezionato
+                const countrySelect = document.getElementById('country-select');
+                const airportSelect = document.getElementById('airport-select');
+                const confirmBtn = document.getElementById('confirm-hub-btn');
+                
+                if (countrySelect) {
+                    countrySelect.innerHTML = '<option value="">Seleziona nazione...</option>';
+                    countrySelect.disabled = true;
+                }
+                if (airportSelect) {
+                    airportSelect.innerHTML = '<option value="">Seleziona aeroporto...</option>';
+                    airportSelect.disabled = true;
+                }
+                if (confirmBtn) confirmBtn.disabled = true;
+            }
+        }
+    });
+    
+    // Nazione selezionata
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'country-select') {
+            const selectedCountry = e.target.value;
+            if (selectedCountry) {
+                console.log('🏳️ Nazione selezionata:', selectedCountry);
+                populateAirports(selectedCountry);
+            } else {
+                // Reset se deselezionato
+                const airportSelect = document.getElementById('airport-select');
+                const confirmBtn = document.getElementById('confirm-hub-btn');
+                
+                if (airportSelect) {
+                    airportSelect.innerHTML = '<option value="">Seleziona aeroporto...</option>';
+                    airportSelect.disabled = true;
+                }
+                if (confirmBtn) confirmBtn.disabled = true;
+            }
+        }
+    });
+    
+    // Aeroporto selezionato
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'airport-select') {
+            const selectedAirport = e.target.value;
+            const confirmBtn = document.getElementById('confirm-hub-btn');
+            
+            if (selectedAirport && confirmBtn) {
+                const option = e.target.selectedOptions[0];
+                const airportName = option.getAttribute('data-airport-name');
+                const airportCity = option.getAttribute('data-airport-city');
+                const airportCountry = option.getAttribute('data-airport-country');
+                const airportSize = option.getAttribute('data-airport-size');
+                
+                console.log('✈️ Aeroporto selezionato:', selectedAirport, '-', airportName);
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = `✅ Conferma ${airportName} (${selectedAirport})`;
+            } else if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = '✅ Conferma Hub';
+            }
         }
     });
     
@@ -360,6 +546,14 @@ function setupEventListeners() {
     if (cancelNewBtn) cancelNewBtn.addEventListener('click', hideNewGameModal);
     const newGameFormEl = document.getElementById('new-game-form');
     if (newGameFormEl) newGameFormEl.addEventListener('submit', handleNewGame);
+    
+    // Hub Selection Modal controls
+    const closeHubModalBtn = document.getElementById('close-hub-modal');
+    if (closeHubModalBtn) closeHubModalBtn.addEventListener('click', closeSelectHubModal);
+    const cancelHubBtn = document.getElementById('cancel-hub-select');
+    if (cancelHubBtn) cancelHubBtn.addEventListener('click', closeSelectHubModal);
+    const confirmHubBtn = document.getElementById('confirm-hub-btn');
+    if (confirmHubBtn) confirmHubBtn.addEventListener('click', confirmHubSelection);
     
     // Delete modal controls
     const closeDeleteBtn = document.getElementById('close-delete-modal');
@@ -376,10 +570,12 @@ function setupEventListeners() {
     // Click outside modal to close
     document.addEventListener('click', function(e) {
         const newGameModal = document.getElementById('new-game-modal');
+        const selectHubModal = document.getElementById('select-hub-modal');
         const deleteModal = document.getElementById('delete-modal');
     
-            if (e.target === newGameModal) hideNewGameModal();
-            if (e.target === deleteModal) hideDeleteModal();
+        if (e.target === newGameModal) hideNewGameModal();
+        if (e.target === selectHubModal) closeSelectHubModal();
+        if (e.target === deleteModal) hideDeleteModal();
     });
 }
 
@@ -396,12 +592,6 @@ window.onModalInjected = function(modalId) {
         if (newGameFormEl) newGameFormEl.addEventListener('submit', handleNewGame);
         const openHubBtn = document.getElementById('open-hub-modal-btn');
         if (openHubBtn) openHubBtn.addEventListener('click', function() { const scenario = document.getElementById('scenario')?.value; openSelectHubModal(scenario); });
-        // Dopo che la modal è stata iniettata, popola la select degli aeroporti
-        try {
-            populateStartingAirports();
-        } catch (err) {
-            console.warn('[game-select] populateStartingAirports fallita dopo injection:', err.message);
-        }
     }
 
     if (modalId === 'select-hub-modal') {
@@ -418,8 +608,43 @@ window.onModalInjected = function(modalId) {
     }
 };
 
+// Funzione per mostrare la modale di eliminazione salvataggio
+window.showDeleteSaveModal = function(saveId, saveName) {
+    selectedSaveToDelete = saveId;
+    document.getElementById('delete-save-name').textContent = saveName;
+    document.getElementById('delete-save-modal').classList.remove('hidden');
+};
+
+// Event listeners per la modale
+if (document.getElementById('close-delete-modal')) {
+    document.getElementById('close-delete-modal').onclick = function() {
+        document.getElementById('delete-save-modal').classList.add('hidden');
+    };
+}
+if (document.getElementById('cancel-delete-save')) {
+    document.getElementById('cancel-delete-save').onclick = function() {
+        document.getElementById('delete-save-modal').classList.add('hidden');
+    };
+}
+if (document.getElementById('confirm-delete-save')) {
+    document.getElementById('confirm-delete-save').onclick = async function() {
+        if (!selectedSaveToDelete) return;
+        showLoading('Eliminazione salvataggio...');
+        try {
+            const res = await fetch(`/api/game/saves/${selectedSaveToDelete}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Errore eliminazione salvataggio');
+            showToast('Salvataggio eliminato', 'success');
+            document.getElementById('delete-save-modal').classList.add('hidden');
+            loadUserSaves();
+        } catch (e) {
+            showToast('Errore: ' + e.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    };
+}
+
 async function showNewGameModal() {
-    console.debug('[game-select] showNewGameModal called');
     const modal = document.getElementById('new-game-modal');
     const companyNameInput = document.getElementById('company-name-input');
     const scenarioSelect = document.getElementById('scenario');
@@ -439,31 +664,102 @@ async function showNewGameModal() {
         companyNameInput.value = randomSuggestion;
     }
 
-    // Carica AirportData on-demand prima di popolare la modal.
-    // Se il caricamento fallisce, logghiamo e lasciamo la modal aprirsi comunque
-    // (l'utente vedrà un messaggio o la select vuota) ma non lanciamo eccezioni.
-    const defaultScenario = scenarioSelect ? scenarioSelect.value : 'aviation_dawn';
-    try {
-        const ok = await loadAirportDataFromApi();
-        if (!ok) {
-            console.warn('[game-select] AirportData non disponibile dopo tentativo di caricamento');
-        }
-    } catch (err) {
-        console.warn('[game-select] Errore inatteso durante loadAirportDataFromApi:', err.message);
-    }
-
-    try {
-        populateStartingAirports(defaultScenario);
-    } catch (err) {
-        console.warn('[game-select] populateStartingAirports failed (AirportData may be missing)', err.message);
-    }
-
     if (modal) modal.classList.remove('hidden');
 }
 
 function hideNewGameModal() {
     const modal = document.getElementById('new-game-modal');
     if (modal) modal.classList.add('hidden');
+}
+
+async function openSelectHubModal(scenario = 'aviation_dawn') {
+    const modal = document.getElementById('select-hub-modal');
+    if (!modal) {
+        console.error('select-hub-modal non trovato');
+        return;
+    }
+
+    // Reset del form e stato
+    const continentSelect = document.getElementById('continent-select');
+    const countrySelect = document.getElementById('country-select');
+    const airportSelect = document.getElementById('airport-select');
+    const confirmBtn = document.getElementById('confirm-hub-btn');
+    
+    if (continentSelect) continentSelect.value = '';
+    if (countrySelect) {
+        countrySelect.innerHTML = '<option value="">Seleziona nazione...</option>';
+        countrySelect.disabled = true;
+    }
+    if (airportSelect) {
+        airportSelect.innerHTML = '<option value="">Seleziona aeroporto...</option>';
+        airportSelect.disabled = true;
+    }
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '✅ Conferma Hub';
+    }
+
+    // Mostra il modal
+    modal.classList.remove('hidden');
+
+    // Carica i continenti per lo scenario selezionato
+    try {
+        console.log('🌍 Caricamento continenti per scenario:', scenario);
+        // Reset cache per nuovo scenario
+        allAirportsData = null;
+        await populateStartingAirports(scenario);
+    } catch (error) {
+        console.error('❌ Errore caricamento continenti per hub modal:', error);
+        showToast('Errore caricamento aeroporti', 'error');
+    }
+}
+
+function closeSelectHubModal() {
+    const modal = document.getElementById('select-hub-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function confirmHubSelection() {
+    const airportSelect = document.getElementById('airport-select');
+    const selectedHubSummary = document.getElementById('selected-hub-summary');
+    const hiddenInput = document.getElementById('starting-airport');
+    
+    if (!airportSelect || !selectedHubSummary || !hiddenInput) {
+        console.error('Elementi hub selection non trovati');
+        return;
+    }
+    
+    const selectedValue = airportSelect.value;
+    if (!selectedValue) {
+        showToast('Seleziona un aeroporto prima di confermare', 'error');
+        return;
+    }
+    
+    // Ottieni dati dall'opzione selezionata
+    const selectedOption = airportSelect.selectedOptions[0];
+    const airportName = selectedOption.getAttribute('data-airport-name');
+    const airportCity = selectedOption.getAttribute('data-airport-city');
+    const airportCountry = selectedOption.getAttribute('data-airport-country');
+    const airportSize = selectedOption.getAttribute('data-airport-size');
+    const businessLevel = selectedOption.getAttribute('data-business-level');
+    
+    // Aggiorna il riassunto nel modal principale
+    const sizeIcon = airportSize === 'large' ? '🏢' : '🏬';
+    const businessInfo = businessLevel ? ` (Business: ${businessLevel}%)` : '';
+    
+    selectedHubSummary.textContent = `${sizeIcon} ${airportName} (${selectedValue}) - ${airportCity}, ${airportCountry}${businessInfo}`;
+    selectedHubSummary.classList.add('selected');
+    
+    // Salva il valore nel campo nascosto
+    hiddenInput.value = selectedValue;
+    
+    // Chiudi il modal
+    closeSelectHubModal();
+    
+    console.log('✅ Hub selezionato:', selectedValue, '-', airportName);
+    showToast(`Hub selezionato: ${airportName}`, 'success');
 }
 
 function handleNewGame(e) {
@@ -473,11 +769,10 @@ function handleNewGame(e) {
     const saveName = formData.get('saveName').trim();
     const companyName = formData.get('companyName').trim();
     const startingAirport = formData.get('startingAirport');
-    const difficulty = formData.get('difficulty');
     const scenario = formData.get('scenario');
     
     // Validazione
-    if (!saveName || !companyName || !startingAirport || !difficulty || !scenario) {
+    if (!saveName || !companyName || !startingAirport || !scenario) {
         showToast('Tutti i campi sono obbligatori', 'error');
         return;
     }
@@ -485,12 +780,12 @@ function handleNewGame(e) {
     showLoading('Creazione nuovo gioco...');
     
     // Simula creazione gioco
-    setTimeout(async function() {
-        createNewGame(saveName, companyName, startingAirport, difficulty, scenario);
+    setTimeout(function() {
+        createNewGame(saveName, companyName, startingAirport, scenario);
     }, 1500);
 }
 
-function createNewGame(saveName, companyName, startingAirport, difficulty, scenario) {
+function createNewGame(saveName, companyName, startingAirport, scenario) {
     // Configurazioni scenario
     const scenarioSettings = {
         aviation_dawn: {
@@ -527,16 +822,9 @@ function createNewGame(saveName, companyName, startingAirport, difficulty, scena
         }
     };
     
-    // Crea dati iniziali del gioco
-    const difficultySettings = {
-        easy: { money: 5000000, reputation: 60 },
-        normal: { money: 2000000, reputation: 50 },
-        hard: { money: 1000000, reputation: 40 }
-    };
-    
-    const settings = difficultySettings[difficulty];
+    // Dati iniziali fissi per MVP
+    const settings = { money: 2000000, reputation: 50 };
     const scenarioData = scenarioSettings[scenario];
-    
     const gameData = {
         company: {
             name: companyName,
@@ -549,7 +837,6 @@ function createNewGame(saveName, companyName, startingAirport, difficulty, scena
             ...scenarioData
         },
         homeAirport: startingAirport,
-        difficulty: difficulty,
         gameTime: {
             currentDate: new Date(scenarioData.year, 0, 1).toISOString(),
             gameSpeed: 1,
@@ -593,7 +880,7 @@ async function syncGameWithServer(saveName, gameData) {
             throw new Error('Utente non valido per la sincronizzazione');
         }
         
-    console.debug('🔄 Inizio sincronizzazione con server...', {
+        console.log('🔄 Inizio sincronizzazione con server...', {
             userId: user.id,
             saveName: saveName,
             companyName: gameData.company.name
@@ -623,7 +910,7 @@ async function syncGameWithServer(saveName, gameData) {
             user_id: user.id // <--- AGGIUNTO
         };
         
-    console.debug('📊 Creazione compagnia sul server...', companyPayload);
+        console.log('📊 Creazione compagnia sul server...', companyPayload);
         
         const companyResponse = await fetch('/api/game/companies/create-or-update', {
             method: 'POST',
@@ -634,7 +921,7 @@ async function syncGameWithServer(saveName, gameData) {
             body: JSON.stringify(companyPayload)
         });
         
-    console.debug('📊 Risposta server compagnia:', companyResponse.status, companyResponse.statusText);
+        console.log('📊 Risposta server compagnia:', companyResponse.status, companyResponse.statusText);
         
         if (!companyResponse.ok) {
             let errorMessage = `Errore HTTP ${companyResponse.status}`;
@@ -653,12 +940,12 @@ async function syncGameWithServer(saveName, gameData) {
             throw new Error('Risposta compagnia non valida dal server');
         }
         
-    console.debug('✅ Compagnia creata/aggiornata:', companyData.data?.name || 'Nome non disponibile');
+        console.log('✅ Compagnia creata/aggiornata:', companyData.data?.name || 'Nome non disponibile');
         
         // SEMPLIFICATO: salva solo l'UUID in sessionStorage e avvia subito il gioco
         if (companyData.data && companyData.data.id) {
             sessionStorage.setItem('selectedCompanyId', companyData.data.id);
-            console.debug('[DEBUG] Salvato selectedCompanyId in sessionStorage (nuovo gioco):', companyData.data.id, '| typeof:', typeof companyData.data.id);
+            console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage (nuovo gioco):', companyData.data.id, '| typeof:', typeof companyData.data.id);
             window.location.href = 'index.html';
             return;
         }
@@ -691,7 +978,7 @@ function startGame(saveKey) {
         return;
     }
     sessionStorage.setItem('selectedCompanyId', companyId);
-    console.debug('[DEBUG] Salvato selectedCompanyId in sessionStorage (startGame):', companyId, '| typeof:', typeof companyId);
+    console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage (startGame):', companyId, '| typeof:', typeof companyId);
     window.location.href = 'index.html';
 }
 
@@ -716,132 +1003,20 @@ function confirmDelete() {
     
     showLoading('Eliminazione salvataggio...');
     
-    setTimeout(async function() {
-        try {
-            console.debug('[game-select] confirmDelete called for:', selectedSaveToDelete);
-            console.debug('[game-select] authManager currentUser snapshot:', !!authManager && !!authManager.getCurrentUser ? authManager.getCurrentUser() : '(no authManager)');
-        } catch (dbgErr) { console.warn('[game-select] debug read failed:', dbgErr.message); }
-
-        let deleteResult = false;
-        try {
-            if (selectedDeleteType === 'company') {
-                // Call server API to delete company
-                console.debug('[game-select] attempting server-side deletion for company id:', selectedSaveToDelete);
-                try {
-                    const resp = await fetch(`/api/game/companies/${selectedSaveToDelete}`, { method: 'DELETE' });
-                    if (resp.ok) {
-                        deleteResult = true;
-                    } else {
-                        const text = await resp.text();
-                        console.error('[game-select] server delete failed:', resp.status, text);
-                        deleteResult = false;
-                    }
-                } catch (netErr) {
-                    console.error('[game-select] network error deleting company:', netErr.message);
-                    deleteResult = false;
-                }
-            } else {
-                deleteResult = authManager.deleteSave(selectedSaveToDelete);
-                console.debug('[game-select] authManager.deleteSave result:', deleteResult);
-            }
-        } catch (e) {
-            console.error('[game-select] deletion threw:', e && e.message);
-            deleteResult = false;
-        }
-
-        // If deleteResult is false, attempt robust manual fallbacks to remove the save
-        if (!deleteResult) {
-            try {
-                const user = authManager.getCurrentUser ? authManager.getCurrentUser() : (authManager.currentUser || null);
-
-                // 1) Direct key deletion if present
-                if (user && user.saves && user.saves[selectedSaveToDelete]) {
-                console.debug('[game-select] attempting manual deletion fallback for', selectedSaveToDelete);
-                    delete user.saves[selectedSaveToDelete];
-                    const saved = authManager.saveUsers ? authManager.saveUsers() : false;
-                console.debug('[game-select] manual deletion persisted:', saved);
-                    deleteResult = !!saved;
-                } else {
-                    // 2) Search all saves for a matching internal id or name and delete that key
-                    try {
-                        const saves = authManager.getUserSaves ? authManager.getUserSaves() : (user && user.saves ? user.saves : null);
-                        let foundKey = null;
-                        if (saves) {
-                            for (const key in saves) {
-                                if (!Object.prototype.hasOwnProperty.call(saves, key)) continue;
-                                const s = saves[key];
-                                try {
-                                    // match by nested company id
-                                    if (s && s.data && s.data.company && (String(s.data.company.id) === String(selectedSaveToDelete))) {
-                                        foundKey = key;
-                                        break;
-                                    }
-                                    // match by save name
-                                    if (s && s.name && String(s.name) === String(selectedSaveToDelete)) {
-                                        foundKey = key;
-                                        break;
-                                    }
-                                    // match by company name
-                                    if (s && s.data && s.data.company && s.data.company.name && String(s.data.company.name) === String(selectedSaveToDelete)) {
-                                        foundKey = key;
-                                        break;
-                                    }
-                                } catch (inner) { /* ignore per-save errors */ }
-                            }
-                        }
-
-                        if (foundKey) {
-                    console.debug('[game-select] found matching save key via search:', foundKey, 'for', selectedSaveToDelete);
-                            if (user && user.saves && user.saves[foundKey]) {
-                                delete user.saves[foundKey];
-                            } else {
-                                // try users cache if currentUser doesn't hold saves
-                                const email = (authManager.getCurrentUser && authManager.getCurrentUser()?.email) || (authManager.currentUser && authManager.currentUser.email);
-                                if (email && authManager.users && authManager.users[email] && authManager.users[email].saves && authManager.users[email].saves[foundKey]) {
-                                    delete authManager.users[email].saves[foundKey];
-                                }
-                            }
-                            const saved = authManager.saveUsers ? authManager.saveUsers() : false;
-                    console.debug('[game-select] manual deletion (foundKey) persisted:', saved);
-                            deleteResult = !!saved;
-                        } else {
-                            // 3) Try cache stored in authManager.users by email as last resort
-                            try {
-                                const email = (authManager.getCurrentUser && authManager.getCurrentUser()?.email) || (authManager.currentUser && authManager.currentUser.email);
-                                if (email && authManager.users && authManager.users[email] && authManager.users[email].saves && authManager.users[email].saves[selectedSaveToDelete]) {
-                        console.debug('[game-select] attempting manual deletion in authManager.users cache for', selectedSaveToDelete);
-                                    delete authManager.users[email].saves[selectedSaveToDelete];
-                                    const saved = authManager.saveUsers ? authManager.saveUsers() : false;
-                        console.debug('[game-select] manual deletion in users cache persisted:', saved);
-                                    deleteResult = !!saved;
-                                } else {
-                                    console.warn('[game-select] manual deletion fallback: save key not found on currentUser or users cache and search yielded no match');
-                                }
-                            } catch (e) {
-                                console.error('[game-select] error during users-cache fallback:', e && e.message);
-                            }
-                        }
-                    } catch (e) {
-                        console.error('[game-select] error during search-based fallback:', e && e.message);
-                    }
-                }
-            } catch (fallbackErr) {
-                console.error('[game-select] manual deletion fallback threw:', fallbackErr && fallbackErr.message);
-            }
-        }
-
+    setTimeout(function() {
+        const deleteResult = authManager.deleteSave(selectedSaveToDelete);
+        
         hideLoading();
         hideDeleteModal();
-
+        
         if (deleteResult) {
             showToast('Salvataggio eliminato con successo', 'success');
             loadUserSaves(); // Ricarica la lista
         } else {
-            showToast('Errore durante l\'eliminazione (controlla console)', 'error');
+            showToast('Errore durante l\'eliminazione', 'error');
         }
-
-        selectedSaveToDelete = null;
         
+        selectedSaveToDelete = null;
     }, 800);
 }
 
@@ -887,4 +1062,4 @@ function hideToast() {
     toast.classList.add('hidden');
 }
 
-console.debug('✅ game-select.js caricato');
+console.log('✅ game-select.js caricato');
