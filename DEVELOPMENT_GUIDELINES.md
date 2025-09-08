@@ -454,6 +454,28 @@ Il file `PAGES_GUIDE.md` contiene la mappa funzionale e lo stato di implementazi
 4. ✅ Validare integrazione API
 5. ✅ Seguire naming conventions
 
+### Testing e Debug
+
+#### **NO Test Modal o File di Test**
+
+- **NON** creare file di test temporanei (es. test-delete-modal.html)
+- **NON** creare script di test separati per singole funzionalità
+- **SÌ** testare direttamente sulla versione reale del sito
+
+#### **Processo di Testing**
+
+1. **Implementa** le modifiche al codice
+2. **Chiedi all'utente** di testare la funzionalità specifica
+3. **Raccogli feedback** sui risultati dei test
+4. **Itera** in base ai risultati reali
+
+#### **Vantaggi Testing Reale**
+
+- Test più accurati e puntuali
+- Nessun overhead di file temporanei
+- Feedback immediato su problemi reali
+- Ambiente di test identico a quello di produzione
+
 ### Code Review Checklist:
 
 - [ ] Codice modulare e ben organizzato
@@ -461,6 +483,7 @@ Il file `PAGES_GUIDE.md` contiene la mappa funzionale e lo stato di implementazi
 - [ ] Performance ottimali
 - [ ] Sicurezza validata
 - [ ] Documentazione aggiornata
+- [ ] **Test reali completati dall'utente**
 
 _Ultimo aggiornamento: 21 agosto 2025_
 _Versione: 1.0_

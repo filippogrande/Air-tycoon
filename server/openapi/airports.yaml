@@ -9,47 +9,131 @@ paths:
     get:
       tags: [Airports]
       summary: Lista aeroporti (filtrabile)
+      description: |
+        Restituisce una lista di aeroporti filtrabili per vari criteri.
+        Tutti i parametri sono opzionali. Se non vengono specificati parametri,
+        restituisce tutti gli aeroporti (fino al limite specificato).
       parameters:
-        - in: query
-          name: country
-          schema:
-            type: string
         - in: query
           name: search
           schema:
             type: string
+          description: Cerca per nome aeroporto, codice IATA o città (case-insensitive)
+          example: "milan"
+        - in: query
+          name: country
+          schema:
+            type: string
+          description: Filtra per paese (case-insensitive, supporta pattern parziali)
+          example: "Italy"
         - in: query
           name: continent
           schema:
             type: string
+            enum: [Europe, Asia, NorthAmerica, SouthAmerica, Africa, Oceania]
+          description: Filtra per continente
+          example: "Europe"
         - in: query
           name: size
           schema:
             type: string
+          description: |
+            Filtra per dimensione aeroporto. Supporta valori singoli o multipli separati da virgola.
+            Valori possibili: small, medium, large
+          example: "large,medium"
         - in: query
           name: before
           schema:
             type: string
+            format: date
+          description: |
+            Filtra aeroporti aperti prima o durante la data specificata (formato YYYY-MM-DD).
+            Esclude aeroporti chiusi prima di questa data.
+          example: "1970-12-31"
         - in: query
           name: limit
           schema:
             type: integer
+            minimum: 1
+            maximum: 10000
+            default: 100
+          description: Numero massimo di aeroporti da restituire
+          example: 500
       responses:
         "200":
           description: Lista aeroporti
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Airport"
+              example:
+                - id: 1
+                  name: "Malpensa Airport"
+                  iata_code: "MXP"
+                  icao_code: "LIMC"
+                  city: "Milan"
+                  country: "Italy"
+                  latitude: 45.6306
+                  longitude: 8.7231
+                  elevation: 234
+                  timezone: "Europe/Rome"
+                  opened_date: "1948-10-27"
+                  closure_date: null
+                  runways_count: 2
+                  runway_length_meters: 3920
+                  airport_size: "large"
+                  business_level: 85
+                  tourist_level: 70
+        "500":
+          description: Errore del server
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Failed to fetch airports"
   /api/airports/{id}:
     get:
       tags: [Airports]
       summary: Dettagli di un aeroporto
+      description: Restituisce i dettagli completi di un aeroporto specifico
       parameters:
         - in: path
           name: id
           required: true
           schema:
             type: integer
+          description: ID dell'aeroporto
+          example: 1
       responses:
         "200":
           description: Dettagli aeroporto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Airport"
+        "404":
+          description: Aeroporto non trovato
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: "Airport not found"
+        "500":
+          description: Errore del server
   /api/airports/near/{lat}/{lng}:
     get:
       tags: [Airports]
@@ -90,17 +174,78 @@ components:
       properties:
         id:
           type: integer
+          description: ID univoco dell'aeroporto
+          example: 1
         name:
           type: string
+          description: Nome completo dell'aeroporto
+          example: "Malpensa Airport"
         iata_code:
           type: string
+          description: Codice IATA a 3 lettere
+          example: "MXP"
         icao_code:
           type: string
+          description: Codice ICAO a 4 lettere
+          example: "LIMC"
         city:
           type: string
+          description: Città dell'aeroporto
+          example: "Milan"
         country:
           type: string
+          description: Paese dell'aeroporto
+          example: "Italy"
         latitude:
           type: number
+          description: Latitudine in gradi decimali
+          example: 45.6306
         longitude:
           type: number
+          description: Longitudine in gradi decimali
+          example: 8.7231
+        elevation:
+          type: integer
+          description: Altitudine in metri sul livello del mare
+          example: 234
+        timezone:
+          type: string
+          description: Fuso orario
+          example: "Europe/Rome"
+        opened_date:
+          type: string
+          format: date
+          description: Data di apertura dell'aeroporto
+          example: "1948-10-27"
+          nullable: true
+        closure_date:
+          type: string
+          format: date
+          description: Data di chiusura dell'aeroporto (null se ancora aperto)
+          example: null
+          nullable: true
+        runways_count:
+          type: integer
+          description: Numero di piste
+          example: 2
+        runway_length_meters:
+          type: integer
+          description: Lunghezza della pista più lunga in metri
+          example: 3920
+        airport_size:
+          type: string
+          enum: [small, medium, large]
+          description: Dimensione dell'aeroporto
+          example: "large"
+        business_level:
+          type: integer
+          description: Livello di attività commerciale (0-100)
+          example: 85
+          minimum: 0
+          maximum: 100
+        tourist_level:
+          type: integer
+          description: Livello di attività turistica (0-100)
+          example: 70
+          minimum: 0
+          maximum: 100

@@ -809,7 +809,7 @@ body {
 }
 
 /* Modale Elimina Salvataggio */
-#delete-save-modal .modal-actions {
+#delete-modal .modal-actions {
     display: flex;
     gap: 16px;
     margin-top: 24px;
@@ -817,10 +817,10 @@ body {
     padding-left: 32px;
     margin-bottom: 32px;
 }
-#delete-save-modal .action-btn {
+#delete-modal .action-btn {
     min-width: 120px;
 }
-#delete-save-modal .modal-actions::after {
+#delete-modal .modal-actions::after {
     content: "";
     display: block;
     width: 100%;

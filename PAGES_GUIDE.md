@@ -159,11 +159,28 @@ index.html (Launcher)
 
 ##### 🗑️ **Modal Elimina Salvataggio**
 
-**Status**: ✅ **Implementato**
+**Status**: ✅ **Implementato e Corretto**
 
-- ✅ **Trigger**: Click su icona cestino
-- ✅ **Conferma**: Double-check con nome compagnia
-- ✅ **API**: `DELETE /api/game/saves/{saveId}`
+- ✅ **Trigger**: Click su icona cestino nelle card dei salvataggi
+- ✅ **Template HTML**: `Client/pages/modals/delete-modal.html` con struttura corretta
+- ✅ **Caricamento dinamico**: Modal caricato automaticamente all'avvio della pagina
+- ✅ **ID corretti**:
+  - Modal: `delete-modal`
+  - Pulsanti: `close-delete-modal`, `cancel-delete`, `confirm-delete`
+  - Nome salvataggio: `delete-save-name`
+- ✅ **Event listeners**: Tutti i pulsanti funzionanti (chiudi, annulla, conferma)
+- ✅ **Conferma doppia**: Mostra nome compagnia nel messaggio di conferma
+- ✅ **API**: `DELETE /api/game/companies/${companyId}` (correggendo da saves a companies)
+- ✅ **Feedback utente**: Loading overlay + toast di successo/errore
+- ✅ **Logging**: Debug completo per troubleshooting
+
+**Bug Fix Completati:**
+
+- 🔧 **ID non corrispondenti**: Corretti tutti gli ID per uniformità con il template HTML
+- 🔧 **Caricamento modal**: Implementato sistema di caricamento dinamico robusto
+- 🔧 **API endpoint**: Corretta da `/api/game/saves/` a `/api/game/companies/`
+- 🔧 **Event listeners duplicati**: Rimosso codice duplicato e non funzionante
+- 🔧 **Percorso script**: Aggiornato da `/src/` a `/main-src/` seguendo le linee guida
 
 #### File Coinvolti:
 

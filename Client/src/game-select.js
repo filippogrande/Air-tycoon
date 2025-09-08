@@ -20,44 +20,105 @@ document.addEventListener('DOMContentLoaded', function() {
     currentUser = authManager.getCurrentUser();
     console.log('✅ Utente autenticato:', currentUser.email);
     
-    initializeGameSelectPage();
-    
-    setupDeleteModalListeners();
+    // Carica i modali necessari
+    loadAllModals().then(() => {
+        initializeGameSelectPage();
+        setupDeleteModalListeners();
+    });
 });
 
-function setupDeleteModalListeners() {
-    const closeDeleteModalBtn = document.getElementById('close-delete-modal');
-    if (closeDeleteModalBtn) {
-        closeDeleteModalBtn.addEventListener('click', function() {
-            document.getElementById('delete-save-modal').classList.add('hidden');
-            selectedSaveToDelete = null;
-        });
-    }
-    const cancelDeleteSaveBtn = document.getElementById('cancel-delete-save');
-    if (cancelDeleteSaveBtn) {
-        cancelDeleteSaveBtn.addEventListener('click', function() {
-            document.getElementById('delete-save-modal').classList.add('hidden');
-            selectedSaveToDelete = null;
-        });
-    }
-    const confirmDeleteSaveBtn = document.getElementById('confirm-delete-save');
-    if (confirmDeleteSaveBtn) {
-        confirmDeleteSaveBtn.addEventListener('click', async function() {
-            if (!selectedSaveToDelete) return;
-            showLoading('Eliminazione salvataggio...');
-            try {
-                const res = await fetch(`/api/game/saves/${selectedSaveToDelete}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('Errore eliminazione salvataggio');
-                showToast('Salvataggio eliminato', 'success');
-                document.getElementById('delete-save-modal').classList.add('hidden');
-                loadUserSaves();
-            } catch (e) {
-                showToast('Errore: ' + e.message, 'error');
-            } finally {
-                hideLoading();
-                selectedSaveToDelete = null;
+async function loadAllModals() {
+    console.log('📂 Caricamento modali...');
+    const modalsToLoad = [
+        { id: 'delete-modal', path: '/game/pages/modals/delete-modal.html' },
+        { id: 'new-game-modal', path: '/game/pages/modals/new-game-modal.html' },
+        { id: 'select-hub-modal', path: '/game/pages/modals/select-hub-modal.html' }
+    ];
+    
+    for (const modal of modalsToLoad) {
+        try {
+            console.log(`📄 Caricamento modal: ${modal.id} da ${modal.path}`);
+            const response = await fetch(modal.path);
+            if (response.ok) {
+                const html = await response.text();
+                const container = document.getElementById(modal.id);
+                if (container) {
+                    // Invece di mettere il contenuto dentro il container, sostituiamo il container
+                    container.outerHTML = html;
+                    console.log(`✅ Modal ${modal.id} caricato con successo`);
+                    
+                    // Assicuriamoci che sia nascosto
+                    const loadedModal = document.getElementById(modal.id);
+                    if (loadedModal && !loadedModal.classList.contains('hidden')) {
+                        loadedModal.classList.add('hidden');
+                    }
+                } else {
+                    console.warn(`⚠️ Container ${modal.id} non trovato nel DOM`);
+                }
+            } else {
+                console.error(`❌ Errore caricamento ${modal.path}: ${response.status} ${response.statusText}`);
             }
+        } catch (error) {
+            console.error(`❌ Errore caricamento modal ${modal.id}:`, error);
+        }
+    }
+    
+    // Attiva i listeners dopo che tutti i modali sono stati caricati
+    attachDeleteModalListeners();
+    attachHubModalListeners();
+    attachNewGameModalListeners();
+}
+
+function setupDeleteModalListeners() {
+    // Questa funzione è stata spostata in attachDeleteModalListeners()
+    // per essere chiamata dopo il caricamento dinamico del modal
+}
+
+function attachNewGameModalListeners() {
+    console.log('🔗 Attivazione listeners new-game-modal...');
+    const newGameFormEl = document.getElementById('new-game-form');
+    if (newGameFormEl) {
+        newGameFormEl.addEventListener('submit', handleNewGame);
+        console.log('✅ Listener form nuovo gioco attivato');
+    }
+    
+    const openHubBtn = document.getElementById('open-hub-modal-btn');
+    if (openHubBtn) {
+        openHubBtn.addEventListener('click', function() { 
+            const scenario = document.getElementById('scenario')?.value; 
+            openSelectHubModal(scenario); 
         });
+        console.log('✅ Listener apertura hub modal attivato');
+    }
+    
+    const cancelBtn = document.getElementById('cancel-new-game');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            const modal = document.getElementById('new-game-modal');
+            if (modal) modal.classList.add('hidden');
+        });
+        console.log('✅ Listener annulla nuovo gioco attivato');
+    }
+    
+    const closeBtn = document.getElementById('close-modal');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            const modal = document.getElementById('new-game-modal');
+            if (modal) modal.classList.add('hidden');
+        });
+        console.log('✅ Listener chiudi modal attivato');
+    }
+}
+
+function attachHubModalListeners() {
+    console.log('🔗 Attivazione listeners hub-modal...');
+    const closeHubModalBtn = document.getElementById('close-hub-modal');
+    if (closeHubModalBtn) {
+        closeHubModalBtn.addEventListener('click', function() {
+            const modal = document.getElementById('select-hub-modal');
+            if (modal) modal.classList.add('hidden');
+        });
+        console.log('✅ Listener chiudi hub modal attivato');
     }
 }
 
@@ -66,7 +127,7 @@ async function initializeGameSelectPage() {
     updateUserInfo();
     
     // Carica salvataggi
-    loadUserSaves();
+    await loadUserSaves();
     
     // Setup event listeners
     setupEventListeners();
@@ -85,16 +146,34 @@ async function loadUserSaves() {
     const noSavesDiv = document.getElementById('no-saves');
     savesContainer.innerHTML = '';
 
+    console.log('🔍 Debug: inizio loadUserSaves');
+    console.log('🔍 savesContainer:', savesContainer);
+    console.log('🔍 noSavesDiv:', noSavesDiv);
+    console.log('🔍 noSavesDiv classes:', noSavesDiv?.classList.toString());
+
     // Utente autenticato: carica compagnie dal backend
     try {
         const res = await fetch('/api/game/companies');
         if (!res.ok) throw new Error('Errore nel recupero compagnie dal server');
         const result = await res.json();
         const companies = (result && result.data) ? result.data : [];
+        
+        console.log('🔍 Compagnie trovate:', companies.length);
+        
         if (companies.length === 0) {
+            console.log('🔍 Nessuna compagnia, mostro no-saves div');
             savesContainer.style.display = 'none';
             noSavesDiv.classList.remove('hidden');
+            
+            // Debug: verifico che il pulsante sia visibile dopo aver mostrato no-saves
+            setTimeout(() => {
+                const startFirstBtn = document.getElementById('start-first-game');
+                console.log('🔍 start-first-game dopo timeout:', startFirstBtn);
+                console.log('🔍 start-first-game visibile?', startFirstBtn?.offsetParent !== null);
+            }, 100);
+            
         } else {
+            console.log('🔍 Compagnie trovate, mostro saves container');
             savesContainer.style.display = 'grid';
             noSavesDiv.classList.add('hidden');
             companies.forEach(company => {
@@ -104,6 +183,7 @@ async function loadUserSaves() {
         }
         console.log('📂 Caricate', companies.length, 'compagnie dal server');
     } catch (e) {
+        console.log('🔍 Errore, mostro no-saves div');
         savesContainer.style.display = 'none';
         noSavesDiv.classList.remove('hidden');
         showToast('Errore caricamento compagnie: ' + e.message, 'error');
@@ -179,7 +259,9 @@ window.startGameFromCompany = function(companyId) {
     // Salva il companyId selezionato in sessionStorage e reindirizza
     sessionStorage.setItem('selectedCompanyId', companyId);
     console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage:', companyId, '| typeof:', typeof companyId);
-    window.location.href = 'index.html';
+    
+    // Redirect alla pagina hub (che ha tutti gli script necessari)
+    window.location.href = '/game/pages/hub.html';
 }
 
 // ========== SISTEMA DRILL-DOWN GEOGRAFICO ==========
@@ -188,18 +270,22 @@ let allAirportsData = null; // Cache globale aeroporti
 
 async function loadAirportsData(selectedScenario = null) {
     if (allAirportsData) {
+        console.log('🎯 Usando cache aeroporti esistente');
         return allAirportsData; // Usa cache se già caricati
     }
     
     try {
         console.log('🛫 Caricamento aeroporti dal database...');
         const response = await fetch('/api/airports');
+        console.log('📡 Response status:', response.status, response.statusText);
+        
         if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
         
         const airports = await response.json();
-        console.log(`✅ Caricati ${airports.length} aeroporti`);
+        console.log(`✅ Caricati ${airports.length} aeroporti dal server`);
+        console.log('📊 Sample airport:', airports[0]); // Log del primo aeroporto per debug
         
         // Se non c'è uno scenario selezionato, prova a prenderlo dal form
         if (!selectedScenario) {
@@ -216,26 +302,33 @@ async function loadAirportsData(selectedScenario = null) {
         };
         
         const targetYear = scenarioYears[selectedScenario] || 1950;
+        console.log(`🎯 Scenario: ${selectedScenario}, Anno target: ${targetYear}`);
         
-        // Filtra aeroporti disponibili nell'anno dello scenario
-        const availableAirports = airports.filter(airport => {
-            // Converti date in anni
-            const openedYear = airport.opened_date ? new Date(airport.opened_date).getFullYear() : 1900;
-            const closedYear = airport.closure_date ? new Date(airport.closure_date).getFullYear() : null;
-            
-            // Deve essere aperto nell'anno target
-            const isOpen = openedYear <= targetYear;
-            const notClosed = !closedYear || closedYear >= targetYear;
-            
-            return isOpen && notClosed;
-        });
+        // Costruisci URL con parametri per filtrare per anno e dimensione aeroporto
+        const apiUrl = new URL('/api/airports', window.location.origin);
+        apiUrl.searchParams.set('before', `${targetYear}-12-31`); // Filtra aeroporti aperti prima del 31 dicembre dell'anno target
+        apiUrl.searchParams.set('size', 'large,medium'); // Solo aeroporti grandi e medi per la partenza
+        apiUrl.searchParams.set('limit', '1000'); // Aumenta il limite per avere più opzioni
         
-        // Filtra solo aeroporti grandi/medium per la partenza
-        const suitableAirports = availableAirports
-            .filter(airport => ['large', 'medium'].includes(airport.airport_size))
-            .sort((a, b) => (b.business_level || 0) - (a.business_level || 0));
+        console.log('🌐 URL API completo:', apiUrl.toString());
         
-        allAirportsData = suitableAirports;
+        // Richiama l'API con i parametri corretti
+        const responseWithParams = await fetch(apiUrl);
+        console.log('📡 Response status con parametri:', responseWithParams.status, responseWithParams.statusText);
+        
+        if (!responseWithParams.ok) {
+            throw new Error(`API error: ${responseWithParams.status} ${responseWithParams.statusText}`);
+        }
+        
+        const airportsFiltered = await responseWithParams.json();
+        console.log(`✅ Caricati ${airportsFiltered.length} aeroporti filtrati dal server`);
+        console.log('📊 Sample airport filtrato:', airportsFiltered[0]); // Log del primo aeroporto per debug
+        
+        // Il server ha già filtrato per anno e dimensione, non serve filtrare ulteriormente
+        allAirportsData = airportsFiltered;
+        console.log(`💾 Cache aggiornata con ${allAirportsData.length} aeroporti`);
+        
+        return allAirportsData;
         return allAirportsData;
         
     } catch (error) {
@@ -245,41 +338,42 @@ async function loadAirportsData(selectedScenario = null) {
 }
 
 function getContinentsFromAirports(airports) {
-    // Mappa regioni geografiche a continenti
-    const regionToContinentMap = {
-        'Europe': 'Europa',
-        'European': 'Europa',
-        'EU': 'Europa',
-        'North America': 'Nord America',
-        'NA': 'Nord America',
-        'South America': 'Sud America',
-        'SA': 'Sud America',
-        'Asia': 'Asia',
-        'East Asia': 'Asia',
-        'Southeast Asia': 'Asia',
-        'Africa': 'Africa',
-        'Oceania': 'Oceania',
-        'Australia': 'Oceania',
-        'Middle East': 'Medio Oriente',
-        'ME': 'Medio Oriente'
-    };
-
     const continents = new Set();
 
     airports.forEach(airport => {
-        // Usa region, country o city come fallback
-        let region = airport.region || '';
-        if (!region && airport.country) {
-            // Prova a dedurre continente da paese
-            if (airport.country === 'Italy' || airport.country === 'France' || airport.country === 'Germany' || airport.country === 'Spain' || airport.country === 'United Kingdom') region = 'Europe';
-            else if (airport.country === 'United States' || airport.country === 'Canada' || airport.country === 'Mexico') region = 'North America';
-            else if (airport.country === 'Brazil' || airport.country === 'Argentina' || airport.country === 'Chile') region = 'South America';
-            else if (airport.country === 'China' || airport.country === 'Japan' || airport.country === 'India' || airport.country === 'Thailand') region = 'Asia';
-            else if (airport.country === 'Egypt' || airport.country === 'South Africa' || airport.country === 'Nigeria') region = 'Africa';
-            else if (airport.country === 'Australia' || airport.country === 'New Zealand') region = 'Oceania';
-            else if (airport.country === 'UAE' || airport.country === 'Saudi Arabia' || airport.country === 'Qatar') region = 'Middle East';
+        // Estrai continente dal timezone (formato: Europe/Rome, America/New_York, etc.)
+        let continent = '';
+        if (airport.timezone) {
+            const timezoneParts = airport.timezone.split('/');
+            if (timezoneParts.length >= 1) {
+                const timezoneContinent = timezoneParts[0];
+                
+                // Mappa timezone continents a nomi italiani
+                switch (timezoneContinent) {
+                    case 'Europe':
+                        continent = 'Europa';
+                        break;
+                    case 'America':
+                        // Distingui tra Nord e Sud America in base alla latitudine
+                        if (airport.latitude && parseFloat(airport.latitude) >= 0) {
+                            continent = 'Nord America';
+                        } else {
+                            continent = 'Sud America';
+                        }
+                        break;
+                    case 'Asia':
+                        continent = 'Asia';
+                        break;
+                    case 'Africa':
+                        continent = 'Africa';
+                        break;
+                    case 'Australia':
+                        continent = 'Oceania';
+                        break;
+                }
+            }
         }
-        const continent = regionToContinentMap[region] || region;
+        
         if (continent && continent.length > 2) continents.add(continent);
     });
 
@@ -287,23 +381,42 @@ function getContinentsFromAirports(airports) {
 }
 
 function getCountriesFromAirports(airports, selectedContinent) {
-    // Mappa inversa per filtrare per continente
-    const continentToRegionMap = {
-        'Europa': 'Europe',
-        'Nord America': 'North America',
-        'Sud America': 'South America',
-        'Asia': 'Asia',
-        'Africa': 'Africa',
-        'Oceania': 'Oceania',
-        'Medio Oriente': 'Middle East'
-    };
-    
-    const targetRegion = continentToRegionMap[selectedContinent];
-    
     const countries = new Set();
     
     airports
-        .filter(airport => airport.region === targetRegion)
+        .filter(airport => {
+            // Usa la stessa logica di getContinentsFromAirports per determinare il continente
+            let continent = '';
+            if (airport.timezone) {
+                const timezoneParts = airport.timezone.split('/');
+                if (timezoneParts.length >= 1) {
+                    const timezoneContinent = timezoneParts[0];
+                    
+                    switch (timezoneContinent) {
+                        case 'Europe':
+                            continent = 'Europa';
+                            break;
+                        case 'America':
+                            if (airport.latitude && parseFloat(airport.latitude) >= 0) {
+                                continent = 'Nord America';
+                            } else {
+                                continent = 'Sud America';
+                            }
+                            break;
+                        case 'Asia':
+                            continent = 'Asia';
+                            break;
+                        case 'Africa':
+                            continent = 'Africa';
+                            break;
+                        case 'Australia':
+                            continent = 'Oceania';
+                            break;
+                    }
+                }
+            }
+            return continent === selectedContinent;
+        })
         .forEach(airport => {
             if (airport.country) {
                 countries.add(airport.country);
@@ -320,12 +433,26 @@ function getAirportsFromCountry(airports, selectedCountry) {
 }
 
 async function populateContinents() {
+    console.log('🌍 populateContinents chiamata');
     const continentSelect = document.getElementById('continent-select');
-    if (!continentSelect) return;
+    if (!continentSelect) {
+        console.error('❌ continent-select non trovato');
+        return;
+    }
     
     try {
+        console.log('📡 Chiamata loadAirportsData...');
         const airports = await loadAirportsData();
+        console.log('✈️ Aeroporti ricevuti:', airports?.length || 0);
+        
+        if (!airports || airports.length === 0) {
+            console.error('❌ Nessun aeroporto ricevuto');
+            continentSelect.innerHTML = '<option value="">Nessun aeroporto disponibile</option>';
+            return;
+        }
+        
         const continents = getContinentsFromAirports(airports);
+        console.log('🌍 Continenti estratti:', continents);
         
         continentSelect.innerHTML = '<option value="">Seleziona continente...</option>';
         
@@ -434,6 +561,15 @@ async function populateStartingAirports(selectedScenario = null) {
 }
 
 function setupEventListeners() {
+    console.log('🔧 Setup event listeners...');
+    
+    // Debug: verifica tutti i pulsanti nel DOM
+    console.log('🔍 Verifica pulsanti nel DOM:');
+    console.log('  - new-game-btn:', document.getElementById('new-game-btn'));
+    console.log('  - start-first-game:', document.getElementById('start-first-game'));
+    console.log('  - no-saves div:', document.getElementById('no-saves'));
+    console.log('  - no-saves hidden?', document.getElementById('no-saves')?.classList.contains('hidden'));
+    
     // Logout button
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
@@ -444,17 +580,35 @@ function setupEventListeners() {
                 window.location.href = '/game/pages/auth/login.html';
             }, 500);
         });
+        console.log('✅ Logout button event listener attivato');
     } else {
         console.warn('[game-select] logout-btn non trovato in DOM');
     }
     
     // New game buttons
     const newGameBtn = document.getElementById('new-game-btn');
-    if (newGameBtn) newGameBtn.addEventListener('click', showNewGameModal);
-    else console.warn('[game-select] new-game-btn non trovato');
+    if (newGameBtn) {
+        newGameBtn.addEventListener('click', function(e) {
+            console.log('🎯 Click su new-game-btn!');
+            showNewGameModal();
+        });
+        console.log('✅ new-game-btn event listener attivato');
+    } else {
+        console.warn('[game-select] new-game-btn non trovato');
+    }
+    
     const startFirstBtn = document.getElementById('start-first-game');
-    if (startFirstBtn) startFirstBtn.addEventListener('click', showNewGameModal);
-    else console.warn('[game-select] start-first-game non trovato');
+    if (startFirstBtn) {
+        startFirstBtn.addEventListener('click', function(e) {
+            console.log('🎯 Click su start-first-game!');
+            showNewGameModal();
+        });
+        console.log('✅ start-first-game event listener attivato');
+    } else {
+        console.warn('[game-select] start-first-game non trovato');
+    }
+    
+    console.log('🔧 Setup event listeners completato');
     
     // Scenario change listener - ricarica aeroporti quando cambia lo scenario
     document.addEventListener('change', async function(e) {
@@ -555,6 +709,15 @@ function setupEventListeners() {
     const confirmHubBtn = document.getElementById('confirm-hub-btn');
     if (confirmHubBtn) confirmHubBtn.addEventListener('click', confirmHubSelection);
     
+    // Previeni submit del form hub selection
+    const selectHubForm = document.getElementById('select-hub-form');
+    if (selectHubForm) {
+        selectHubForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            confirmHubSelection();
+        });
+    }
+    
     // Delete modal controls
     const closeDeleteBtn = document.getElementById('close-delete-modal');
     if (closeDeleteBtn) closeDeleteBtn.addEventListener('click', hideDeleteModal);
@@ -582,76 +745,131 @@ function setupEventListeners() {
 // Hook used by selectPage.js after it injects modal HTML. This ensures listeners
 // that depend on modal DOM are attached even if templates were loaded asynchronously.
 window.onModalInjected = function(modalId) {
+    console.log(`🔗 Modal ${modalId} iniettato, attivazione listeners...`);
+    
     if (modalId === 'new-game-modal') {
-        // attach new-game modal listeners
-        const closeModalBtn = document.getElementById('close-modal');
-        if (closeModalBtn) closeModalBtn.addEventListener('click', hideNewGameModal);
-        const cancelNewBtn = document.getElementById('cancel-new-game');
-        if (cancelNewBtn) cancelNewBtn.addEventListener('click', hideNewGameModal);
-        const newGameFormEl = document.getElementById('new-game-form');
-        if (newGameFormEl) newGameFormEl.addEventListener('submit', handleNewGame);
-        const openHubBtn = document.getElementById('open-hub-modal-btn');
-        if (openHubBtn) openHubBtn.addEventListener('click', function() { const scenario = document.getElementById('scenario')?.value; openSelectHubModal(scenario); });
+        attachNewGameModalListeners();
     }
 
     if (modalId === 'select-hub-modal') {
-        attachModalListeners('select-hub-modal');
+        attachHubModalListeners();
     }
 
     if (modalId === 'delete-modal') {
-        const closeDeleteBtn = document.getElementById('close-delete-modal');
-        if (closeDeleteBtn) closeDeleteBtn.addEventListener('click', hideDeleteModal);
-        const cancelDeleteBtn = document.getElementById('cancel-delete');
-        if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', hideDeleteModal);
-        const confirmDeleteBtn = document.getElementById('confirm-delete');
-        if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', confirmDelete);
+        attachDeleteModalListeners();
     }
 };
 
 // Funzione per mostrare la modale di eliminazione salvataggio
 window.showDeleteSaveModal = function(saveId, saveName) {
-    selectedSaveToDelete = saveId;
-    document.getElementById('delete-save-name').textContent = saveName;
-    document.getElementById('delete-save-modal').classList.remove('hidden');
+    console.log('🗑️ Richiesta apertura modal eliminazione per:', saveId, saveName);
+    
+    const modal = document.getElementById('delete-modal');
+    const saveNameSpan = document.getElementById('delete-save-name');
+    
+    console.log('🔍 Elementi DOM trovati:', {
+        modal: !!modal,
+        saveNameSpan: !!saveNameSpan,
+        modalClasses: modal ? Array.from(modal.classList) : 'n/a',
+        modalDisplay: modal ? getComputedStyle(modal).display : 'n/a',
+        modalVisible: modal ? modal.offsetParent !== null : 'n/a'
+    });
+    
+    if (modal && saveNameSpan) {
+        selectedSaveToDelete = saveId;
+        saveNameSpan.textContent = saveName;
+        
+        // Rimuovi hidden e forza la visualizzazione
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex'; // Forza display flex per i modal
+        
+        console.log('✅ Modal eliminazione mostrato per:', saveName);
+        console.log('🔍 Stato finale modal:', {
+            classes: Array.from(modal.classList),
+            display: getComputedStyle(modal).display,
+            visible: modal.offsetParent !== null
+        });
+    } else {
+        console.error('❌ Modal elementi non trovati:', {
+            'delete-modal': !!modal,
+            'delete-save-name': !!saveNameSpan
+        });
+        
+        // Prova a ricaricare i modali se non sono stati caricati
+        loadAllModals().then(() => {
+            console.log('🔄 Riprovo ad aprire il modal dopo ricaricamento...');
+            const retryModal = document.getElementById('delete-modal');
+            const retrySaveNameSpan = document.getElementById('delete-save-name');
+            
+            if (retryModal && retrySaveNameSpan) {
+                selectedSaveToDelete = saveId;
+                retrySaveNameSpan.textContent = saveName;
+                retryModal.classList.remove('hidden');
+                retryModal.style.display = 'flex';
+                console.log('✅ Modal eliminazione mostrato al secondo tentativo');
+            } else {
+                showToast('Errore apertura modal eliminazione', 'error');
+            }
+        });
+    }
 };
 
-// Event listeners per la modale
-if (document.getElementById('close-delete-modal')) {
-    document.getElementById('close-delete-modal').onclick = function() {
-        document.getElementById('delete-save-modal').classList.add('hidden');
-    };
-}
-if (document.getElementById('cancel-delete-save')) {
-    document.getElementById('cancel-delete-save').onclick = function() {
-        document.getElementById('delete-save-modal').classList.add('hidden');
-    };
-}
-if (document.getElementById('confirm-delete-save')) {
-    document.getElementById('confirm-delete-save').onclick = async function() {
-        if (!selectedSaveToDelete) return;
-        showLoading('Eliminazione salvataggio...');
-        try {
-            const res = await fetch(`/api/game/saves/${selectedSaveToDelete}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error('Errore eliminazione salvataggio');
-            showToast('Salvataggio eliminato', 'success');
-            document.getElementById('delete-save-modal').classList.add('hidden');
-            loadUserSaves();
-        } catch (e) {
-            showToast('Errore: ' + e.message, 'error');
-        } finally {
-            hideLoading();
-        }
-    };
+function attachDeleteModalListeners() {
+    const closeDeleteBtn = document.getElementById('close-delete-modal');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    
+    console.log('🔌 Attivazione listeners modal eliminazione:', {
+        close: !!closeDeleteBtn,
+        cancel: !!cancelDeleteBtn,
+        confirm: !!confirmDeleteBtn
+    });
+    
+    if (closeDeleteBtn) {
+        closeDeleteBtn.addEventListener('click', hideDeleteModal);
+        console.log('✅ Listener "close" attivato');
+    } else {
+        console.warn('⚠️ Pulsante close-delete-modal non trovato');
+    }
+    
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', hideDeleteModal);
+        console.log('✅ Listener "cancel" attivato');
+    } else {
+        console.warn('⚠️ Pulsante cancel-delete non trovato');
+    }
+    
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', confirmDelete);
+        console.log('✅ Listener "confirm" attivato');
+    } else {
+        console.warn('⚠️ Pulsante confirm-delete non trovato');
+    }
 }
 
+
 async function showNewGameModal() {
+    console.log('🎬 showNewGameModal chiamata!');
+    
     const modal = document.getElementById('new-game-modal');
     const companyNameInput = document.getElementById('company-name-input');
     const scenarioSelect = document.getElementById('scenario');
 
+    console.log('🔍 Modal elements:');
+    console.log('  - new-game-modal:', modal);
+    console.log('  - company-name-input:', companyNameInput);
+    console.log('  - scenario:', scenarioSelect);
+
     if (!modal) {
         console.warn('[game-select] new-game-modal element not present yet; will attempt to open after injection');
+        return;
     }
+
+    // Verifica stile computed prima
+    const computedStyle = window.getComputedStyle(modal);
+    console.log('🎨 Display prima:', computedStyle.display);
+    console.log('🔍 Visibilità prima:', computedStyle.visibility);
+    console.log('📄 Modal innerHTML:', modal.innerHTML);
 
     // Pre-popola nome compagnia con suggerimento (solo se input esiste)
     if (companyNameInput && !companyNameInput.value) {
@@ -662,9 +880,23 @@ async function showNewGameModal() {
         ];
         const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
         companyNameInput.value = randomSuggestion;
+        console.log('✅ Nome compagnia suggerito:', randomSuggestion);
     }
 
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
+    console.log('👁️ Classe hidden rimossa, classList ora:', modal.classList.toString());
+    
+    // Verifica stile computed dopo
+    const computedStyleAfter = window.getComputedStyle(modal);
+    console.log('🎨 Display dopo:', computedStyleAfter.display);
+    console.log('🔍 Visibilità dopo:', computedStyleAfter.visibility);
+    
+    // Force display se necessario
+    if (computedStyleAfter.display === 'none') {
+        console.log('🔧 Forzo display flex');
+        modal.style.display = 'flex';
+    }
+    console.log('✅ Modal mostrato!');
 }
 
 function hideNewGameModal() {
@@ -965,36 +1197,15 @@ async function syncGameWithServer(saveName, gameData) {
     }
 }
 
-function startGame(saveKey) {
-    // SEMPLIFICATO: recupera companyId dal salvataggio e avvia solo se presente
-    const saves = authManager.getUserSaves();
-    const save = saves[saveKey];
-    let companyId = null;
-    if (save && save.data && save.data.company && save.data.company.id) {
-        companyId = save.data.company.id;
-    }
-    if (!companyId) {
-        showToast('Errore: companyId non trovato nel salvataggio selezionato', 'error');
-        return;
-    }
-    sessionStorage.setItem('selectedCompanyId', companyId);
-    console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage (startGame):', companyId, '| typeof:', typeof companyId);
-    window.location.href = 'index.html';
-}
-
-function deleteSave(saveKey) {
-    selectedSaveToDelete = saveKey;
-    
-    const modal = document.getElementById('delete-modal');
-    const saveNameSpan = document.getElementById('delete-save-name');
-    
-    saveNameSpan.textContent = saveKey;
-    modal.classList.remove('hidden');
-}
 
 function hideDeleteModal() {
+    console.log('❌ Chiusura modal eliminazione');
     const modal = document.getElementById('delete-modal');
-    modal.classList.add('hidden');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none'; // Forza nascondere
+        console.log('✅ Modal nascosto');
+    }
     selectedSaveToDelete = null;
 }
 
@@ -1003,21 +1214,31 @@ function confirmDelete() {
     
     showLoading('Eliminazione salvataggio...');
     
-    setTimeout(function() {
-        const deleteResult = authManager.deleteSave(selectedSaveToDelete);
-        
+    // Usa l'API corretta per eliminare una compagnia
+    fetch(`/api/game/companies/${selectedSaveToDelete}`, { 
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Errore ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(result => {
         hideLoading();
         hideDeleteModal();
-        
-        if (deleteResult) {
-            showToast('Salvataggio eliminato con successo', 'success');
-            loadUserSaves(); // Ricarica la lista
-        } else {
-            showToast('Errore durante l\'eliminazione', 'error');
-        }
-        
-        selectedSaveToDelete = null;
-    }, 800);
+        showToast('Salvataggio eliminato con successo', 'success');
+        loadUserSaves(); // Ricarica la lista
+    })
+    .catch(error => {
+        console.error('Errore eliminazione:', error);
+        hideLoading();
+        hideDeleteModal();
+        showToast('Errore durante l\'eliminazione: ' + error.message, 'error');
+    });
 }
 
 function showLoading(message) {

@@ -12,16 +12,19 @@ function setupCompanyHeader(companyId) {
         .then(data => {
             console.log('📊 Dati compagnia ricevuti:', data);
             
-            if (data && data.company) {
-                updateHeaderWithCompanyData(data.company);
+            // La struttura API è data.data.company
+            const company = data.data.company;
+            
+            if (company && company.name) {
+                updateHeaderWithCompanyData(company);
             } else {
-                console.warn('⚠️ Formato dati compagnia non riconosciuto');
-                setFallbackCompanyData();
+                console.error('❌ Dati compagnia non validi:', data);
+                throw new Error('Dati compagnia non disponibili o non validi');
             }
         })
         .catch(err => {
             console.error('❌ Errore caricamento dati compagnia:', err);
-            setFallbackCompanyData();
+            throw err; // Non usare fallback, propaga l'errore
         });
 }
 
@@ -40,20 +43,21 @@ function updateHeaderWithCompanyData(company) {
     console.log('✅ Header aggiornato con dati compagnia');
 }
 
-// Imposta dati di fallback se non si riesce a caricare dall'API
-function setFallbackCompanyData() {
-    const companyNameEl = document.getElementById('company-name');
-    const companyMoneyEl = document.getElementById('company-money');
-    const companyReputationEl = document.getElementById('company-reputation');
-    const gameDate = document.getElementById('game-date');
+// Inizializzazione quando la pagina è caricata
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎯 DOM caricato, inizializzazione header...');
     
-    if (companyNameEl) companyNameEl.textContent = 'Mosca Airlines';
-    if (companyMoneyEl) companyMoneyEl.textContent = '€2,000M';
-    if (companyReputationEl) companyReputationEl.textContent = '50';
-    if (gameDate) gameDate.textContent = formatGameDate();
+    // Recupera l'ID della compagnia da sessionStorage
+    const companyId = sessionStorage.getItem('selectedCompanyId');
     
-    console.log('⚠️ Header impostato con dati di fallback');
-}
+    if (!companyId) {
+        console.error('❌ Nessun ID compagnia trovato in sessionStorage');
+        throw new Error('ID compagnia non trovato');
+    }
+    
+    // Setup header con dati veri
+    setupCompanyHeader(companyId);
+});
 
 // Formatta il denaro per display
 function formatMoney(amount) {
@@ -82,9 +86,18 @@ function setupFleetButton() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🏁 HubPage-simple: DOM pronto');
     
-    // Configura header
-    const companyId = 1; // Hardcodato per ora
-    setupCompanyHeader(companyId);
+    // Ottieni companyId dal sessionStorage
+    const companyId = sessionStorage.getItem('selectedCompanyId');
+    console.log('🔍 Company ID dal sessionStorage:', companyId);
+    
+    if (companyId) {
+        setupCompanyHeader(companyId);
+    } else {
+        console.error('❌ Nessun companyId trovato in sessionStorage');
+        // Fallback per sviluppo - usa ID 1
+        console.warn('🔧 Utilizzo fallback companyId = 1 per sviluppo');
+        setupCompanyHeader(1);
+    }
     
     // Setup fleet button
     setTimeout(setupFleetButton, 1000);

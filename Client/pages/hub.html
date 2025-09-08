@@ -27,10 +27,19 @@
                     <span id="reputation">⭐ 0</span>
                     <span id="game-date" class="game-date"></span>
                     <button id="settings-button" title="Impostazioni"></button>
-                    <button id="back-to-menu-button" title="Torna al Menu" onclick="window.clearGameSession(); window.location.href='/game/game/select.html'">📋 Menu</button>
                 </div>
             </div>
         </header>
+
+        <!-- Barra di navigazione principale -->
+        <nav class="main-nav">
+            <button class="menu-btn active" data-tab="world">🌍 Mappa</button>
+            <button class="menu-btn" data-tab="fleet">✈️ Flotta</button>
+            <button class="menu-btn" data-tab="routes">🛣️ Rotte</button>
+            <button class="menu-btn" data-tab="finances">💰 Finanze</button>
+            <button class="menu-btn" data-tab="infrastructure">🏗️ Infrastrutture</button>
+            <button class="menu-btn" data-tab="research">🔬 Ricerca</button>
+        </nav>
 
         <!-- Area principale del gioco -->
         <main id="game-main">
@@ -111,6 +120,9 @@
     <!-- Scripts -->
     <!-- Leaflet JS: ensure the global `L` is available for client modules like WorldMap -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    
+    <!-- Dati temporanei per testing (rimuovere quando il database funziona) -->
+    <script src="/main-src/data/AircraftData-temp.js"></script>
     
     <!-- Entità base -->
     <script src="/main-src/entities/Aircraft.js"></script>

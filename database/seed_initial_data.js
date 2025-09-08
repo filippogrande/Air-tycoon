@@ -116,19 +116,32 @@ async function runSqlFile(client, filePath, fileLabel) {
     return `${stmt} ON CONFLICT (${key}) DO UPDATE SET ${updateFields}`;
   }
 
+  let errorCount = 0;
+  let successCount = 0;
+
   for (let stmt of statements) {
     if (stmt.toUpperCase().startsWith('INSERT INTO')) {
       stmt = transformInsertToUpsert(stmt);
     }
     try {
       await client.query(stmt);
+      successCount++;
     } catch (err) {
-      console.error(`[ERROR][${fileLabel}] failed executing statement: ${stmt.substring(0,200).replace(/\n/g,' ')}`);
-      console.error(err);
-      // Consider this a fatal error for this file
-      throw err;
+      errorCount++;
+      console.warn(`[WARNING][${fileLabel}] ⚠️ Saltando statement problematico: ${stmt.substring(0,100).replace(/\n/g,' ')}...`);
+      console.warn(`[WARNING][${fileLabel}] 📋 Errore: ${err.message}`);
+      // Non interrompere l'intero file per un singolo statement
+      // Continua con il prossimo statement
     }
   }
+  
+  console.log(`[INFO][${fileLabel}] 📊 Completato: ${successCount} statement riusciti, ${errorCount} saltati`);
+  
+  // Se ci sono solo errori e nessun successo, considera il file fallito
+  if (successCount === 0 && errorCount > 0) {
+    throw new Error(`Tutti gli statement nel file ${fileLabel} sono falliti`);
+  }
+  
   return true;
 }
 
@@ -142,14 +155,29 @@ async function main() {
     const files = fs.readdirSync(INITIAL_DB_DIR)
       .filter(f => f.endsWith('.sql'))
       .sort();
+    
+    let successCount = 0;
+    let failureCount = 0;
+    
     for (const file of files) {
       const filePath = path.join(INITIAL_DB_DIR, file);
-      await runSqlFile(client, filePath, file);
-      // Salva hash per ogni file
-      const fileHash = await getFileHash(filePath);
-      await saveSeedHash(client, file, fileHash);
+      try {
+        console.log(`[INFO] Processando file: ${file}`);
+        await runSqlFile(client, filePath, file);
+        // Salva hash per ogni file solo se il seeding è riuscito
+        const fileHash = await getFileHash(filePath);
+        await saveSeedHash(client, file, fileHash);
+        successCount++;
+        console.log(`[SUCCESS] ✅ File ${file} processato con successo`);
+      } catch (fileErr) {
+        failureCount++;
+        console.error(`[WARNING] ⚠️ Saltando file ${file} a causa di errori:`, fileErr.message);
+        console.error(`[WARNING] 📋 Stack trace per ${file}:`, fileErr.stack);
+        // Non interrompere il processo, continua con il file successivo
+      }
     }
-    console.log('[INFO] Seeding COMPLETATO per tutti i file.');
+    
+    console.log(`[INFO] 🏁 Seeding COMPLETATO: ${successCount} successi, ${failureCount} fallimenti.`);
   } catch (err) {
     console.error('[ERROR] Errore durante il seeding:', err.message);
   } finally {
