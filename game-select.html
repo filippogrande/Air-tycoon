@@ -131,6 +131,7 @@
         </div>
     </div>
     
+    <script src="Client/src/utils/uiUtils.js"></script>
     <script src="Client/src/utils/AuthManager.js?v=1.2"></script>
     <script src="Client/src/game-select.js?v=1.2"></script>
     <script>
@@ -194,7 +195,7 @@
 
   function openSelectHubModal(scenario) {
     selectedScenario = scenario;
-    document.getElementById('select-hub-modal').classList.remove('hidden');
+    uiUtils.showModal('select-hub-modal');
     populateContinents();
     resetSelect('country-select');
     resetSelect('airport-select');
@@ -204,7 +205,7 @@
   }
 
   function closeSelectHubModal() {
-    document.getElementById('select-hub-modal').classList.add('hidden');
+    uiUtils.hideModal('select-hub-modal');
   }
 
   function resetSelect(id) {

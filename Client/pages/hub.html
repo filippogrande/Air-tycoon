@@ -121,8 +121,7 @@
     <!-- Leaflet JS: ensure the global `L` is available for client modules like WorldMap -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     
-    <!-- Dati temporanei per testing (rimuovere quando il database funziona) -->
-    <script src="/main-src/data/AircraftData-temp.js"></script>
+    <!-- Dati temporanei rimossi - ora utilizza il database via API -->
     
     <!-- Entità base -->
     <script src="/main-src/entities/Aircraft.js"></script>
@@ -142,7 +141,8 @@
     <script src="/main-src/managers/InfrastructureManager.js"></script>
     
     <!-- UI e Utils -->
-    <script src="/main-src/utils/core-utils.js"></script>
+    <script src="/main-src/utils/gameUtils.js"></script>
+    <script src="/main-src/utils/uiUtils.js"></script>
     <script src="/main-src/utils/APIClient.js"></script>
     <script src="/main-src/utils/AuthManager.js"></script>
     <script src="/main-src/utils/RouteCalculator.js"></script>
@@ -166,7 +166,7 @@
     <script src="/main-src/ui/UIManager.js"></script>
     <script src="/main-src/graphics/WorldMap.js"></script>
     <script src="/main-src/ui/FleetTab.js"></script>
-    <script src="/main-src/pages/hubPage-simple.js"></script>
+    <script type="module" src="/main-src/pages/hubPage.js"></script>
     
     <!-- Engines -->
     <script src="/main-src/simulation/EconomyEngine.js"></script>
@@ -174,35 +174,6 @@
     <!-- Main game initialization -->
     <script src="/main-src/main.js"></script>
     
-    <!-- Inizializzazione hub semplificata -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Setup settings overlay se disponibile
-            if (typeof setupSettingsOverlay === 'function') {
-                setupSettingsOverlay();
-            }
-            
-            // Setup semplice per i tab (solo mappa attiva per ora)
-            const tabBtns = document.querySelectorAll('.menu-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const tabName = this.dataset.tab;
-                    
-                    // Rimuovi classe active da tutti
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    tabContents.forEach(t => t.classList.remove('active'));
-                    
-                    // Aggiungi active al selezionato
-                    this.classList.add('active');
-                    document.getElementById(tabName + '-tab').classList.add('active');
-                });
-            });
-            
-            console.log('📋 Hub UI inizializzata');
-        });
-    </script>
     </div>
 </body>
 </html>

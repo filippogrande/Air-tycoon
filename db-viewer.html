@@ -299,7 +299,7 @@
         </div>
     </div>
 
-    <script type="module" src="src/utils/AuthManager.js"></script>
+    <script type="module" src="/main-src/utils/AuthManager.js"></script>
     <script>
         let currentTable = null;
         let currentDataSource = 'localStorage'; // 'localStorage' o 'server'
@@ -432,7 +432,7 @@
                 displayTableData(tableName, data);
 
             } catch (error) {
-                showError(`Errore nel caricamento di ${tableName} da ${currentDataSource}: ${error.message}`);
+                showDbError(`Errore nel caricamento di ${tableName} da ${currentDataSource}: ${error.message}`);
             }
         }
 
@@ -557,7 +557,7 @@
                 displayComparison(localCategory, serverTable, localData, serverData);
 
             } catch (error) {
-                showError('Errore durante il confronto: ' + error.message);
+                showDbError('Errore durante il confronto: ' + error.message);
             }
         }
 
@@ -744,7 +744,7 @@
         }
 
         // Mostra un errore
-        function showError(message) {
+        function showDbError(message) {
             const container = document.getElementById('table-container');
             container.innerHTML = `<div class="error">${message}</div>`;
         }

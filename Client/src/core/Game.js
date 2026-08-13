@@ -108,10 +108,24 @@ Game.prototype.init = function() {
 Game.prototype.setupNewGame = function() {
     console.log('🆕 Setup nuova partita...');
     
-    // Imposta valori iniziali per una nuova partita
-    this.state.company.name = "Air Express";
-    this.state.company.money = 1000000; // $1M iniziali
-    this.state.company.reputation = 50;
+    // Se abbiamo già i dati della company dal server, usa quelli invece dei default.
+    var companySnapshot = window.__currentCompanyData || null;
+    if (companySnapshot) {
+        this.state.company.name = companySnapshot.name || this.state.company.name;
+        if (typeof companySnapshot.money !== 'undefined') {
+            this.state.company.money = Number(companySnapshot.money) || this.state.company.money;
+        }
+        if (typeof companySnapshot.reputation !== 'undefined') {
+            this.state.company.reputation = Number(companySnapshot.reputation) || this.state.company.reputation;
+        }
+    } else {
+        // Imposta valori iniziali per una nuova partita
+        this.state.company.name = "Air Express";
+        this.state.company.money = 1000000; // $1M iniziali
+        this.state.company.reputation = 50;
+    }
+
+    this.state.money = this.state.company.money;
     
     console.log('✅ Nuova partita configurata');
 };
@@ -297,10 +311,10 @@ Game.prototype.processMonthlyFinances = function() {
     }
     
     console.log('💰 Finanze mensili:', {
-        ricavi: totalRevenue.toLocaleString(),
-        costi: totalCosts.toLocaleString(),
-        profitto: netProfit.toLocaleString(),
-        liquidità: this.state.money.toLocaleString()
+        ricavi: uiUtils.formatNumber(totalRevenue),
+        costi: uiUtils.formatNumber(totalCosts),
+        profitto: uiUtils.formatNumber(netProfit),
+        liquidità: uiUtils.formatNumber(this.state.money)
     });
 };
 

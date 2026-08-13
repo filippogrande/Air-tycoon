@@ -190,7 +190,7 @@ DemandEstimationManager.prototype.improveAnalysis = function(originCode, destina
     if (currentMoney < cost) {
         return {
             success: false,
-            message: 'Fondi insufficienti. Servono €' + cost.toLocaleString()
+            message: 'Fondi insufficienti. Servono ' + uiUtils.formatCurrency(cost)
         };
     }
     
@@ -227,7 +227,7 @@ DemandEstimationManager.prototype.improveAnalysis = function(originCode, destina
     // Forza ricalcolo delle stime
     delete this.routeEstimates[routeKey];
     
-    console.log('✅ Analisi migliorata per', routeKey, '- Costo: €' + cost.toLocaleString());
+    console.log('✅ Analisi migliorata per', routeKey, '- Costo: ' + uiUtils.formatCurrency(cost));
     
     return {
         success: true,

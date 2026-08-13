@@ -36,7 +36,7 @@ var RoutePanelManager = {
         
         if (panel && triggerBtn) {
             panel.classList.add('active');
-            triggerBtn.classList.add('hidden');
+            uiUtils.hide(triggerId);
             console.log('✅ Pannello rotte aperto');
             return true;
         }
@@ -53,7 +53,7 @@ var RoutePanelManager = {
         
         if (panel) panel.classList.remove('active');
         if (configPanel) configPanel.classList.remove('active');
-        if (triggerBtn) triggerBtn.classList.remove('hidden');
+        if (triggerBtn) uiUtils.show(triggerId);
         
         console.log('✅ Pannelli rotte chiusi');
         return true;

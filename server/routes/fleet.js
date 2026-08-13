@@ -383,4 +383,230 @@ router.get('/available', async (req, res) => {
     }
 });
 
+// GET /api/fleet/generate-registration/:company_id - Genera codice registrazione automatico
+router.get('/generate-registration/:company_id', async (req, res) => {
+    try {
+        const { company_id } = req.params;
+        
+        // Ottieni il paese della sede principale della compagnia
+        const companyInfo = await db.query(`
+            SELECT c.name as company_name, a.country 
+            FROM companies c
+            JOIN airports a ON c.base_airport = a.id
+            WHERE c.id = $1
+        `, [company_id]);
+        
+        if (companyInfo.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Company not found'
+            });
+        }
+        
+        const country = companyInfo.rows[0].country;
+        
+        // Mappa paese -> prefisso registrazione aeromobili (standard ICAO)
+        const countryPrefixes = {
+            'United States': 'N',
+            'USA': 'N',
+            'United Kingdom': 'G',
+            'UK': 'G',
+            'Germany': 'D',
+            'France': 'F',
+            'Italy': 'I',
+            'Spain': 'EC',
+            'Netherlands': 'PH',
+            'Switzerland': 'HB',
+            'Austria': 'OE',
+            'Belgium': 'OO',
+            'Canada': 'C',
+            'Australia': 'VH',
+            'Japan': 'JA',
+            'China': 'B',
+            'Brazil': 'PR',
+            'Russia': 'RA',
+            'India': 'VT',
+            'South Africa': 'ZS',
+            'Mexico': 'XA',
+            'Argentina': 'LV',
+            'Chile': 'CC',
+            'Turkey': 'TC',
+            'Greece': 'SX',
+            'Portugal': 'CS',
+            'Sweden': 'SE',
+            'Norway': 'LN',
+            'Denmark': 'OY',
+            'Finland': 'OH',
+            'Poland': 'SP',
+            'Czech Republic': 'OK',
+            'Hungary': 'HA',
+            'Ireland': 'EI',
+            'Israel': '4X',
+            'Egypt': 'SU',
+            'South Korea': 'HL',
+            'Thailand': 'HS',
+            'Malaysia': '9M',
+            'Singapore': '9V',
+            'Philippines': 'RP',
+            'Indonesia': 'PK',
+            'New Zealand': 'ZK',
+            'Saudi Arabia': 'HZ',
+            'UAE': 'A6',
+            'Qatar': 'A7',
+            'Kuwait': '9K',
+            'Algeria': '7T',
+            'Morocco': 'CN',
+            'Tunisia': 'TS',
+            'Libya': '5A',
+            'Sudan': 'ST',
+            'Ethiopia': 'ET',
+            'Kenya': '5Y',
+            'Nigeria': '5N',
+            'Ghana': '9G',
+            'Zimbabwe': 'Z',
+            'Botswana': 'A2',
+            'Zambia': '9J',
+            'Tanzania': '5H',
+            'Uganda': '5X',
+            'Rwanda': '9XR',
+            'Democratic Republic of the Congo': '9Q',
+            'Angola': 'D2',
+            'Venezuela': 'YV',
+            'Colombia': 'HK',
+            'Peru': 'OB',
+            'Ecuador': 'HC',
+            'Uruguay': 'CX',
+            'Paraguay': 'ZP',
+            'Bolivia': 'CP',
+            'Cuba': 'CU',
+            'Jamaica': '6Y',
+            'Costa Rica': 'TI',
+            'Panama': 'HP',
+            'Guatemala': 'TG',
+            'Honduras': 'HR',
+            'Nicaragua': 'YN',
+            'El Salvador': 'YS',
+            'Dominican Republic': 'HI',
+            'Haiti': 'HH',
+            'Barbados': '8P',
+            'Trinidad and Tobago': '9Y',
+            'Guyana': '8R',
+            'Suriname': 'PZ',
+            'French Guiana': 'F',
+            'Iceland': 'TF',
+            'Greenland': 'OY',
+            'Faroe Islands': 'OY',
+            'Ukraine': 'UR',
+            'Belarus': 'EW',
+            'Moldova': 'ER',
+            'Georgia': '4L',
+            'Armenia': 'EK',
+            'Azerbaijan': '4K',
+            'Kazakhstan': 'UN',
+            'Uzbekistan': 'UK',
+            'Kyrgyzstan': 'EX',
+            'Tajikistan': 'EY',
+            'Turkmenistan': 'EZ',
+            'Afghanistan': 'YA',
+            'Pakistan': 'AP',
+            'Bangladesh': 'S2',
+            'Sri Lanka': '4R',
+            'Maldives': '8Q',
+            'Nepal': '9N',
+            'Bhutan': 'A5',
+            'Myanmar': 'XY',
+            'Laos': 'RDPL',
+            'Cambodia': 'XU',
+            'Vietnam': 'VN',
+            'Mongolia': 'JU',
+            'North Korea': 'P',
+            'Taiwan': 'B',
+            'Hong Kong': 'B',
+            'Macau': 'B'
+        };
+        
+        // Trova il prefisso per il paese, usa 'XX' come default se non trovato
+        let prefix = countryPrefixes[country] || 'XX';
+        
+        // Cerca variazioni del nome del paese se non trovato direttamente
+        if (prefix === 'XX') {
+            for (const [countryName, countryPrefix] of Object.entries(countryPrefixes)) {
+                if (country.toLowerCase().includes(countryName.toLowerCase()) || 
+                    countryName.toLowerCase().includes(country.toLowerCase())) {
+                    prefix = countryPrefix;
+                    break;
+                }
+            }
+        }
+        
+        // Ottieni il numero più alto esistente per questo prefisso nella flotta della compagnia
+        const existingRegistrations = await db.query(`
+            SELECT registration 
+            FROM fleet 
+            WHERE company_id = $1 
+            AND registration LIKE $2
+            ORDER BY registration DESC
+        `, [company_id, `${prefix}%`]);
+        
+        // Trova il numero più alto
+        let nextNumber = 1;
+        if (existingRegistrations.rows.length > 0) {
+            for (const row of existingRegistrations.rows) {
+                const reg = row.registration;
+                // Estrai il numero dalla registrazione (assumendo formato PREFIX + NUMERO + LETTERE)
+                const match = reg.match(new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)`));
+                if (match) {
+                    const num = parseInt(match[1]);
+                    if (num >= nextNumber) {
+                        nextNumber = num + 1;
+                    }
+                }
+            }
+        }
+        
+        // Genera la registrazione finale nel formato PREFISSO + NUMERO (3 cifre) + LETTERE
+        const paddedNumber = nextNumber.toString().padStart(3, '0');
+        const suffix = ['AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ'][nextNumber % 10];
+        const registration = `${prefix}${paddedNumber}${suffix}`;
+        
+        // Verifica che la registrazione non esista già nel sistema (controllo globale)
+        const globalCheck = await db.query(`
+            SELECT registration FROM fleet WHERE registration = $1
+        `, [registration]);
+        
+        if (globalCheck.rows.length > 0) {
+            // Se esiste, aggiungi un suffisso random
+            const randomSuffix = Math.random().toString(36).substr(2, 2).toUpperCase();
+            const uniqueRegistration = `${prefix}${paddedNumber}${randomSuffix}`;
+            
+            res.json({
+                success: true,
+                data: {
+                    registration: uniqueRegistration,
+                    country: country,
+                    prefix: prefix,
+                    company_name: companyInfo.rows[0].company_name
+                }
+            });
+        } else {
+            res.json({
+                success: true,
+                data: {
+                    registration: registration,
+                    country: country,
+                    prefix: prefix,
+                    company_name: companyInfo.rows[0].company_name
+                }
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error generating registration:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to generate registration'
+        });
+    }
+});
+
 module.exports = router;

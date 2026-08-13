@@ -24,7 +24,7 @@ var RouteUIManager = {
         if (panel && triggerBtn) {
             // Mostra pannello e nascondi bottone
             panel.classList.add('active');
-            triggerBtn.classList.add('hidden');
+            uiUtils.hide('open-route-panel');
             
             // Aggiorna stato
             this.routeCreationState.isOpen = true;
@@ -55,7 +55,7 @@ var RouteUIManager = {
         }
         
         if (triggerBtn) {
-            triggerBtn.classList.remove('hidden');
+            uiUtils.show('open-route-panel');
         }
         
         // Reset stato
@@ -509,7 +509,7 @@ var RouteUIManager = {
     },
     
     // Popola i dati nel pannello configurazione
-    populateRouteConfigData: function() {
+    populateRouteConfigData: async function() {
         var origin = this.routeCreationState.originAirport;
         var destination = this.routeCreationState.destinationAirport;
         
@@ -536,14 +536,18 @@ var RouteUIManager = {
         
         // Calcola dati rotta
         if (typeof RouteCalculator !== 'undefined') {
-            var estimates = RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
-            
-            // Aggiorna distanza e tempo di volo
-            var distanceSpan = document.getElementById('config-distance');
-            var flightTimeSpan = document.getElementById('config-flight-time');
-            
-            if (distanceSpan) distanceSpan.textContent = Math.round(estimates.distance);
-            if (flightTimeSpan) flightTimeSpan.textContent = estimates.flightTime.formatted;
+            try {
+                var estimates = await RouteCalculator.calculateRouteEstimates(origin, destination, 'basic');
+
+                // Aggiorna distanza e tempo di volo
+                var distanceSpan = document.getElementById('config-distance');
+                var flightTimeSpan = document.getElementById('config-flight-time');
+
+                if (distanceSpan) distanceSpan.textContent = Math.round(estimates.distance);
+                if (flightTimeSpan) flightTimeSpan.textContent = estimates.flightTimeFormatted || '--';
+            } catch (err) {
+                console.warn('[RouteUIManager] impossibile calcolare le stime rotta:', err && err.message);
+            }
         }
         
         // Calcola costi
@@ -1460,6 +1464,35 @@ var RouteUIManager = {
     // Inizializza event listeners per i pannelli rotte
     setupRoutePanelEventListeners: function() {
         console.log('🔧 Setup event listeners pannelli rotte...');
+
+        if (this._routePanelEventListenersBound) {
+            console.debug('🔧 Event listeners pannelli rotte già configurati, skip');
+            return;
+        }
+        this._routePanelEventListenersBound = true;
+
+        var self = this;
+
+        // Bottone rosso nella tab Rotte: porta alla mappa e apre il pannello condiviso
+        var addRouteBtn = document.getElementById('add-route');
+        if (addRouteBtn) {
+            addRouteBtn.addEventListener('click', function() {
+                try {
+                    if (typeof window.switchToTab === 'function') {
+                        window.switchToTab('world');
+                    }
+                } catch (e) { /* ignore */ }
+                self.openRouteCreationPanel();
+            });
+        }
+
+        // Bottone condiviso nella mappa
+        var openRouteBtn = document.getElementById('open-route-panel');
+        if (openRouteBtn) {
+            openRouteBtn.addEventListener('click', function() {
+                self.openRouteCreationPanel();
+            });
+        }
         
         // Event listener per bottone cancella rotta
         var cancelBtn = document.getElementById('cancel-route-btn');

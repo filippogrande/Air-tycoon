@@ -136,30 +136,6 @@ function initializeGame(companyId) {
     }
 }
 
-// Verifica compatibilità del browser
-function checkBrowserCompatibility() {
-    try {
-        // Verifica localStorage
-        if (!window.localStorage) return false;
-        
-        // Verifica JSON
-        if (!window.JSON) return false;
-        
-        // Verifica Canvas support
-        const canvas = document.createElement('canvas');
-        if (!canvas.getContext) return false;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return false;
-        
-        // requestAnimationFrame è ora garantito dal polyfill
-        
-        return true;
-    } catch (error) {
-        console.error('Errore nel controllo compatibilità:', error);
-        return false;
-    }
-}
-
 // Gestione errori globali
 function handleGlobalError(event) {
     console.error('❌ Errore globale:', event.error);
@@ -234,99 +210,11 @@ function showWelcomeMessage() {
     }, 2000);
 }
 
-// Mostra errore all'utente
-function showError(message) {
-    // Crea elemento errore
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #f44336;
-        color: white;
-        padding: 20px;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        text-align: center;
-        z-index: 10000;
-        max-width: 400px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    `;
-    errorDiv.textContent = message;
-    
-    document.body.appendChild(errorDiv);
-    
-    // Rimuovi dopo 5 secondi
-    setTimeout(() => {
-        if (errorDiv.parentNode) {
-            errorDiv.parentNode.removeChild(errorDiv);
-        }
-    }, 5000);
-}
-
-// --- Mostra la data di gioco nell'header ---
-function updateGameDateInHeader(dateString) {
-    var el = document.getElementById('game-date');
-    if (!el) return;
-    if (!dateString) {
-        el.textContent = '';
-        return;
-    }
-    // Formatta la data come "Gennaio 1950"
-    var d = new Date(dateString);
-    if (!isNaN(d.getTime())) {
-        var mesi = [
-            'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-            'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
-        ];
-        var month = mesi[d.getMonth()];
-        var year = d.getFullYear();
-        el.textContent = `📅 ${month} ${year}`;
-    } else {
-        el.textContent = `📅 ${dateString}`;
-    }
-}
-
-// --- Carica la data di gioco dopo aver caricato la compagnia ---
-function fetchAndShowGameDate(companyId) {
-    fetch('/api/game/companies/' + companyId)
-        .then(res => res.json())
-        .then(response => {
-            if (response.success && response.data && response.data.company) {
-                // Aggiorna data
-                if (response.data.company.game_date) {
-                    updateGameDateInHeader(response.data.company.game_date);
-                }
-                // Aggiorna soldi e reputazione
-                updateCompanyStatsInHeader(response.data.company);
-            }
-        });
-}
-
-// Funzione per aggiornare soldi e reputazione nell'header
-function updateCompanyStatsInHeader(company) {
-    // Aggiorna soldi
-    var moneyEl = document.getElementById('money');
-    if (moneyEl && company.money !== undefined) {
-        // Formatta con separatore migliaia e simbolo €
-        let euro = Number(company.money) || 0;
-        moneyEl.textContent = `💰 ${euro.toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}`;
-    }
-    // Aggiorna reputazione
-    var repEl = document.getElementById('reputation');
-    if (repEl && company.reputation !== undefined) {
-        repEl.textContent = `⭐ ${company.reputation}`;
-    }
-}
-
 // Debug: Espone oggetti globali per testing (solo in development)
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     window.debugGame = () => game;
-    window.debugAircraftData = AircraftData;
-    window.debugAirportData = AirportData;
+    window.debugAircraftData = window.AircraftData || null;
+    window.debugAirportData = window.AirportData || null;
     window.debugSaveLoad = SaveLoad;
     
     console.log('🐛 Modalità debug attiva. Usa window.debugGame() per accedere al gioco.');
@@ -378,13 +266,13 @@ function setupGameMenuEvents() {
         gameMenuBtn.addEventListener('click', function() {
             console.log('📋 Apertura menu di gioco');
             updateGameMenuInfo();
-            gameMenuModal.classList.remove('hidden');
+            uiUtils.showModal('game-menu-modal');
         });
     }
     
     if (closeGameMenuBtn && gameMenuModal) {
         closeGameMenuBtn.addEventListener('click', function() {
-            gameMenuModal.classList.add('hidden');
+            uiUtils.hideModal('game-menu-modal');
         });
     }
     
@@ -397,7 +285,7 @@ function setupGameMenuEvents() {
                 try {
                     game.saveGame();
                     alert('✅ Partita salvata con successo!');
-                    gameMenuModal.classList.add('hidden');
+                    uiUtils.hideModal('game-menu-modal');
                 } catch (error) {
                     console.error('❌ Errore nel salvataggio:', error);
                     alert('❌ Errore nel salvataggio: ' + error.message);
@@ -434,7 +322,7 @@ function setupGameMenuEvents() {
                 } catch (e) {
                     console.warn('⚠️ Errore pulizia dati di gioco:', e);
                 }
-                window.location.href = 'game-select.html';
+                window.location.href = '/game/game/select.html';
             }
         });
     }
@@ -617,6 +505,11 @@ function setupUIEvents() {
 function setupTabNavigation() {
     console.log('🏷️ Setup navigazione tab...');
     
+    if (window._tabNavigationBound) {
+        console.debug('🏷️ Navigazione tab già configurata, skip');
+        return;
+    }
+    
     var tabButtons = document.querySelectorAll('.menu-btn[data-tab]');
     var tabContents = document.querySelectorAll('.tab-content');
     
@@ -634,6 +527,8 @@ function setupTabNavigation() {
             }
         });
     });
+    
+    window._tabNavigationBound = true;
     
     console.log('✅ Navigazione tab configurata');
 }
@@ -760,13 +655,13 @@ function setupGameMenuEvents() {
         gameMenuBtn.addEventListener('click', function() {
             console.log('📋 Apertura menu di gioco');
             updateGameMenuInfo();
-            gameMenuModal.classList.remove('hidden');
+            uiUtils.showModal('game-menu-modal');
         });
     }
     
     if (closeGameMenuBtn && gameMenuModal) {
         closeGameMenuBtn.addEventListener('click', function() {
-            gameMenuModal.classList.add('hidden');
+            uiUtils.hideModal('game-menu-modal');
         });
     }
     
@@ -779,7 +674,7 @@ function setupGameMenuEvents() {
                 try {
                     game.saveGame();
                     alert('✅ Partita salvata con successo!');
-                    gameMenuModal.classList.add('hidden');
+                    uiUtils.hideModal('game-menu-modal');
                 } catch (error) {
                     console.error('❌ Errore nel salvataggio:', error);
                     alert('❌ Errore nel salvataggio: ' + error.message);
@@ -807,7 +702,7 @@ function setupGameMenuEvents() {
                 } catch (e) {
                     console.warn('⚠️ Errore pulizia dati di gioco:', e);
                 }
-                window.location.href = 'game-select.html';
+                window.location.href = '/game/game/select.html';
             }
         });
     }

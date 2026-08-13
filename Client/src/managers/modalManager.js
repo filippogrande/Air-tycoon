@@ -3,9 +3,8 @@
 
 window.modalManager = {
   openDeleteModal(saveId, companyName) {
-    const modal = document.getElementById('delete-save-modal');
+    const modal = uiUtils.showModal('delete-save-modal');
     if (!modal) return;
-    modal.classList.remove('hidden');
     modal.setAttribute('data-save-id', saveId);
     const nameEl = document.getElementById('delete-save-name');
     if (nameEl) nameEl.textContent = companyName;
@@ -23,14 +22,14 @@ window.modalManager = {
     if (closeBtn) {
       closeBtn.replaceWith(closeBtn.cloneNode(true));
       modal.querySelector('#close-delete-modal').addEventListener('click', function() {
-        modal.classList.add('hidden');
+        uiUtils.hideModal('delete-save-modal');
         modal.removeAttribute('data-save-id');
       });
     }
     if (cancelBtn) {
       cancelBtn.replaceWith(cancelBtn.cloneNode(true));
       modal.querySelector('#cancel-delete-save').addEventListener('click', function() {
-        modal.classList.add('hidden');
+        uiUtils.hideModal('delete-save-modal');
         modal.removeAttribute('data-save-id');
       });
     }
@@ -44,7 +43,7 @@ window.modalManager = {
           const res = await fetch(`/api/game/saves/${saveId}`, { method: 'DELETE' });
           if (!res.ok) throw new Error('Errore eliminazione salvataggio');
           window.uiUtils.showToast('Salvataggio eliminato', 'success');
-          modal.classList.add('hidden');
+          uiUtils.hideModal('delete-save-modal');
           modal.removeAttribute('data-save-id');
           window.savesManager.loadUserSaves();
         } catch (e) {
