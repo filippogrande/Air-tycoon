@@ -102,7 +102,12 @@ FleetManager.prototype.purchaseAircraft = function(aircraftType, customName) {
     var aircraft = this.addAircraft(aircraftData, customName);
     if (aircraft) {
         this.gameState.subtractMoney(aircraftData.price);
-        console.log('💰 Acquistato ' + aircraft.name + ' per €' + aircraftData.price.toLocaleString());
+        console.log('💰 Acquistato ' + aircraft.name + ' per ' + uiUtils.formatCurrency(aircraftData.price));
+        
+        // Aggiorna i soldi della compagnia
+        if (window.game && window.game.state) {
+            window.game.state.money -= aircraftData.price;
+        }
     }
     
     return aircraft;
@@ -120,7 +125,7 @@ FleetManager.prototype.sellAircraft = function(aircraftId) {
     this.removeAircraft(aircraftId);
     this.gameState.addMoney(sellPrice);
     
-    console.log('💰 Venduto ' + aircraft.name + ' per €' + sellPrice.toLocaleString());
+    console.log('💰 Venduto ' + aircraft.name + ' per ' + uiUtils.formatCurrency(sellPrice));
     return true;
 };
 
@@ -135,7 +140,7 @@ FleetManager.prototype.performMaintenance = function(aircraftId) {
     var cost = aircraft.performMaintenance();
     if (this.gameState.canAfford(cost)) {
         this.gameState.subtractMoney(cost);
-        console.log('🔧 Manutenzione completata per ' + aircraft.name + ' (€' + cost.toLocaleString() + ')');
+        console.log('🔧 Manutenzione completata per ' + aircraft.name + ' (' + uiUtils.formatCurrency(cost) + ')');
         return true;
     } else {
         console.error('❌ Fondi insufficienti per la manutenzione');

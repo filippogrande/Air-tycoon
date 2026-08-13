@@ -77,7 +77,7 @@ UIManager.prototype.showAirportInfo = function(airport) {
                 '<p><strong>Traffico Turistico:</strong> ' + touristLevel + '/100</p>';
         }
         
-        infoPanel.classList.remove('hidden');
+        uiUtils.show('info-panel');
     } else {
         console.warn('⚠️ Elemento airport-info non trovato nel DOM');
     }
@@ -88,7 +88,7 @@ UIManager.prototype.hideAirportInfo = function() {
     
     var infoPanel = document.getElementById('airport-info');
     if (infoPanel) {
-        infoPanel.classList.add('hidden');
+        uiUtils.hide('info-panel');
     }
 };
 

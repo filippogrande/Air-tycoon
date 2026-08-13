@@ -1,55 +1,143 @@
--- Inserisci qui i dati iniziali per la tabella seat_models
-INSERT INTO seat_models (manufacturer_id, model_name, model_code, seat_class, width_cm, depth_cm, height_cm, 
-                        pitch_min_cm, pitch_max_cm, weight_kg, comfort_rating, recline_angle, 
-                        has_entertainment_screen, screen_size_inches, has_power_outlet, has_usb_port,
+-- Catalogo seat models con progressione storica e optional
+INSERT INTO seat_models (manufacturer_id, model_name, model_code, seat_class, width_cm, depth_cm, height_cm,
+                        pitch_min_cm, pitch_max_cm, weight_kg, comfort_rating, recline_angle,
+                        features, has_entertainment_screen, screen_size_inches, has_power_outlet, has_usb_port,
                         market_entry_year, max_flight_hours, max_cycles, base_cost, maintenance_cost_per_year) VALUES
 
--- Recaro Economy
-(1, 'BL3510', 'BL3510', 'economy', 43.2, 76.0, 81.0, 76, 86, 12.5, 6, 8, TRUE, 9.0, FALSE, TRUE, 2015, 45000, 22500, 1200, 150),
-(1, 'CL3710', 'CL3710', 'economy', 45.0, 78.0, 83.0, 79, 89, 13.2, 7, 10, TRUE, 10.1, TRUE, TRUE, 2018, 50000, 25000, 1600, 180),
+-- Pre-1950: i modelli sono semplici, robusti e quasi senza elettronica
+(1, 'Recaro Heritage 1936', 'RH-36', 'economy', 42.0, 73.0, 78.0, 74, 82, 11.2, 3, 6,
+ 'Fixed backrest, fabric cover, fixed armrest, ashtray, magazine pocket', FALSE, NULL, FALSE, FALSE, 1936, 30000, 15000, 650, 90),
+(2, 'Collins Classic 1938', 'CC-38', 'economy', 43.0, 74.0, 79.0, 75, 83, 11.7, 4, 7,
+ 'Reclining backrest, tray table, reading lamp, coat hook', FALSE, NULL, FALSE, FALSE, 1938, 32000, 16000, 720, 100),
+(8, 'Haeco Pioneer 1940', 'HP-40', 'economy', 43.5, 75.0, 80.0, 76, 85, 12.1, 4, 8,
+ 'Reclining backrest, tray table, map pocket, coat hook', FALSE, NULL, FALSE, FALSE, 1940, 33000, 16500, 760, 105),
+(6, 'Thompson Salon 1942', 'TS-42', 'premium_economy', 46.0, 82.0, 85.0, 84, 92, 14.8, 5, 10,
+ 'Wider cushion, leg rest, adjustable headrest, reading lamp', FALSE, NULL, FALSE, FALSE, 1942, 34000, 17000, 980, 130),
+(7, 'Jamco Diplomat 1944', 'JD-44', 'business', 50.0, 98.0, 96.0, 96, 108, 22.0, 6, 18,
+ 'Recline lever, armrest, fold-out table, privacy curtain', FALSE, NULL, FALSE, FALSE, 1944, 35000, 17500, 1800, 220),
+(4, 'Geven Nomad 1946', 'GN-46', 'economy', 43.8, 75.5, 80.0, 76, 84, 11.9, 4, 8,
+ 'Reclining shell, tray table, ashtray, literature pocket', FALSE, NULL, FALSE, FALSE, 1946, 36000, 18000, 800, 110),
+(3, 'Zodiac Prestige 1948', 'ZP-48', 'first', 58.0, 120.0, 110.0, 120, 132, 32.5, 7, 35,
+ 'Wide armchair, privacy curtain, footrest, vanity mirror', FALSE, NULL, FALSE, FALSE, 1948, 37000, 18500, 3200, 350),
 
--- Collins Aerospace Economy  
-(2, 'Meridian', 'MER-100', 'economy', 44.0, 77.0, 82.0, 76, 87, 12.8, 6, 9, TRUE, 9.0, FALSE, TRUE, 2016, 47000, 23000, 1400, 170),
-(2, 'Aire', 'AIR-200', 'economy', 46.0, 79.0, 84.0, 81, 91, 14.0, 8, 12, TRUE, 11.0, TRUE, TRUE, 2020, 55000, 27500, 2000, 210),
+-- 1950s: piu comfort meccanico, sempre senza schermi
+(1, 'Recaro AeroSeat 1951', 'RA-51', 'economy', 42.5, 74.5, 79.0, 75, 84, 11.4, 4, 8,
+ 'Reclining backrest, tray table, ashtray pocket, coat hook', FALSE, NULL, FALSE, FALSE, 1951, 38000, 19000, 700, 95),
+(2, 'Collins Streamline 1953', 'CS-53', 'economy', 43.2, 75.0, 79.5, 76, 85, 11.8, 4, 9,
+ 'Reclining backrest, tray table, reading lamp, magazine pocket', FALSE, NULL, FALSE, FALSE, 1953, 39000, 19500, 760, 100),
+(4, 'Geven Jetlite 1955', 'GJ-55', 'premium_economy', 46.5, 83.0, 86.0, 85, 94, 15.2, 5, 12,
+ 'Wider cushion, leg rest, adjustable headrest, tray table', FALSE, NULL, FALSE, FALSE, 1955, 40000, 20000, 1050, 135),
+(8, 'Haeco Club 1958', 'HC-58', 'business', 50.5, 100.0, 98.0, 98, 110, 23.0, 6, 20,
+ 'Recline lever, fold-out table, reading lamp, privacy divider', FALSE, NULL, FALSE, FALSE, 1958, 41000, 20500, 1900, 240),
 
--- Geven Economy (low-cost specialist)
-(4, 'Piuma', 'PMA-150', 'economy', 43.0, 75.0, 80.0, 76, 84, 11.8, 5, 6, FALSE, 0, FALSE, FALSE, 2014, 40000, 20000, 1000, 120),
-(4, 'Essenza', 'ESS-250', 'economy', 44.5, 76.5, 81.5, 78, 86, 12.2, 6, 8, TRUE, 8.9, FALSE, TRUE, 2019, 48000, 24000, 1300, 140),
+-- 1960s: compaiono soluzioni piu raffinate e spazio extra
+(6, 'Thompson Executive 1961', 'TE-61', 'business', 51.0, 101.0, 99.0, 100, 112, 23.5, 7, 20,
+ 'Adjustable headrest, recline lever, fold-out table, coat hook', FALSE, NULL, FALSE, FALSE, 1961, 42000, 21000, 2200, 260),
+(3, 'Zodiac Royale 1963', 'ZR-63', 'first', 59.0, 124.0, 112.0, 124, 136, 34.0, 8, 40,
+ 'Wide armchair, leg rest, vanity mirror, privacy screen', FALSE, NULL, FALSE, FALSE, 1963, 43000, 21500, 3600, 390),
+(1, 'Recaro Metro 1965', 'RM-65', 'economy', 43.8, 76.0, 80.0, 77, 86, 12.0, 5, 9,
+ 'Improved foam, tray table, reading lamp, ashtray pocket', FALSE, NULL, FALSE, FALSE, 1965, 44000, 22000, 820, 110),
+(2, 'Collins Nova 1967', 'CN-67', 'economy', 44.0, 76.5, 80.5, 78, 87, 12.2, 5, 10,
+ 'Improved foam, tray table, optional lumbar insert, coat hook', FALSE, NULL, FALSE, FALSE, 1967, 45000, 22500, 860, 115),
+(4, 'Geven Skyrest 1969', 'GS-69', 'premium_economy', 47.0, 84.0, 87.0, 86, 95, 15.8, 6, 13,
+ 'Adjustable headrest, wider cushion, tray table, leg rest', FALSE, NULL, FALSE, FALSE, 1969, 46000, 23000, 1120, 140),
 
--- Acro Economy (ultra-lightweight)
-(5, 'Series 3', 'S3-100', 'economy', 43.5, 76.0, 80.5, 76, 85, 10.5, 5, 7, FALSE, 0, FALSE, FALSE, 2017, 42000, 21000, 1100, 110),
-(5, 'Series 6', 'S6-200', 'economy', 45.0, 77.5, 82.0, 79, 88, 11.8, 7, 9, TRUE, 9.0, TRUE, TRUE, 2021, 50000, 25000, 1700, 160),
+-- 1970s: piu ergonomia, piu privacy, optional ancora analogici
+(8, 'Haeco Horizon 1971', 'HH-71', 'business', 51.5, 102.0, 100.0, 101, 113, 24.0, 7, 22,
+ 'Adjustable headrest, fold-out table, reading lamp, privacy divider', FALSE, NULL, FALSE, FALSE, 1971, 47000, 23500, 2400, 270),
+(7, 'Jamco Panorama 1973', 'JP-73', 'economy', 44.2, 77.0, 81.0, 78, 88, 12.4, 5, 10,
+ 'Reclining shell, tray table, magazine pocket, coat hook', FALSE, NULL, FALSE, FALSE, 1973, 48000, 24000, 900, 120),
+(6, 'Thompson Elite 1975', 'TE-75', 'first', 60.0, 126.0, 114.0, 126, 138, 35.5, 8, 42,
+ 'Lie-flat prototype, privacy screen, footrest, side table', FALSE, NULL, FALSE, FALSE, 1975, 49000, 24500, 3800, 410),
+(1, 'Recaro Advantage 1977', 'RA-77', 'economy', 44.0, 77.5, 81.0, 79, 88, 12.6, 5, 10,
+ 'Slim shell, tray table, reading lamp, optional headrest', FALSE, NULL, FALSE, FALSE, 1977, 50000, 25000, 920, 125),
+(2, 'Collins Comfort 1979', 'CC-79', 'premium_economy', 47.5, 85.0, 88.0, 87, 96, 16.0, 6, 14,
+ 'Wider cushion, tray table, adjustable headrest, optional footrest', FALSE, NULL, FALSE, FALSE, 1979, 51000, 25500, 1180, 150),
 
+-- 1980s: iniziano sedili piu modulari e prime basi per elettronica
+(3, 'Zodiac Executive 1981', 'ZE-81', 'business', 52.0, 104.0, 101.0, 102, 114, 24.5, 8, 24,
+ 'Adjustable headrest, recline lever, fold-out table, reading lamp', FALSE, NULL, FALSE, FALSE, 1981, 52000, 26000, 2500, 280),
+(4, 'Geven Flex 1983', 'GF-83', 'economy', 44.5, 78.0, 81.5, 79, 89, 12.8, 5, 10,
+ 'Slimline backrest, tray table, magazine pocket, optional headrest', FALSE, NULL, FALSE, FALSE, 1983, 53000, 26500, 950, 130),
+(8, 'Haeco Crown 1985', 'HC-85', 'first', 61.0, 128.0, 116.0, 128, 140, 36.0, 9, 45,
+ 'Privacy shell, footrest, side table, mood lamp, optional screen housing', FALSE, NULL, FALSE, FALSE, 1985, 54000, 27000, 4200, 450),
+(7, 'Jamco Business 1987', 'JB-87', 'business', 52.5, 105.0, 102.0, 103, 115, 25.0, 8, 25,
+ 'Recline lever, fold-out table, reading lamp, optional lumbar support', FALSE, NULL, FALSE, FALSE, 1987, 55000, 27500, 2600, 290),
+(6, 'Thompson Premier 1989', 'TP-89', 'first', 62.0, 130.0, 118.0, 130, 142, 36.8, 9, 48,
+ 'Recline shell, privacy divider, footrest, vanity mirror, optional screen', FALSE, NULL, FALSE, FALSE, 1989, 56000, 28000, 4400, 480),
 
--- Recaro Premium Economy
-(1, 'CL3620', 'CL3620', 'premium_economy', 48.0, 91.0, 88.0, 97, 107, 18.5, 8, 15, TRUE, 12.1, TRUE, TRUE, 2017, 50000, 25000, 3200, 350),
+-- 1990s: nascono i primi optional elettronici veri
+(5, 'Acro Light 1991', 'AL-91', 'economy', 44.0, 77.0, 81.0, 78, 88, 11.9, 5, 9,
+ 'Slim seat, tray table, reading lamp, optional headrest', FALSE, NULL, FALSE, FALSE, 1991, 50000, 25000, 980, 120),
+(2, 'Collins Meridian 1993', 'CM-93', 'premium_economy', 48.0, 86.0, 89.0, 88, 97, 16.5, 6, 15,
+ 'Wider cushion, tray table, armrest, optional screen pack', FALSE, NULL, FALSE, FALSE, 1993, 52000, 26000, 1400, 170),
+(3, 'Zodiac Aura 1995', 'ZA-95', 'business', 53.0, 106.0, 103.0, 104, 116, 25.5, 8, 26,
+ 'Personal lamp, fold-out table, power socket option, privacy divider', TRUE, 5.6, TRUE, FALSE, 1995, 53000, 26500, 3200, 320),
+(4, 'Geven Piuma 1997', 'GP-97', 'economy', 44.5, 78.0, 81.5, 79, 89, 12.0, 5, 10,
+ 'Light frame, tray table, magazine pocket, optional reading lamp', FALSE, NULL, FALSE, FALSE, 1997, 54000, 27000, 1040, 125),
+(8, 'Haeco Signature 1999', 'HS-99', 'first', 62.5, 132.0, 120.0, 132, 145, 37.5, 9, 50,
+ 'Privacy shell, footrest, screen pack, power outlet, mood lamp', TRUE, 6.4, TRUE, FALSE, 1999, 55000, 27500, 4800, 500),
 
--- Collins Premium Economy
-(2, 'Elements', 'ELM-300', 'premium_economy', 49.5, 93.0, 90.0, 99, 109, 19.2, 8, 18, TRUE, 13.3, TRUE, TRUE, 2019, 52000, 26000, 4100, 390),
+-- 2000s: schermi e prese diventano piu comuni nelle classi alte
+(1, 'Recaro BL2001', 'BL-01', 'economy', 44.5, 78.5, 82.0, 79, 89, 12.2, 5, 10,
+ 'Slim seat, tray table, reading lamp, optional screen pack', FALSE, NULL, FALSE, FALSE, 2001, 56000, 28000, 1080, 130),
+(2, 'Collins Aire 2004', 'CA-04', 'premium_economy', 49.0, 88.0, 90.0, 90, 100, 17.0, 7, 16,
+ 'Wider cushion, personal screen, power outlet, adjustable headrest', TRUE, 7.0, TRUE, FALSE, 2004, 57000, 28500, 1800, 190),
+(3, 'Zodiac Cloud 2006', 'ZC-06', 'business', 54.0, 107.0, 104.0, 105, 118, 26.0, 8, 28,
+ 'Personal screen, power outlet, fold-out table, privacy divider', TRUE, 8.5, TRUE, FALSE, 2006, 58000, 29000, 3400, 340),
+(6, 'Thompson Prestige 2007', 'TP-07', 'first', 63.0, 134.0, 122.0, 134, 147, 38.0, 10, 54,
+ 'Lie-flat shell, personal screen, power outlet, mood lamp, privacy curtain', TRUE, 9.0, TRUE, FALSE, 2007, 59000, 29500, 5200, 540),
+(7, 'Jamco Suite 2009', 'JS-09', 'first', 63.5, 135.0, 123.0, 135, 148, 38.8, 10, 55,
+ 'Lie-flat shell, screen pack, power outlet, reading lamp, privacy screen', TRUE, 9.0, TRUE, TRUE, 2009, 60000, 30000, 5400, 560),
 
--- Zodiac Premium Economy
-(3, 'Z300', 'Z300-PE', 'premium_economy', 47.5, 89.0, 87.0, 94, 104, 17.8, 7, 12, TRUE, 11.6, TRUE, TRUE, 2016, 48000, 24000, 2800, 320),
+-- 2010s: optionali moderni e USB diventano standard in molte classi
+(4, 'Geven Piuma NG 2011', 'GPN-11', 'economy', 44.8, 78.5, 82.0, 80, 90, 12.1, 5, 10,
+ 'Slimline seat, tray table, optional screen pack, optional power outlet', FALSE, NULL, FALSE, FALSE, 2011, 61000, 30500, 1120, 135),
+(5, 'Acro Series 2014', 'AS-14', 'economy', 45.0, 79.0, 82.5, 81, 91, 12.0, 6, 11,
+ 'Lightweight shell, tray table, reading lamp, optional USB port', FALSE, NULL, FALSE, FALSE, 2014, 62000, 31000, 1180, 140),
+(1, 'BL3510', 'BL3510', 'economy', 43.2, 76.0, 81.0, 76, 86, 12.5, 6, 8,
+ 'Default screen pack, power outlet, USB port, tray table, adjustable headrest', TRUE, 9.0, TRUE, TRUE, 2015, 45000, 22500, 1200, 150),
+(2, 'CL3710', 'CL3710', 'economy', 45.0, 78.0, 83.0, 79, 89, 13.2, 7, 10,
+ 'Default screen pack, power outlet, USB port, improved padding, reading lamp', TRUE, 10.1, TRUE, TRUE, 2018, 50000, 25000, 1600, 180),
+(2, 'Elements', 'ELM-300', 'premium_economy', 49.5, 93.0, 90.0, 99, 109, 19.2, 8, 18,
+ 'Default screen pack, power outlet, USB port, larger tray table, leg rest', TRUE, 13.3, TRUE, TRUE, 2019, 52000, 26000, 4100, 390),
+(2, 'Aire', 'AIR-200', 'economy', 46.0, 79.0, 84.0, 81, 91, 14.0, 8, 12,
+ 'Default screen pack, power outlet, USB port, improved lumbar support', TRUE, 11.0, TRUE, TRUE, 2020, 55000, 27500, 2000, 210),
+(5, 'Series 6', 'S6-200', 'economy', 45.0, 77.5, 82.0, 79, 88, 11.8, 7, 9,
+ 'Screen option, power outlet option, USB option, reinforced shell', TRUE, 9.0, TRUE, TRUE, 2021, 50000, 25000, 1700, 160),
 
-
--- Recaro Business
-(1, 'CL6720', 'CL6720', 'business', 53.0, 152.0, 110.0, 152, 165, 35.0, 9, 180, TRUE, 15.6, TRUE, TRUE, 2018, 60000, 30000, 9000, 900),
-
--- Collins Business
-(2, 'Super Diamond', 'SD-400', 'business', 55.0, 156.0, 115.0, 156, 170, 38.5, 9, 180, TRUE, 17.0, TRUE, TRUE, 2019, 62000, 31000, 12000, 1100),
-
--- Zodiac Business (Luxury specialist)
-(3, 'Cirrus', 'CIR-500', 'business', 56.0, 160.0, 118.0, 160, 175, 42.0, 10, 180, TRUE, 18.5, TRUE, TRUE, 2020, 58000, 29000, 15000, 1300),
-
--- Thompson Business
-(6, 'Vantage XL', 'VXL-600', 'business', 54.0, 155.0, 112.0, 155, 168, 36.8, 9, 180, TRUE, 16.0, TRUE, TRUE, 2017, 55000, 27500, 10000, 1000),
-
-
-
--- Zodiac First Class (specialist luxury)
-(3, 'Optima', 'OPT-800', 'first', 68.0, 203.0, 140.0, 203, 220, 65.0, 10, 180, TRUE, 24.0, TRUE, TRUE, 2019, 55000, 27500, 25000, 2000),
-
--- Collins First Class
-(2, 'Pinnacle', 'PIN-900', 'first', 71.0, 208.0, 145.0, 208, 225, 68.5, 10, 180, TRUE, 26.0, TRUE, TRUE, 2020, 58000, 29000, 32000, 2200),
-
--- Thompson First Class
-(6, 'Elite', 'ELI-1000', 'first', 75.0, 215.0, 150.0, 215, 235, 75.0, 10, 180, TRUE, 27.0, TRUE, TRUE, 2018, 52000, 26000, 37000, 2500);
+-- 2020s: comfort premium e connected
+(3, 'Z300', 'Z300-PE', 'premium_economy', 47.5, 89.0, 87.0, 94, 104, 17.8, 7, 12,
+ 'Default screen, power outlet, USB, improved recline, extra padding', TRUE, 11.6, TRUE, TRUE, 2022, 48000, 24000, 2800, 320),
+(6, 'Vantage XL', 'VXL-600', 'business', 54.0, 155.0, 112.0, 155, 168, 36.8, 9, 180,
+ 'Lie-flat shell, large screen, power outlet, USB, privacy wing', TRUE, 16.0, TRUE, TRUE, 2023, 55000, 27500, 10000, 1000),
+(1, 'CL6720', 'CL6720', 'business', 53.0, 152.0, 110.0, 152, 165, 35.0, 9, 180,
+ 'Lie-flat shell, large screen, power outlet, USB, massage option', TRUE, 15.6, TRUE, TRUE, 2024, 60000, 30000, 9000, 900),
+(3, 'Optima', 'OPT-800', 'first', 68.0, 203.0, 140.0, 203, 220, 65.0, 10, 180,
+ 'Suite seat, large screen, power outlet, USB, privacy door', TRUE, 24.0, TRUE, TRUE, 2025, 55000, 27500, 25000, 2000),
+(2, 'Pinnacle', 'PIN-900', 'first', 71.0, 208.0, 145.0, 208, 225, 68.5, 10, 180,
+ 'Suite seat, large screen, power outlet, USB, privacy door, mood lighting', TRUE, 26.0, TRUE, TRUE, 2025, 58000, 29000, 32000, 2200),
+(6, 'Elite', 'ELI-1000', 'first', 75.0, 215.0, 150.0, 215, 235, 75.0, 10, 180,
+ 'Suite seat, large screen, power outlet, USB, privacy door, table service console', TRUE, 27.0, TRUE, TRUE, 2026, 52000, 26000, 37000, 2500)
+ON CONFLICT (model_name) DO UPDATE SET
+    manufacturer_id = EXCLUDED.manufacturer_id,
+    model_code = EXCLUDED.model_code,
+    seat_class = EXCLUDED.seat_class,
+    width_cm = EXCLUDED.width_cm,
+    depth_cm = EXCLUDED.depth_cm,
+    height_cm = EXCLUDED.height_cm,
+    pitch_min_cm = EXCLUDED.pitch_min_cm,
+    pitch_max_cm = EXCLUDED.pitch_max_cm,
+    weight_kg = EXCLUDED.weight_kg,
+    comfort_rating = EXCLUDED.comfort_rating,
+    recline_angle = EXCLUDED.recline_angle,
+    features = EXCLUDED.features,
+    has_entertainment_screen = EXCLUDED.has_entertainment_screen,
+    screen_size_inches = EXCLUDED.screen_size_inches,
+    has_power_outlet = EXCLUDED.has_power_outlet,
+    has_usb_port = EXCLUDED.has_usb_port,
+    market_entry_year = EXCLUDED.market_entry_year,
+    max_flight_hours = EXCLUDED.max_flight_hours,
+    max_cycles = EXCLUDED.max_cycles,
+    base_cost = EXCLUDED.base_cost,
+    maintenance_cost_per_year = EXCLUDED.maintenance_cost_per_year;

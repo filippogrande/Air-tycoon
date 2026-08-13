@@ -58,11 +58,44 @@ if [ -f "./database/schema_base.sql" ]; then
   fi
 fi
 
-# NOTE: migrations are executed by the server process (server/index.js)
-# to avoid leaving a separate migrate process running and blocking the entrypoint.
-# If you need to run migrations from the entrypoint, ensure migrate.js closes DB pools.
+# Run migrations BEFORE seeding using the working server migration system
+echo "[entrypoint] Running database migrations..."
+if [ -f "./server/index.js" ]; then
+  node -e "
+    const MigrationSystem = require('./database/migration-system');
+    const db = require('./server/database');
+    
+    async function runMigrations() {
+      try {
+        console.log('🔧 Controllo migrazioni pendenti...');
+        const migrations = new MigrationSystem();
+        console.log('🔧 Inizializzazione sistema migrazioni...');
+        await migrations.initialize();
+        console.log('🔧 Esecuzione migrazioni pendenti...');
+        await migrations.runPendingMigrations();
+        console.log('✅ Migrazioni completate');
+        await db.closePool();
+        process.exit(0);
+      } catch (error) {
+        console.error('❌ Errore durante migrazioni:', error.message);
+        console.error('📋 Stack trace:', error.stack);
+        await db.closePool();
+        process.exit(1);
+      }
+    }
+    
+    runMigrations();
+  "
+  MIGRATE_EXIT=$?
+  if [ "$MIGRATE_EXIT" -ne 0 ]; then
+    echo "[entrypoint] Migration script failed with exit code $MIGRATE_EXIT"
+    exit $MIGRATE_EXIT
+  fi
+else
+  echo "[entrypoint] No server/index.js found, skipping migrations"
+fi
 
-# Run seed if requested
+# Run seed if requested (AFTER migrations)
 if [ "$RUN_SEED" = "1" ] || [ "$RUN_SEED" = "true" ]; then
   echo "[entrypoint] Running seed_initial_data..."
   if [ -f "./database/seed_initial_data.js" ]; then

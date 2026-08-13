@@ -64,7 +64,7 @@ HubManager.prototype.buildHub = function(airportCode) {
     if (this.gameState.company.money < buildCost) {
         return { 
             success: false, 
-            message: 'Fondi insufficienti. Costo: €' + buildCost.toLocaleString() 
+            message: 'Fondi insufficienti. Costo: ' + uiUtils.formatCurrency(buildCost) 
         };
     }
     

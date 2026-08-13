@@ -464,6 +464,11 @@ WorldMap.prototype.setupMapEvents = function() {
 // Setup eventi per creazione rotte
 WorldMap.prototype.setupRouteCreationEvents = function() {
     var self = this;
+
+    if (this._routeCreationEventsBound) {
+        return;
+    }
+    this._routeCreationEventsBound = true;
     
     // Bottone per aprire pannello
     var openRouteBtn = document.getElementById('open-route-panel');
@@ -548,7 +553,15 @@ WorldMap.prototype.setupRouteCreationEvents = function() {
     
     // Listener per bottone acquista aereo nel warning
     document.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('buy-aircraft-btn')) {
+        var purchaseBtn = e.target && e.target.closest ? e.target.closest('.buy-aircraft-btn') : null;
+        if (!purchaseBtn) return;
+
+        // Ignore the fleet-tab return button and any purchase UI rendered inside the fleet tab.
+        if (purchaseBtn.id === 'fleet-purchase-back' || purchaseBtn.closest('#fleet-tab .fleet-purchase-root')) {
+            return;
+        }
+
+        if (purchaseBtn.classList && purchaseBtn.classList.contains('buy-aircraft-btn')) {
             console.log('🛒 Richiesta acquisto aereo dalla configurazione rotta');
 
             // Chiudi pannello configurazione

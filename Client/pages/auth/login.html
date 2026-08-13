@@ -24,7 +24,7 @@
             <!-- Form di Login -->
             <div id="login-form" class="auth-form active">
                 <h2>Accedi al tuo account</h2>
-                <form id="loginForm">
+                <form id="loginForm" method="post" action="/api/auth/login">
                     <div class="input-group">
                         <label for="login-email">📧 Email</label>
                         <input type="email" id="login-email" name="email" required>
@@ -50,7 +50,7 @@
             <!-- Form di Registrazione -->
             <div id="register-form" class="auth-form">
                 <h2>Crea un nuovo account</h2>
-                <form id="registerForm">
+                <form id="registerForm" method="post" action="/api/auth/register">
                     <div class="input-group">
                         <label for="register-email">📧 Email</label>
                         <input type="email" id="register-email" name="email" required>
@@ -98,7 +98,8 @@
         </div>
     </div>
     
-    <script type="module" src="src/utils/AuthManager.js"></script>
+    <script src="src/utils/uiUtils.js"></script>
+    <script src="src/utils/AuthManager.js"></script>
     <script type="module" src="../../src/auth.js"></script>
     <script type="module">
     // Fallback leggero: assicurati che i link "Registrati" e "Accedi" funzionino

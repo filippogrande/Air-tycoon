@@ -253,30 +253,12 @@ db.testConnection()
     .then(async () => {
         console.log('✅ Connessione database stabilita');
         
-        // Esegui migrazioni automaticamente
-        console.log('🔧 Controllo migrazioni pendenti...');
-        try {
-            const migrations = new MigrationSystem();
-            console.log('🔧 Inizializzazione sistema migrazioni...');
-            await migrations.initialize();
-            console.log('🔧 Esecuzione migrazioni pendenti...');
-            await migrations.runPendingMigrations();
-            console.log('✅ Migrazioni completate');
-        } catch (error) {
-            console.error('❌ Errore durante migrazioni:', error.message);
-            console.error('📋 Stack trace:', error.stack);
-            console.log('⚠️ Il server continuerà comunque...');
-        }
-
+        // Le migrazioni sono ora gestite dal docker-entrypoint.sh PRIMA del seeding
+        // per garantire che tutte le colonne esistano quando i dati vengono inseriti
+        console.log('ℹ️ Migrazioni già eseguite dal docker-entrypoint.sh');
         
-            try {
-                console.log('🌱 Seeding automatico initial_data.sql...');
-                await require('../database/seed_initial_data');
-            } catch (err) {
-                console.error('❌ Errore durante il seeding automatico:', err.message);
-                console.error('📋 Stack trace:', err.stack);
-            }
-        
+        // Nota: anche il seeding è gestito dal docker-entrypoint.sh se RUN_SEED=true
+        console.log('ℹ️ Seeding gestito dal docker-entrypoint.sh');
         
         // Avvia server, bind esplicito a 0.0.0.0 per assicurare che sia raggiungibile fuori dal container
         app.listen(PORT, '0.0.0.0', () => {

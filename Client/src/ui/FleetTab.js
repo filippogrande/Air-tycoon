@@ -106,47 +106,19 @@ async function attemptPurchase(aircraftType, includeCampoMod = false) {
         alert('Nessuna compagnia selezionata.');
         return;
     }
-    function genRegistration() { return 'REG' + Math.floor(Math.random() * 90000 + 10000) + '-' + Date.now().toString().slice(-4); }
-    const registration = prompt('Inserisci la registrazione per il nuovo aeromobile (lascia vuoto per generarla):', genRegistration()) || genRegistration();
-    if (!registration) return;
-    if (!confirm(`Confermi l'acquisto di ${aircraftType.name || aircraftType.model || aircraftType.id} per la compagnia ${companyId}?`)) return;
-
-    try {
-        // includeCampoMod is an explicit flag (true when user picked "con modifica").
-        let basePrice = (typeof aircraftType.purchase_price !== 'undefined' && aircraftType.purchase_price !== null) ? Number(aircraftType.purchase_price) : null;
-        let extra = 0;
-        try {
-            if (includeCampoMod && aircraftType.campo_aviazione_mod_cost) {
-                extra = Number(aircraftType.campo_aviazione_mod_cost) || 0;
-            }
-        } catch (e) { /* ignore */ }
-        const finalPriceToSend = (basePrice !== null) ? (basePrice + extra) : null;
-
-        const body = {
-            company_id: companyId,
-            aircraft_type_id: aircraftType.id,
-            registration: registration,
-            purchase_price: finalPriceToSend
-        };
-    const r = await loggedFetch('/api/fleet/purchase', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        let json = null;
-        try { json = await r.json(); } catch(e) { /* ignore */ }
-        if (!r.ok || !json || !json.success) {
-            const err = (json && json.error) || ('Acquisto fallito ' + (r && r.status ? r.status : ''));
-            alert('Errore acquisto: ' + err);
-            return;
-        }
-        if (window.game && window.game.uiManager && window.game.uiManager.showNotification) {
-            window.game.uiManager.showNotification('Aereo acquistato', 'success');
-        }
-        // hide modal if present
-        try { const modal = document.getElementById('aircraft-modal'); if (modal) modal.classList.add('hidden'); } catch(e){}
-        // refresh fleet UI if available
-        try { if (window.game && window.game.uiManager && window.game.uiManager.updateFleetUI) window.game.uiManager.updateFleetUI(); } catch(e){}
-    } catch (err) {
-        console.warn('[FleetTab] errore durante acquisto:', err && err.message);
-        alert('Errore durante l\'acquisto. Vedi console per dettagli.');
+    
+    // Reindirizza alla pagina di configurazione acquisto
+    const aircraftId = aircraftType.id;
+    const params = new URLSearchParams({
+        aircraft_id: aircraftId,
+        company_id: companyId
+    });
+    
+    if (includeCampoMod) {
+        params.append('campo_mod', 'true');
     }
+    
+    window.location.href = `../pages/game/aircraft-purchase.html?${params.toString()}`;
 }
 
 // helper: render models into provided container for tab UI
@@ -162,15 +134,19 @@ function renderModelsInTab(modelsEl, models, detailsEl) {
         title.textContent = m.name || m.model || ('Model ' + (m.id || ''));
         const info = document.createElement('div'); info.className = 'model-row-info';
         const priceStr = (typeof m.purchase_price !== 'undefined' && m.purchase_price !== null) ? Number(m.purchase_price).toLocaleString('it-IT') + ' €' : '—';
-        // Determine capacity/area display: cargo shows capacity (tonnellate), others show cabin area if capacity not set
+        // Determine capacity/area display: cargo shows capacity (tonnellate), passenger aircraft show cabin area
         let capacityDisplay = 'N/A';
-        if (m.category === 'cargo' && typeof m.capacity !== 'undefined' && m.capacity !== null) {
-            capacityDisplay = String(m.capacity) + ' t';
-        } else if (typeof m.capacity !== 'undefined' && m.capacity !== null) {
-            capacityDisplay = String(m.capacity) + ' posti';
+        if (m.category === 'cargo') {
+            if (typeof m.capacity !== 'undefined' && m.capacity !== null) {
+                capacityDisplay = String(m.capacity) + ' t';
+            }
         } else {
             const area = computeCabinAreaMeters(m);
-            capacityDisplay = area ? (Number(area).toFixed(1) + ' m²') : 'N/A';
+            if (area) {
+                capacityDisplay = Number(area).toFixed(1) + ' m²';
+            } else if (typeof m.capacity !== 'undefined' && m.capacity !== null) {
+                capacityDisplay = String(m.capacity) + ' posti';
+            }
         }
         info.textContent = `${capacityDisplay} • ${m.range_km || m.range || 'N/A'} km • ${priceStr}`;
         row.appendChild(title); row.appendChild(info);
@@ -207,13 +183,18 @@ function showModelDetails(detailsEl, model) {
 
     // capacity / area
     const capRow = document.createElement('div');
-    if (model.category === 'cargo' && typeof model.capacity !== 'undefined' && model.capacity !== null) {
-        capRow.innerHTML = `<strong>Capacità (t):</strong> ${String(model.capacity)}`;
-    } else if (typeof model.capacity !== 'undefined' && model.capacity !== null) {
-        capRow.innerHTML = `<strong>Posti:</strong> ${String(model.capacity)}`;
+    if (model.category === 'cargo') {
+        const cargoCapacity = (typeof model.capacity !== 'undefined' && model.capacity !== null) ? String(model.capacity) : 'N/A';
+        capRow.innerHTML = `<strong>Capacità cargo (t):</strong> ${cargoCapacity}`;
     } else {
         const area = computeCabinAreaMeters(model);
-        capRow.innerHTML = `<strong>Dimensione (m²):</strong> ${area ? Number(area).toFixed(1) : 'N/A'}`;
+        if (area) {
+            capRow.innerHTML = `<strong>Spazio cabina (m²):</strong> ${Number(area).toFixed(1)}`;
+        } else if (typeof model.capacity !== 'undefined' && model.capacity !== null) {
+            capRow.innerHTML = `<strong>Posti:</strong> ${String(model.capacity)}`;
+        } else {
+            capRow.innerHTML = `<strong>Spazio cabina (m²):</strong> N/A`;
+        }
     }
     specs.appendChild(capRow);
 
@@ -394,7 +375,7 @@ function initFleetTab() {
                 </div>`;
 
         const closeBtn = modal.querySelector('.close-modal');
-        closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        closeBtn.addEventListener('click', () => uiUtils.hideModal(modal.id));
 
         const grouped = groupAircraft(types);
         const manufacturersEl = modal.querySelector('.manufacturers');
@@ -522,6 +503,12 @@ async function openFleetPurchaseUI(origin) {
     const fleetTab = document.getElementById('fleet-tab');
     if (!fleetTab) return;
 
+    if (window._fleetPurchaseOpenLock || fleetTab.querySelector('.fleet-purchase-root')) {
+        console.debug('[FleetTab] openFleetPurchaseUI skipped: already open or opening');
+        return;
+    }
+    window._fleetPurchaseOpenLock = true;
+
     // Save previous content to restore later
     if (typeof fleetTab._previousContent === 'undefined') fleetTab._previousContent = fleetTab.innerHTML;
 
@@ -621,15 +608,19 @@ async function openFleetPurchaseUI(origin) {
                 if (fleetTab._previousContent) {
                     fleetTab.innerHTML = fleetTab._previousContent;
                     delete fleetTab._previousContent;
+                    window._fleetPurchaseOpenLock = false;
                     // re-initialize FleetTab handlers if needed
                     try { initFleetTab(); } catch (e) { /* ignore */ }
                 }
             });
         }
 
+        window._fleetPurchaseOpenLock = false;
+
     } catch (err) {
         console.warn('[FleetTab] errore caricamento tipi disponibili (tab):', err && err.message);
         fleetTab.innerHTML = '<div class="catalog-empty">Errore caricamento catalogo.</div>';
+        window._fleetPurchaseOpenLock = false;
     }
 }
 
