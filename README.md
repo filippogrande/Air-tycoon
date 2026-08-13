@@ -282,3 +282,4 @@ Il progetto è strutturato per essere facilmente estendibile:
 - Il database migliora l'esperienza ma non è obbligatorio
 - Tutti i salvataggi localStorage vengono automaticamente sincronizzati al database
 - Il sistema è progettato per funzionare in modo resiliente (fallback automatico)
+- Ultimo aggiornamento: 13/08/2026
