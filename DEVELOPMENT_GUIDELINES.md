@@ -15,9 +15,8 @@
 9. [Performance](#performance)
 10. [Sicurezza](#sicurezza)
 11. [Testing](#testing)
-12. [Lista Cose da Fare](#todo)
-13. [Lista Cose da Rimuovere (hard bans)](#rimuovere)
-14. [Verifica Coerenza & Aggiornamento Doc](#coerenza)
+12. [Lista Cose da Rimuovere (hard bans)](#rimuovere)
+13. [Verifica Coerenza & Aggiornamento Doc](#coerenza)
 
 ---
 
@@ -177,22 +176,6 @@ REGOLA FORTE (decisa dall'utente): data la natura dell'app e lo stato di svilupp
 
 ---
 
-## ✅ Lista Cose da Fare {#todo}
-
-### Priorità Alta
-- [ ] Sistema aircraft purchase: filtri avanzati (prezzo/capacità/range), comparazione
-- [ ] Performance: virtual scrolling, caching intelligente, compressione immagini aircraft
-
-### Priorità Media
-- [ ] UI/UX: dark mode, animazioni transizioni, tooltips
-- [ ] Routing: completare modularizzazione RouteUIManager, fuel cost, slot aeroportuali
-- [ ] Reporting: dashboard finanziario, grafici performance
-
-### Priorità Bassa
-- [ ] Eventi random, AI competitors
-
----
-
 ## ❌ Lista Cose da Rimuovere (HARD BANS) {#rimuovere}
 
 Questi NON sono "graduali": se presenti, sono BUG da eliminare prima di qualsiasi nuova feature.
@@ -219,3 +202,7 @@ Questi NON sono "graduali": se presenti, sono BUG da eliminare prima di qualsias
 4. Integrazione API validata
 5. Naming conventions rispettate
 6. Nessun file vietato da §rimuovere introdotto
+
+---
+
+> 📌 **Backlog di sviluppo**: le feature da aggiungere e i refactor da fare sono tracciati su **TickTick** (lista "Air tycoon"), con priorità e sotto-task. Questo file definisce i *paletti* di sviluppo; il *cosa costruire dopo* vive su TickTick, non qui.
