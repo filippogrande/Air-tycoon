@@ -1,489 +1,221 @@
 # Air Tycoon 2 - Linee Guida per lo Sviluppo
 
+> Versione 2.0 - Paletti vincolanti. Ogni regola qui sotto è OBBLIGATORIA, non un suggerimento.
+> Ultimo aggiornamento: 13 agosto 2026
+
 ## 📋 Indice
-
-1. [Struttura del Codice](#struttura-del-codice)
-2. [Architettura Unificata](#architettura-unificata)
-3. [Convenzioni JavaScript](#convenzioni-javascript)
-4. [Gestione Dati](#gestione-dati)
-5. [UI/UX Guidelines](#uiux-guidelines)
-6. [Performance e Ottimizzazione](#performance-e-ottimizzazione)
-7. [Sicurezza](#sicurezza)
-8. [Lista delle Cose da Fare](#lista-delle-cose-da-fare)
-9. [Lista delle Cose da Rimuovere](#lista-delle-cose-da-rimuovere)
-
----
-
-## 🏗️ Struttura del Codice
-
-### Architettura Generale
-
-Il progetto segue un'architettura **modulare unificata** con le seguenti caratteristiche:
-
-```
-Air-tycoon/
-├── Client/                    # Frontend unificato (sorgente principale)
-│   ├── src/                   # Codice JavaScript principale
-│   │   ├── auth.js           # Autenticazione
-│   │   ├── game-select.js    # Selezione partita
-│   │   ├── load-game.js      # Caricamento gioco
-│   │   ├── main.js           # Entry point principale
-│   │   ├── core/             # Logica di base
-│   │   ├── entities/         # Entità di gioco (Company, Fleet, ecc.)
-│   │   ├── managers/         # Manager di sistema
-│   │   ├── simulation/       # Logica di simulazione
-│   │   ├── ui/               # Componenti UI
-│   │   │   ├── modules/      # Moduli UI specializzati
-│   │   │   └── FleetTab.js   # Sistema acquisto aeromobili
-│   │   ├── utils/            # Utilità condivise
-│   │   └── graphics/         # Grafici e visualizzazioni
-│   ├── pages/                # Pagine HTML
-│   ├── styles/               # CSS
-│   └── assets/               # Risorse statiche (immagini, ecc.)
-├── server/                   # Backend Node.js
-└── database/                 # Schema e migrazioni DB
-```
-
-### Principi Architetturali
-
-#### 1. **Modularità**
-
-- Ogni modulo deve avere una responsabilità specifica e minimale, in maniera da poterli facilmente riutilizzare o modificare in caso di errori
-- Evitare file monolitici > 500 righe
-- Separare logica, UI e dati
-
-#### 2. **Sistema Unificato (/main-src)**
-
-- Tutti i file JS vengono serviti tramite `/main-src` che punta a `Client/src`
-- **NON** duplicare codice tra `/src` e `/Client/src`
-- Un solo punto di verità per ogni funzionalità
-
-#### 3. **Compatibilità Browser**
-
-- **NO** ES6 modules (import/export)
-- **SÌ** Global window attachments
-- Supportare script loading tradizionale
+1. [Regola 0 - Sistema Moduli (vincolante)](#regola-0)
+2. [Struttura del Codice](#struttura-del-codice)
+3. [Contratto di Load Order](#contratto-di-load-order)
+4. [Single Source of Truth / Anti-duplicazione](#single-source-of-truth)
+5. [Convenzioni JavaScript](#convenzioni-javascript)
+6. [Gestione Dati (Database Only)](#gestione-dati)
+7. [No Fallback / No Dati Finti](#no-fallback)
+8. [UI/UX Guidelines](#uiux-guidelines)
+9. [Performance](#performance)
+10. [Sicurezza](#sicurezza)
+11. [Testing](#testing)
+12. [Lista Cose da Fare](#todo)
+13. [Lista Cose da Rimuovere (hard bans)](#rimuovere)
+14. [Verifica Coerenza & Aggiornamento Doc](#coerenza)
 
 ---
 
-## 🔄 Architettura Unificata
+## 🔒 Regola 0 - Sistema Moduli (DECISIONE VINCOLANTE) {#regola-0}
 
-### Serving dei File
+**Niente dibattito: il progetto NON usa ES6 `import`/`export`.**
 
+- ❌ MAI `import` / `export` in alcun file `.js` del frontend.
+- ✅ TUTTO viene esposto come global su `window`.
+- Motivo: niente build step, serving diretto di `Client/src` via `/main-src`.
+- Eccezione: solo `server/` (Node.js) può usare `require`/`import` CommonJS/ESM lato backend.
+
+Pattern obbligatorio per esporre un modulo:
 ```javascript
-// server/index.js
-app.use("/main-src", express.static(path.join(__dirname, "../Client/src")));
-```
-
-### Caricamento Script
-
-```html
-<!-- Esempio in hub.html -->
-<script src="/main-src/utils/core-utils.js"></script>
-<script src="/main-src/managers/GameState.js"></script>
-<script src="/main-src/main.js"></script>
-```
-
-### Export Pattern
-
-```javascript
-// ❌ NON FARE (ES6 modules)
-export class MyClass {}
-export function myFunction() {}
-
-// ✅ FARE (Global attachments)
-window.MyClass = class MyClass {};
-window.myFunction = function () {};
-
-// Per moduli complessi
-window.MyModule = {
-  init: function () {},
-  doSomething: function () {},
-};
-```
-
----
-
-## 📝 Convenzioni JavaScript
-
-### 1. **Naming Conventions**
-
-```javascript
-// Classi: PascalCase
-class CompanyManager {}
-
-// Funzioni: camelCase
-function loadGameData() {}
-
-// Costanti: UPPER_CASE
-const MAX_AIRCRAFT_COUNT = 100;
-
-// Variabili: camelCase
-let currentCompany = null;
-```
-
-### 2. **Gestione Errori**
-
-```javascript
-// Sempre controllare esistenza elementi DOM
-const element = document.getElementById("my-id");
-if (element) {
-  element.addEventListener("click", handleClick);
-} else {
-  console.warn("Elemento my-id non trovato");
-}
-
-// Usare try-catch per operazioni rischiose
-try {
-  const data = JSON.parse(response);
-  return data;
-} catch (error) {
-  console.error("Errore parsing JSON:", error);
-  return null;
-}
-```
-
-### 3. **Accesso Sicuro alle Variabili Globali**
-
-```javascript
-// ✅ BUONO - Controllo esistenza
-function updateUI() {
-  if (window.game && window.game.currentCompany) {
-    // Procedi con l'aggiornamento
-  }
-}
-
-// ✅ BUONO - Utility per accesso sicuro
-function getGameRef() {
-  if (!window.game) {
-    console.warn("Game object non inizializzato");
-    return null;
-  }
-  return window.game;
-}
-```
-
----
-
-## 🗄️ Gestione Dati
-
-### Principio Fondamentale: **Database Only**
-
-- **TUTTI** i dati devono venire dal database via API
-- **NO** dati hardcoded nel JavaScript
-- **NO** SimpleData.js o simili
-
-### API Endpoints
-
-```javascript
-// ✅ CORRETTO - Dati dal database
-const airports = await fetch("/api/airports").then((r) => r.json());
-const aircraftData = await fetch("/api/game/aircraft-data").then((r) =>
-  r.json()
-);
-const companies = await fetch(`/api/game/companies/${companyId}`).then((r) =>
-  r.json()
-);
-
-// ❌ SBAGLIATO - Dati hardcoded
-const airports = SimpleData.airports; // NON FARE MAI
-```
-
-### Caching Intelligente
-
-```javascript
-// Cache con invalidazione
-const DataCache = {
-  airports: null,
-  aircraftData: null,
-
-  async getAirports() {
-    if (!this.airports) {
-      this.airports = await fetch("/api/airports").then((r) => r.json());
-    }
-    return this.airports;
-  },
-
-  invalidate(key) {
-    this[key] = null;
-  },
-};
-```
-
----
-
-## 🎨 UI/UX Guidelines
-
-### 1. **Componenti Modulari**
-
-```javascript
-// Esempio: FleetTab.js
+// ✅ SEMPRE COSÌ
 window.FleetTab = {
   init: function () {},
   showAircraftPurchase: function () {},
-  updateFleetDisplay: function () {},
 };
+
+// ❌ MAI COSÌ
+export class FleetTab {}
+export function showAircraftPurchase() {}
 ```
 
-### 2. **Responsive Design**
-
-- Mobile-first approach
-- Test su diverse risoluzioni
-- UI adattiva per schermi piccoli
-
-### 3. **Feedback Utente**
-
-```javascript
-// Sempre fornire feedback per azioni asincrone
-showLoading("Caricamento aeromobili...");
-try {
-  const data = await fetch("/api/aircraft");
-  showSuccess("Aeromobili caricati con successo");
-} catch (error) {
-  showError("Errore nel caricamento aeromobili");
-} finally {
-  hideLoading();
-}
-```
+I file che contengono ancora `import`/`export` frontend sono considerati BUG, non feature.
 
 ---
 
-## ⚡ Performance e Ottimizzazione
+## 🏗️ Struttura del Codice {#struttura-del-codice}
 
-### 1. **Lazy Loading**
-
-- Caricare dati solo quando necessari
-- Evitare fetch inutili
-
-### 2. **DOM Manipulation**
-
-```javascript
-// ✅ BUONO - Batch updates
-const fragment = document.createDocumentFragment();
-items.forEach((item) => {
-  const element = createElement(item);
-  fragment.appendChild(element);
-});
-container.appendChild(fragment);
-
-// ❌ CATTIVO - Multiple reflows
-items.forEach((item) => {
-  container.appendChild(createElement(item));
-});
+```
+Air-tycoon/
+├── Client/                    # Frontend unificato (UNICA sorgente JS)
+│   ├── src/                   # Codice JS servito via /main-src
+│   │   ├── auth.js
+│   │   ├── game-select.js
+│   │   ├── load-game.js
+│   │   ├── main.js            # UNICO orchestratore dell'avvio
+│   │   ├── core/              # Game.js, GameState.js
+│   │   ├── entities/
+│   │   ├── managers/
+│   │   ├── simulation/
+│   │   ├── ui/
+│   │   ├── utils/
+│   │   └── graphics/
+│   ├── pages/                 # HTML
+│   ├── styles/                # CSS
+│   └── assets/
+├── server/                    # Backend Node.js (può usare require/import)
+└── database/                  # Schema + migrazioni
 ```
 
-### 3. **Memory Management**
-
-- Rimuovere event listener non necessari
-- Pulire timers e intervals
-- Evitare closure che mantengono riferimenti
+Principi:
+- Modularità: ogni file = una responsabilità. **Max 500 righe per file, max 50 righe per funzione.**
+- Separare logica / UI / dati.
+- Nessun file monolitico.
 
 ---
 
-## 🔒 Sicurezza
+## 🔄 Contratto di Load Order {#contratto-di-load-order}
 
-### 1. **Validazione Input**
+Con i global, l'ORDINE dei `<script>` determina se il `Game` si inizializza. Regola fissa:
 
-```javascript
-function validateCompanyId(id) {
-  if (!id || typeof id !== "string" || id.trim() === "") {
-    throw new Error("Company ID non valido");
+1. `main.js` è l'UNICO punto che chiama le `init()`. Nessun altro modulo si auto-esegue al caricamento.
+2. Ordine di caricamento obbligatorio in ogni HTML:
+   ```html
+   <!-- 1. utility e dipendenze base -->
+   <script src="/main-src/utils/core-utils.js"></script>
+   <!-- 2. core (Game, GameState) -->
+   <script src="/main-src/core/GameState.js"></script>
+   <script src="/main-src/core/Game.js"></script>
+   <!-- 3. managers -->
+   <script src="/main-src/managers/*.js"></script>
+   <!-- 4. ui -->
+   <script src="/main-src/ui/*.js"></script>
+   <!-- 5. SOLO ALLA FINE l'orchestratore -->
+   <script src="/main-src/main.js"></script>
+   ```
+3. Ogni modulo espone `window.X.init()`. `main.js` invoca gli `init()` in sequenza definita, NON prima che il DOM sia pronto (`DOMContentLoaded`).
+4. Se un modulo dipende da un altro, NON leggere il global all'avvio: leggilo dentro `init()` (così si evitano dipendenze circolari e "Game non inizializzato").
+
+Questo contratto risolve i bug ricorrenti: "Game object non si inizializza", "dipendenze circolari UI", "TypeError su global non pronto".
+
+---
+
+## 🎯 Single Source of Truth {#single-source-of-truth}
+
+- `/main-src` → `Client/src` è l'UNICA cartella JS servita. Nessun altro path JS.
+- **NON** esiste più `src/` alla root. Se presente, è da eliminare (vedi §rimuovere).
+- Ogni funzionalità ha UN solo punto di verità. Niente copie.
+
+---
+
+## 📝 Convenzioni JavaScript {#convenzioni-javascript}
+
+- Classi: `PascalCase` · Funzioni/variabili: `camelCase` · Costanti: `UPPER_CASE`.
+- Sempre controllare l'esistenza degli elementi DOM prima di usarli.
+- Usare `try-catch` solo per operazioni realmente rischiose; NON per silenziare errori.
+- Accesso globale protetto:
+  ```javascript
+  function getGameRef() {
+    if (!window.game) { console.warn("Game non inizializzato"); return null; }
+    return window.game;
   }
-  return id.trim();
-}
-```
-
-### 2. **Sanitizzazione Output**
-
-```javascript
-function safeHTML(text) {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
-```
+  ```
 
 ---
 
-## ✅ Lista delle Cose da Fare (dopo la completazione del sito basilare, non ancora ottenuta)
+## 🗄️ Gestione Dati (Database Only) {#gestione-dati}
+
+- TUTTI i dati via API dal DB. **NO** dati hardcoded, **NO** `SimpleData.js`.
+- Caching consentito SOLO con invalidazione esplicita (vedi `DataCache` nel vecchio esempio, da mantenere).
+
+---
+
+## 🚫 No Fallback / No Dati Finti {#no-fallback}
+
+REGOLA FORTE (decisa dall'utente): data la natura dell'app e lo stato di sviluppo, **NON esistono metodi di fallback che simulano un successo non ottenuto**.
+
+- ❌ Un `catch` che restituisce `[]`, `{}` o dati di comodo per "far sembrare" che tutto è andato bene.
+- ❌ Funzioni che ritornano mock quando la fetch fallisce.
+- ✅ In caso di errore API: mostrare `showError(...)`, loggare, e propagare l'errore. Meglio un fallimento VISIBILE che un successo FALSO.
+- ✅ Se serve un valore di default per non rompere la UI, deve essere esplicito, documentato, e NON presentato come dato reale.
+
+---
+
+## 🎨 UI/UX Guidelines {#uiux-guidelines}
+
+- Componenti modulari (pattern `window.Modulo = { init, ... }`).
+- Mobile-first, responsive.
+- Sempre feedback per azioni async: `showLoading()` → `showSuccess()` / `showError()` → `hideLoading()` nel `finally`.
+
+---
+
+## ⚡ Performance {#performance}
+
+- Lazy loading dei dati non critici.
+- Batch DOM updates (DocumentFragment), no reflow multipli.
+- Pulire event listener, timer e interval non più necessari.
+
+---
+
+## 🔒 Sicurezza {#sicurezza}
+
+- Validare SEMPRE input lato client (e comunque mai fidarsi: il server re-valida).
+- Sanitizzare output con `textContent` / `safeHTML()` prima dell'inserimento nel DOM.
+
+---
+
+## 🧪 Testing {#testing}
+
+- **NO** file di test temporanei (`test-*.html`, `*-test.js`) nel tree di produzione.
+- **NO** HTML di debug linkati dalle pagine reali.
+- Strumenti di debug (es. `debug-game.html`) SE mantenuti vivono SOLO in `Client/pages/debug/` e NON sono referenziati da `hub.html` o altre pagine di gioco.
+- Testare sulla versione reale del sito; raccogliere feedback reale; iterare.
+
+---
+
+## ✅ Lista Cose da Fare {#todo}
 
 ### Priorità Alta
-
-- [ ] **Migliorare sistema aircraft purchase**
-
-  - [ ] Aggiungere filtri avanzati (prezzo, capacità, range)
-  - [ ] Implementare comparazione aeromobili
-
-- [ ] **Ottimizzare performance**
-  - [ ] Implementare virtual scrolling per liste lunghe
-  - [ ] Caching intelligente dei dati
-  - [ ] Compressione delle immagini aircraft
+- [ ] Sistema aircraft purchase: filtri avanzati (prezzo/capacità/range), comparazione
+- [ ] Performance: virtual scrolling, caching intelligente, compressione immagini aircraft
 
 ### Priorità Media
-
-- [ ] **UI/UX Improvements**
-
-  - [ ] Dark mode toggle
-  - [ ] Animazioni per transizioni
-  - [ ] Tooltips informativi
-
-- [ ] **Sistema di routing**
-
-  - [ ] Completare RouteUIManager modularization
-  - [ ] Aggiungere calcolo fuel costs
-  - [ ] Sistema di slot aeroportuali
-
-- [ ] **Reporting e Analytics**
-  - [ ] Dashboard finanziario
-  - [ ] Grafici performance
+- [ ] UI/UX: dark mode, animazioni transizioni, tooltips
+- [ ] Routing: completare modularizzazione RouteUIManager, fuel cost, slot aeroportuali
+- [ ] Reporting: dashboard finanziario, grafici performance
 
 ### Priorità Bassa
-
-- [ ] **Funzionalità avanzate**
-  - [ ] Sistema eventi random
-  - [ ] AI competitors
+- [ ] Eventi random, AI competitors
 
 ---
 
-## ❌ Lista delle Cose da Rimuovere (e anche da non aggiungere)
+## ❌ Lista Cose da Rimuovere (HARD BANS) {#rimuovere}
 
-### Immediatamente
+Questi NON sono "graduali": se presenti, sono BUG da eliminare prima di qualsiasi nuova feature.
 
-- [x] ~~**SimpleData.js** - Completamente rimosso~~
-- [x] ~~**Sistema Guest Access** - Rimosso (non necessario per gioco persistente)~~
-- [ ] **Codice duplicato** (da fare man mano che esaminiamo le varie funzioni e pagine del sito)
-- [ ] **Qualsiasi tipologia di fallback** dato la tipologia dell'app e lo stato di sviluppo non ha senso avere metodi di fallback che fanno sembrare che hai ottenuto dei dati che invece non sei riuscito ad ottenere
-
-  - [ ] Rimuovere tutti i file in `/src` (se ancora presenti)
-  - [ ] Consolidare utilities duplicate
-  - [ ] Eliminare funzioni non utilizzate
-
-- [ ] **Riferimenti /src/ legacy**
-
-  - [ ] Convertire tutti i riferimenti `/src/` in `/main-src/` nelle pagine HTML
-  - [ ] Aggiornare Client/pages/game/select.html per usare sistema unificato
-  - [ ] Aggiornare Client/pages/auth/login.html per usare sistema unificato
-  - [ ] Rimuovere file HTML di test obsoleti (test_route_ui.html, test_safe_route.html)
-
-- [ ] **Import/Export ES6 residui**
-  - [ ] Cercare e rimuovere tutti gli `import`/`export`
-  - [ ] Convertire a window attachments
-  - [ ] Testare compatibilità browser
-
-### Gradualmente
-
-- [ ] **Codice legacy**
-
-  - [ ] Vecchi commenti TODO risolti
-  - [ ] Console.log di debug in produzione
-  - [ ] Variabili non utilizzate
-
-- [ ] **Dependencies non necessarie**
-  - [ ] Librerie JS non utilizzate
-  - [ ] CSS rules obsolete
-  - [ ] Immagini non referenziate
-
-### Da Refactoring
-
-- [ ] **Codice monolitico**
-  - [ ] File > 500 righe da spezzare
-  - [ ] Funzioni > 50 righe da semplificare
-  - [ ] Classi con troppe responsabilità
+- [ ] **Root `src/`** - cartella duplicata di `Client/src`, da eliminare. Nessun riferimento `/src/` deve esistere.
+- [ ] **`*_BACKUP.js` / `*_NEW.js`** (es. `RouteUIManager_BACKUP.js`, `RouteUIManager_NEW.js`) - vietati. Una sola versione per modulo.
+- [ ] **`test_*.html`** (es. `test_route_ui.html`, `test_safe_route.html`) - vietati nel tree di produzione.
+- [ ] **`import`/`export` ES6 residui** nel frontend - convertire a `window` attachments.
+- [ ] Utilities duplicate - consolidare in un solo modulo.
+- [ ] Funzioni/variabili non utilizzate e `console.log` di debug in produzione.
 
 ---
 
-## � Bug Fix Completati
+## 🔎 Verifica Coerenza & Aggiornamento Doc {#coerenza}
 
-### Sistema Aeroporti e Modali
+- Ogni modifica a un endpoint API → aggiornare `/server/openapi/`.
+- Ogni feature/bugfix/refactor → aggiornare `DEVELOPMENT_GUIDELINES.md` e `PAGES_GUIDE.md`.
+- Dopo modifiche importanti: ricontrollare che la doc corrisponda al codice REALE.
 
-- [x] ~~**Warning AirportData non disponibile** - Convertito game-select.js per usare API /api/airports invece di SimpleData~~
-- [x] ~~**TypeError populateStartingAirports** - Spostato caricamento aeroporti nel momento corretto (apertura modal hub)~~
-- [x] ~~**Errore select.innerHTML null** - Aggiunto controllo esistenza elementi DOM prima dell'uso~~
-
-### Sistema Autenticazione
-
-- [x] ~~**TypeError guestBtn.addEventListener** - Rimosso sistema guest access e aggiunto controlli di sicurezza~~
-- [x] ~~**Errore elementi DOM mancanti** - Aggiunta validazione esistenza elementi prima di aggiungere event listener~~
-
----
-
-## 📖 Come usare PAGES_GUIDE.md
-
-Il file `PAGES_GUIDE.md` contiene la mappa funzionale e lo stato di implementazione di tutte le pagine, modali e sottosistemi dell'applicazione.
-
-**Utilizzo consigliato:**
-
-- Consulta la sezione relativa alla pagina/modulo su cui stai lavorando per vedere cosa è già implementato, cosa manca e lo stato attuale.
-- Aggiorna il file ogni volta che completi una funzionalità, risolvi un bug o modifichi la struttura di una pagina.
-- Usa le checklist e gli status (✅, 🟡, ❌) per tenere traccia dell'avanzamento.
-- Segnala in PAGES_GUIDE.md anche le dipendenze tra moduli e le note di refactoring.
-
-**Best practice:**
-
-- Non cancellare lo storico: aggiungi sempre le nuove implementazioni come checklist.
-- Mantieni la documentazione aggiornata e coerente con lo stato reale del codice.
-
-## 📚 Obbligo di aggiornare la documentazione API
-
-- Ogni volta che viene modificato, aggiunto o rimosso un endpoint API, è obbligatorio aggiornare la documentazione in `/server/openapi/`.
-- Ricontrollare che la documentazione API sia coerente con il comportamento effettivo del backend.
-
-## 🔎 Verifica coerenza tra codice e documentazione
-
-- Dopo ogni modifica importante, ricontrollare che la documentazione (sia tecnica che funzionale) corrisponda allo stato reale del codice.
-- In caso di refactoring, bugfix o nuove feature, aggiornare sia `DEVELOPMENT_GUIDELINES.md` che `PAGES_GUIDE.md`.
-
----
-
-## �📚 Risorse e Riferimenti
-
-- **API Documentation**: `/server/openapi/`
-- **Database Schema**: `/database/schema_base.sql`
-- **Project Architecture**: `/PROJECT_ARCHITECTURE.md`
-- **Migration Guide**: `/database/MIGRATIONS_GUIDE.md`
-
----
-
-## 📝 Note per Sviluppatori
-
-### Prima di ogni commit:
-
-1. ✅ Testare tutte le funzionalità modificate
-2. ✅ Verificare zero errori in console browser
-3. ✅ Controllare responsive design
-4. ✅ Validare integrazione API
-5. ✅ Seguire naming conventions
-
-### Testing e Debug
-
-#### **NO Test Modal o File di Test**
-
-- **NON** creare file di test temporanei (es. test-delete-modal.html)
-- **NON** creare script di test separati per singole funzionalità
-- **SÌ** testare direttamente sulla versione reale del sito
-
-#### **Processo di Testing**
-
-1. **Implementa** le modifiche al codice
-2. **Chiedi all'utente** di testare la funzionalità specifica
-3. **Raccogli feedback** sui risultati dei test
-4. **Itera** in base ai risultati reali
-
-#### **Vantaggi Testing Reale**
-
-- Test più accurati e puntuali
-- Nessun overhead di file temporanei
-- Feedback immediato su problemi reali
-- Ambiente di test identico a quello di produzione
-
-### Code Review Checklist:
-
-- [ ] Codice modulare e ben organizzato
-- [ ] Gestione errori appropriata
-- [ ] Performance ottimali
-- [ ] Sicurezza validata
-- [ ] Documentazione aggiornata
-- [ ] **Test reali completati dall'utente**
-
-_Ultimo aggiornamento: 21 agosto 2025_
-_Versione: 1.0_
+### Prima di ogni commit
+1. Funzionalità modificate testate sulla versione reale
+2. Zero errori in console
+3. Responsive verificato
+4. Integrazione API validata
+5. Naming conventions rispettate
+6. Nessun file vietato da §rimuovere introdotto
