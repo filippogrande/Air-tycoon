@@ -1,20 +1,17 @@
-import { setupSettingsOverlay } from '../ui/SettingsOverlay.js';
-import { setupTabNavigation } from '../ui/uiEvents.js';
-import { openFleetPurchaseUI } from '../ui/FleetTab.js';
-import { AuthManager } from '../utils/AuthManager.js';
-import { updateGameDateInHeader } from '../utils/gameUtils.js';
-// Ensure RouteCalculator and MapVisibilityManager are loaded on page load so WorldMap can use them via globals
-import '../utils/RouteCalculator.js';
-import '../utils/MapVisibilityManager.js';
+// These UI helpers and tab modules are classic scripts that expose globals on `window`.
+// Do not import them as ES module bindings; instead rely on the global functions
+// that the scripts expose (e.g. `setupSettingsOverlay`, `initFleetTab`, etc.).
 
 // Mappa tab -> modulo e funzione di init
 const tabModules = {
-    world:   () => import('../ui/WorldTab.js').then(m => m.initWorldTab()),
-    fleet:   () => import('../ui/FleetTab.js').then(m => m.initFleetTab()),
-    routes:  () => import('../ui/RoutesTab.js').then(m => m.initRoutesTab()),
-    finances:() => import('../ui/FinancesTab.js').then(m => m.initFinancesTab()),
-    infrastructure: () => import('../ui/InfrastructureTab.js').then(m => m.initInfrastructureTab()),
-    research:() => import('../ui/ResearchTab.js').then(m => m.initResearchTab())
+    // These modules are loaded as classic scripts by the page. Call their
+    // initialization functions exposed on `window` after the script has run.
+    world:   () => Promise.resolve().then(() => window.initWorldTab && window.initWorldTab()),
+    fleet:   () => Promise.resolve().then(() => window.initFleetTab && window.initFleetTab()),
+    routes:  () => Promise.resolve().then(() => window.initRoutesTab && window.initRoutesTab()),
+    finances:() => Promise.resolve().then(() => window.initFinancesTab && window.initFinancesTab()),
+    infrastructure: () => Promise.resolve().then(() => window.initInfrastructureTab && window.initInfrastructureTab()),
+    research:() => Promise.resolve().then(() => window.initResearchTab && window.initResearchTab())
 };
 
 // Traccia i tab già inizializzati
@@ -47,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Preferisci dati presenti in currentUser
             if (currentUser && currentUser.companyName) {
                 companyName = currentUser.companyName;
-                if (typeof currentUser.money !== 'undefined') money = '💰 ' + Number(currentUser.money).toLocaleString();
+                if (typeof currentUser.money !== 'undefined') money = uiUtils.formatMoney(currentUser.money);
                 if (typeof currentUser.reputation !== 'undefined') reputation = '⭐ ' + currentUser.reputation;
             }
 
@@ -55,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if ((companyName === '--' || companyName === null) && currentUser && currentUser.email && authManager.users && authManager.users[currentUser.email]) {
                 const cached = authManager.users[currentUser.email];
                 companyName = cached.companyName || companyName;
-                if (typeof cached.money !== 'undefined') money = '💰 ' + Number(cached.money).toLocaleString();
+                if (typeof cached.money !== 'undefined') money = uiUtils.formatMoney(cached.money);
                 if (typeof cached.reputation !== 'undefined') reputation = '⭐ ' + cached.reputation;
             }
 
@@ -74,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 console.debug('[hubPage] matched company from list:', myCompany);
                             if (myCompany) {
                                 companyName = myCompany.name || myCompany.company_name || companyName;
-                                if (typeof myCompany.money !== 'undefined') money = '💰 ' + Number(myCompany.money).toLocaleString();
+                                if (typeof myCompany.money !== 'undefined') money = uiUtils.formatMoney(myCompany.money);
                                 if (typeof myCompany.reputation !== 'undefined') reputation = '⭐ ' + myCompany.reputation;
 
                                 // Aggiorna cache locale per sessioni future
@@ -126,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const dateToUse = c.game_date || c.founded || c.created_at || c.createdAt || null;
                         console.debug('[hubPage] dateToUse chosen:', dateToUse);
                         if (dateToUse) {
-                            updateGameDateInHeader(dateToUse);
+                            window.updateGameDateInHeader(dateToUse);
                             console.debug('[hubPage] updated header with date, DOM now ->', document.getElementById('game-date') ? document.getElementById('game-date').textContent : null);
                         } else {
                             console.debug('[hubPage] no valid date found in company payload');
@@ -148,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try { setupTabNavigation(); } catch (e) { console.warn('[hubPage] setupTabNavigation failed', e && e.message); }
 
     // Lazy load e init moduli tab solo al primo click
-    const tabButtons = document.querySelectorAll('#main-menu .menu-btn');
+    const tabButtons = document.querySelectorAll('.main-nav .menu-btn, #main-menu .menu-btn');
     tabButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             const tab = btn.getAttribute('data-tab');
@@ -176,18 +173,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const origin = e && e.detail && e.detail.origin ? e.detail.origin : null;
             const fleetBtn = document.querySelector('.menu-btn[data-tab="fleet"]');
             if (fleetBtn && !fleetBtn.classList.contains('active')) fleetBtn.click();
-            // small timeout to let tab content initialize
-            setTimeout(() => openFleetPurchaseUI(origin), 120);
+            // small timeout to let tab content initialize; call global if available
+            setTimeout(() => {
+                if (window.openFleetPurchaseUI) window.openFleetPurchaseUI(origin);
+                else console.warn('[hubPage] openFleetPurchaseUI not available yet');
+            }, 120);
         } catch (err) { console.warn('[hubPage] open-purchase handler error', err); }
     });
 
     // Se il tab world è attivo subito al caricamento, inizializza immediatamente
     try {
-        const activeBtn = document.querySelector('#main-menu .menu-btn.active');
+        const activeBtn = document.querySelector('.main-nav .menu-btn.active') || document.querySelector('#main-menu .menu-btn.active');
         if (activeBtn) {
             const tab = activeBtn.getAttribute('data-tab');
-            if (tab === 'world' && tabModules.world && !initializedTabs.world) {
-                tabModules.world().then(() => { initializedTabs.world = true; });
+            if (tab && tabModules[tab] && !initializedTabs[tab]) {
+                tabModules[tab]().then(() => { initializedTabs[tab] = true; });
             }
         }
     } catch (err) { /* ignore */ }

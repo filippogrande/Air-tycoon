@@ -13,13 +13,13 @@ function setupGameMenuEvents(game) {
         gameMenuBtn.addEventListener('click', function() {
             console.debug('📋 Apertura menu di gioco');
             updateGameMenuInfo(game);
-            gameMenuModal.classList.remove('hidden');
+            uiUtils.showModal('game-menu-modal');
         });
     }
 
     if (closeGameMenuBtn && gameMenuModal) {
         closeGameMenuBtn.addEventListener('click', function() {
-            gameMenuModal.classList.add('hidden');
+            uiUtils.hideModal('game-menu-modal');
         });
     }
 
@@ -32,7 +32,7 @@ function setupGameMenuEvents(game) {
                 try {
                     game.saveGame();
                     alert('✅ Partita salvata con successo!');
-                    gameMenuModal.classList.add('hidden');
+                    uiUtils.hideModal('game-menu-modal');
                 } catch (error) {
                     console.error('❌ Errore nel salvataggio:', error);
                     alert('❌ Errore nel salvataggio: ' + error.message);

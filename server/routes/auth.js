@@ -52,7 +52,12 @@ router.post('/register', async (req, res) => {
         `, [userId, email, defaultUsername, passwordHash]);
         
         console.log('✅ Utente registrato nel database:', email);
-        
+
+        // Se la richiesta proviene da un form del browser (accetta HTML), reindirizza alla pagina di login
+        if (req.accepts('html')) {
+            return res.redirect(302, '/game/auth/login.html');
+        }
+
         res.json({
             success: true,
             message: 'Registrazione completata con successo!',
@@ -130,7 +135,12 @@ router.post('/login', async (req, res) => {
         );
         
         console.log('✅ Login database effettuato:', email);
-        
+
+        // Se la richiesta proviene da un form del browser (accetta HTML), reindirizza alla selezione gioco
+        if (req.accepts('html')) {
+            return res.redirect(302, '/game/game/select.html');
+        }
+
         res.json({
             success: true,
             message: 'Login effettuato con successo!',

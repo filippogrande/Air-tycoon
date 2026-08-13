@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acquisto Aeromobile - Air Tycoon 2</title>
+    <link rel="stylesheet" href="../../styles/main.css">
+    <link rel="stylesheet" href="../../styles/ui.css">
+    <style>
+        :root {
+            --bg-1: #eaf4ff;
+            --bg-2: #d7e7ff;
+            --surface: rgba(255, 255, 255, 0.88);
+            --surface-strong: rgba(255, 255, 255, 0.96);
+            --border: rgba(74, 144, 226, 0.18);
+            --text: #1f2d3d;
+            --muted: #5f6f82;
+            --accent: #2f80ed;
+            --accent-2: #27ae60;
+            --shadow: 0 18px 50px rgba(31, 45, 61, 0.14);
+        }
+
+        html {
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 15% 20%, rgba(255,255,255,0.75), transparent 24%),
+                radial-gradient(circle at 85% 12%, rgba(255,255,255,0.45), transparent 18%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            position: relative;
+        }
+
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            inset: auto;
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(2px);
+            opacity: 0.55;
+        }
+
+        body::before {
+            width: 280px;
+            height: 280px;
+            top: -90px;
+            right: -70px;
+            background: radial-gradient(circle, rgba(47,128,237,0.22), transparent 68%);
+        }
+
+        body::after {
+            width: 320px;
+            height: 320px;
+            bottom: -120px;
+            left: -90px;
+            background: radial-gradient(circle, rgba(39,174,96,0.18), transparent 68%);
+        }
+
+        .aircraft-purchase-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 88px 20px 56px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 999px;
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--text);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            font-weight: 700;
+        }
+
+        .back-button:hover {
+            transform: translateY(-1px);
+            background: var(--surface-strong);
+            box-shadow: 0 22px 60px rgba(31, 45, 61, 0.18);
+        }
+
+        .error-message,
+        .success-message {
+            display: none;
+            padding: 14px 16px;
+            border-radius: 16px;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.95);
+            color: white;
+        }
+
+        .success-message {
+            background: rgba(39, 174, 96, 0.95);
+            color: white;
+        }
+
+        .aircraft-header,
+        .configuration-section,
+        .cost-summary {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .aircraft-header {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: 22px;
+            align-items: center;
+            padding: 22px;
+        }
+
+        .aircraft-image {
+            width: 100%;
+            max-width: 260px;
+            min-height: 160px;
+            height: auto;
+            object-fit: cover;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #dfeeff, #f7fbff);
+            border: 1px solid rgba(47,128,237,0.16);
+        }
+
+        .aircraft-info h1 {
+            margin: 0 0 6px 0;
+            color: var(--text);
+            font-size: clamp(2rem, 3vw, 2.8rem);
+            letter-spacing: -0.03em;
+        }
+
+        .aircraft-info p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 1.02rem;
+        }
+
+        .aircraft-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .spec-item {
+            background: rgba(47, 128, 237, 0.06);
+            padding: 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(47, 128, 237, 0.12);
+        }
+
+        .spec-label,
+        .form-label {
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .spec-value {
+            font-weight: 800;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        .configuration-section,
+        .cost-summary {
+            padding: 22px;
+        }
+
+        .section-title {
+            color: var(--text);
+            font-size: 1.1rem;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(47,128,237,0.16);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(95,111,130,0.18);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.92);
+            color: var(--text);
+            font-size: 1rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .form-input:focus {
+            border-color: rgba(47,128,237,0.6);
+            box-shadow: 0 0 0 4px rgba(47,128,237,0.14);
+            outline: none;
+            background: #fff;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quantity-btn,
+        .btn,
+        .btn-primary,
+        .btn-secondary {
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+        }
+
+        .quantity-btn {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent), #5aa2ff);
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 10px 24px rgba(47,128,237,0.24);
+        }
+
+        .quantity-btn:hover,
+        .btn:hover,
+        .btn-primary:hover,
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+        }
+
+        .quantity-input {
+            width: 100px;
+            text-align: center;
+        }
+
+        .seat-configuration {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .seat-config-card {
+            display: grid;
+            gap: 16px;
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.82);
+            border: 1px solid rgba(47,128,237,0.12);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+
+        .seat-config-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .seat-config-title {
+            margin: 0;
+            color: var(--text);
+            font-size: 1.02rem;
+        }
+
+        .seat-config-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .seat-config-badge {
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 800;
+            background: rgba(47,128,237,0.08);
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+        .seat-preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .seat-preset-card {
+            border: 1px solid rgba(47,128,237,0.12);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.88);
+            padding: 14px;
+            text-align: left;
+            box-shadow: 0 10px 24px rgba(31,45,61,0.06);
+        }
+
+        .seat-preset-card.active {
+            border-color: rgba(39,174,96,0.35);
+            background: linear-gradient(180deg, rgba(39,174,96,0.12), rgba(255,255,255,0.95));
+        }
+
+        .seat-preset-card h4 {
+            margin: 0 0 6px;
+            color: var(--text);
+        }
+
+        .seat-preset-meta {
+            display: grid;
+            gap: 4px;
+            color: var(--muted);
+            font-size: 0.94rem;
+            margin-bottom: 10px;
+        }
+
+        .seat-preset-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .seat-preset-emoji {
+            font-size: 1.4rem;
+        }
+
+        .seat-config-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .seat-config-note {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .seat-designer-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(12, 24, 38, 0.58);
+            backdrop-filter: blur(10px);
+        }
+
+        .seat-designer-shell {
+            width: min(1180px, 100%);
+            max-height: min(90vh, 920px);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+            background: rgba(255,255,255,0.96);
+            border-radius: 28px;
+            border: 1px solid rgba(255,255,255,0.26);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+        }
+
+        .seat-designer-visual,
+        .seat-designer-controls {
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .seat-designer-visual {
+            padding: 24px;
+            background:
+                radial-gradient(circle at top left, rgba(47,128,237,0.12), transparent 28%),
+                linear-gradient(180deg, rgba(233,244,255,0.85), rgba(255,255,255,0.96));
+        }
+
+        .seat-designer-controls {
+            padding: 24px;
+            background: rgba(255,255,255,0.98);
+            border-left: 1px solid rgba(47,128,237,0.10);
+        }
+
+        .designer-topline {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .designer-title {
+            margin: 0;
+            color: var(--text);
+            font-size: 1.4rem;
+        }
+
+        .designer-subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .designer-preview-card {
+            border-radius: 24px;
+            padding: 20px;
+            background: rgba(255,255,255,0.75);
+            border: 1px solid rgba(47,128,237,0.12);
+            box-shadow: 0 20px 50px rgba(31,45,61,0.08);
+        }
+
+        .cabin-visual {
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .cabin-row {
+            display: grid;
+            grid-template-columns: 38px 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .row-index {
+            color: var(--muted);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .row-seat-groups {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .seat-group {
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            border-radius: 14px;
+            background: rgba(47,128,237,0.05);
+            border: 1px solid rgba(47,128,237,0.08);
+        }
+
+        .seat-block {
+            width: 12px;
+            min-width: 12px;
+            height: 20px;
+            border-radius: 5px;
+            background: linear-gradient(180deg, rgba(47,128,237,0.28), rgba(47,128,237,0.68));
+            box-shadow: inset 0 -1px 0 rgba(255,255,255,0.35);
+        }
+
+        .aisle {
+            width: 18px;
+            min-width: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(95,111,130,0.55);
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .seat-preview-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .summary-tile {
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(47,128,237,0.06);
+            border: 1px solid rgba(47,128,237,0.08);
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .summary-value {
+            margin-top: 6px;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .comfort-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 9px 12px;
+            border-radius: 999px;
+            font-weight: 800;
+        }
+
+        .comfort-pill.perfetta { background: rgba(39,174,96,0.14); color: #1f8a4d; }
+        .comfort-pill.ottima { background: rgba(72,187,120,0.14); color: #237f43; }
+        .comfort-pill.buona { background: rgba(131,197,66,0.16); color: #4b7f16; }
+        .comfort-pill.accettabile { background: rgba(245,158,11,0.16); color: #9a6510; }
+        .comfort-pill.insoddisfacente { background: rgba(249,115,22,0.16); color: #b45309; }
+        .comfort-pill.pessima { background: rgba(239,68,68,0.16); color: #b91c1c; }
+        .comfort-pill.inaccettabile { background: rgba(153,27,27,0.16); color: #7f1d1d; }
+
+        .designer-controls-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .control-card {
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(47,128,237,0.05);
+            border: 1px solid rgba(47,128,237,0.08);
+        }
+
+        .control-card h4 {
+            margin: 0 0 10px;
+            color: var(--text);
+        }
+
+        .range-output {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 0.94rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .registrations-list {
+            background: rgba(255,255,255,0.75);
+            padding: 12px;
+            border-radius: 18px;
+            border: 1px solid rgba(47,128,237,0.12);
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .registration-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            background: rgba(47, 128, 237, 0.05);
+            border-radius: 14px;
+            border: 1px solid rgba(47,128,237,0.10);
+        }
+
+        .registration-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid rgba(95,111,130,0.18);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.95);
+            color: var(--text);
+        }
+
+        .cost-summary {
+            border: 1px solid rgba(39,174,96,0.20);
+        }
+
+        .cost-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 10px;
+            padding: 6px 0;
+            color: var(--text);
+        }
+
+        .cost-total {
+            border-top: 1px solid rgba(39,174,96,0.22);
+            padding-top: 14px;
+            margin-top: 14px;
+            font-size: 1.08rem;
+            font-weight: 800;
+            color: var(--accent-2);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 14px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 13px 22px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-2), #35c36e);
+            color: white;
+            box-shadow: 0 12px 26px rgba(39,174,96,0.24);
+        }
+
+        .btn-secondary {
+            background: rgba(95,111,130,0.16);
+            color: var(--text);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            flex: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: var(--accent-2);
+            font-weight: 700;
+        }
+
+        @media (max-width: 900px) {
+            .aircraft-purchase-container {
+                padding: 82px 16px 40px;
+            }
+
+            .aircraft-header {
+                grid-template-columns: 1fr;
+            }
+
+            .aircraft-image {
+                max-width: 100%;
+                min-height: 220px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .back-button {
+                top: 12px;
+                left: 12px;
+                padding: 10px 14px;
+                font-size: 0.95rem;
+            }
+
+            .aircraft-purchase-container {
+                padding-top: 72px;
+            }
+
+            .configuration-section,
+            .cost-summary,
+            .aircraft-header {
+                padding: 18px;
+                border-radius: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="goBack()">← Indietro</button>
+    
+    <div class="aircraft-purchase-container">
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        
+        <!-- Header con info aeromobile -->
+        <div class="aircraft-header">
+            <img id="aircraftImage" src="../../assets/aircraft/default.png" alt="Aircraft" class="aircraft-image">
+            <div class="aircraft-info">
+                <h1 id="aircraftName">Nome Aeromobile</h1>
+                <p id="aircraftManufacturer">Produttore</p>
+                <div class="aircraft-specs">
+                    <div class="spec-item">
+                        <div class="spec-label">Tipologia</div>
+                        <div class="spec-value" id="aircraftCategory">-</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label" id="aircraftCapacityLabel">Spazio cabina</div>
+                        <div class="spec-value" id="aircraftCapacity">N/D</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Autonomia</div>
+                        <div class="spec-value" id="aircraftRange">0 km</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Velocità</div>
+                        <div class="spec-value" id="aircraftSpeed">0 km/h</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Consumo</div>
+                        <div class="spec-value" id="aircraftFuel">0 L/h</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Prezzo Base</div>
+                        <div class="spec-value" id="aircraftPrice">€0</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Anno Introduzione</div>
+                        <div class="spec-value" id="aircraftYear">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configurazione quantità -->
+        <div class="configuration-section">
+            <h3 class="section-title">Quantità</h3>
+            <div class="form-group">
+                <label class="form-label">Numero di aeromobili da ordinare:</label>
+                <div class="quantity-controls">
+                    <button class="quantity-btn" onclick="changeQuantity(-1)">-</button>
+                    <input type="number" id="quantity" class="form-input quantity-input" value="1" min="1" max="50" onchange="updateQuantity()">
+                    <button class="quantity-btn" onclick="changeQuantity(1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configurazione sedili -->
+        <div class="configuration-section" id="seatConfigSection">
+            <h3 class="section-title">Configurazione Sedili</h3>
+            <div id="seatConfigurationCard"></div>
+        </div>
+
+        <!-- Opzioni speciali -->
+        <div class="configuration-section">
+            <h3 class="section-title">Opzioni Speciali</h3>
+            <div class="checkbox-group">
+                <input type="checkbox" id="campoMod" class="checkbox" onchange="updateCosts()">
+                <label for="campoMod" class="form-label">Modifica per campo aviazione (+€<span id="campoModCost">0</span>)</label>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Livrea personalizzata:</label>
+                <select id="livery" class="form-input" onchange="updateCosts()">
+                    <option value="standard">Standard (gratuita)</option>
+                    <option value="custom">Personalizzata (+€50,000)</option>
+                    <option value="premium">Premium (+€100,000)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Registrazioni -->
+        <div class="configuration-section">
+            <h3 class="section-title">Registrazioni Aeromobili</h3>
+            <div class="registrations-list" id="registrationsList">
+                <!-- Le registrazioni verranno generate dinamicamente -->
+            </div>
+            <button class="btn btn-secondary" onclick="regenerateAllRegistrations()">Rigenera Tutte</button>
+        </div>
+
+        <!-- Riepilogo costi -->
+        <div class="cost-summary">
+            <h3 class="section-title">Riepilogo Costi</h3>
+            <div class="cost-row">
+                <span>Prezzo base (x<span id="quantityDisplay">1</span>):</span>
+                <span>€<span id="baseCost">0</span></span>
+            </div>
+            <div class="cost-row" id="campoModRow" style="display: none;">
+                <span>Modifica campo aviazione:</span>
+                <span>€<span id="campoModTotal">0</span></span>
+            </div>
+            <div class="cost-row" id="liveryRow" style="display: none;">
+                <span>Livrea personalizzata:</span>
+                <span>€<span id="liveryCost">0</span></span>
+            </div>
+            <div class="cost-row cost-total">
+                <span>Totale:</span>
+                <span>€<span id="totalCost">0</span></span>
+            </div>
+        </div>
+
+        <!-- Pulsanti azione -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="confirmPurchase()" id="purchaseBtn">
+                Conferma Acquisto
+            </button>
+            <button class="btn btn-secondary" onclick="goBack()">
+                Annulla
+            </button>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            <p>Elaborazione ordine in corso...</p>
+        </div>
+    </div>
+
+    <div class="seat-designer-backdrop hidden" id="seatDesignerModal">
+        <div class="seat-designer-shell">
+            <div class="seat-designer-visual">
+                <div class="designer-topline">
+                    <div>
+                        <h3 class="designer-title">Progetta la cabina da zero</h3>
+                        <p class="designer-subtitle">Scegli layout, modello sedile e legroom. L'anteprima a sinistra si aggiorna in tempo reale.</p>
+                    </div>
+                    <div class="seat-config-badge" id="seatDesignerBadge">Configurazione personalizzata</div>
+                </div>
+
+                <div class="designer-preview-card">
+                    <div class="seat-preview-summary">
+                        <div class="summary-tile">
+                            <div class="summary-label">Posti stimati</div>
+                            <div class="summary-value" id="seatDesignerSeatsValue">0</div>
+                        </div>
+                        <div class="summary-tile">
+                            <div class="summary-label">Layout</div>
+                            <div class="summary-value" id="seatDesignerLayoutValue">-</div>
+                        </div>
+                        <div class="summary-tile">
+                            <div class="summary-label">Modello sedile</div>
+                            <div class="summary-value" id="seatDesignerModelValue">-</div>
+                        </div>
+                    </div>
+
+                    <div class="comfort-pill" id="seatDesignerComfortPill">-</div>
+
+                    <div class="cabin-visual" id="seatDesignerVisual"></div>
+                </div>
+            </div>
+
+            <div class="seat-designer-controls">
+                <div class="designer-topline">
+                    <div>
+                        <h3 class="designer-title">Controlli</h3>
+                        <p class="designer-subtitle">Usa i comandi a destra per definire la configurazione. La densità è vincolata allo spazio cabina dell'aereo.</p>
+                    </div>
+                </div>
+
+                <div class="designer-controls-grid">
+                    <div class="control-card">
+                        <h4>Modello sedili</h4>
+                        <label class="form-label" for="seatModelSelect">Seleziona il tipo di seduta</label>
+                        <select id="seatModelSelect" class="form-input" onchange="updateSeatDraft()">
+                            <option value="standard">Standard</option>
+                            <option value="comfort">Comfort</option>
+                            <option value="premium">Premium</option>
+                            <option value="lie_flat">Lie-flat</option>
+                        </select>
+                    </div>
+
+                    <div class="control-card">
+                        <h4>Layout cabina</h4>
+                        <label class="form-label" for="seatLayoutSelect">Schema corridoi / blocchi</label>
+                        <select id="seatLayoutSelect" class="form-input" onchange="updateSeatDraft()"></select>
+                    </div>
+
+                    <div class="control-card">
+                        <h4>Posti totali</h4>
+                        <label class="form-label" for="seatCountRange">Densità passeggeri</label>
+                        <input type="range" id="seatCountRange" min="0" max="0" value="0" class="form-input" oninput="updateSeatDraft()">
+                        <div class="range-output">
+                            <span id="seatCountRangeLabel">0 posti</span>
+                            <span id="seatCountRangeMaxLabel">Max 0</span>
+                        </div>
+                    </div>
+
+                    <div class="control-card">
+                        <h4>Legroom</h4>
+                        <label class="form-label" for="legroomRange">Spazio gambe in cabina</label>
+                        <input type="range" id="legroomRange" min="74" max="110" step="1" class="form-input" oninput="updateSeatDraft()">
+                        <div class="range-output">
+                            <span id="legroomRangeLabel">0 cm</span>
+                            <span id="legroomMoodLabel">-</span>
+                        </div>
+                    </div>
+
+                    <div class="control-card">
+                        <h4>Impatto percepito</h4>
+                        <div class="seat-config-note" id="seatFeelingNote">-</div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" type="button" onclick="applySeatDraft()">Applica configurazione</button>
+                        <button class="btn btn-secondary" type="button" onclick="resetSeatDraft()">Ripristina preset</button>
+                        <button class="btn btn-secondary" type="button" onclick="closeSeatDesigner()">Annulla</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../src/utils/uiUtils.js"></script>
+    <script src="../../src/ui/aircraft-purchase.js"></script>
+</body>
+</html>

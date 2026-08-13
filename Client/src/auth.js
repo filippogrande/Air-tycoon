@@ -3,18 +3,26 @@ console.log('🔐 Caricamento auth.js...');
 
 let authManager;
 
+// Ensure uiUtils is available in module scope (some pages load uiUtils after modules)
+const uiUtils = window.uiUtils || {
+    showLoading: () => {},
+    hideLoading: () => {},
+    showToast: () => {},
+    hideModal: () => {}
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔐 Inizializzazione pagina autenticazione...');
-    
+
     authManager = new AuthManager();
-    
+
     // Controlla se utente già loggato
     if (authManager.loadCurrentUser()) {
         console.log('✅ Utente già loggato, reindirizzo...');
         redirectToGameSelect();
         return;
     }
-    
+
     initializeAuthPage();
 });
 
@@ -24,9 +32,10 @@ function initializeAuthPage() {
     const registerForm = document.getElementById('register-form');
     const showRegisterBtn = document.getElementById('show-register');
     const showLoginBtn = document.getElementById('show-login');
+    const guestBtn = document.getElementById('guest-btn');
     const loginFormElement = document.getElementById('loginForm');
     const registerFormElement = document.getElementById('registerForm');
-    
+
     // Switch tra login e registrazione
     if (showRegisterBtn) {
         showRegisterBtn.addEventListener('click', function(e) {
@@ -34,14 +43,35 @@ function initializeAuthPage() {
             switchToRegister();
         });
     }
-    
+
     if (showLoginBtn) {
         showLoginBtn.addEventListener('click', function(e) {
             e.preventDefault();
             switchToLogin();
         });
     }
-    
+
+    // Guest mode
+    if (guestBtn) {
+        guestBtn.addEventListener('click', function() {
+            uiUtils.showLoading('Accesso come ospite...');
+
+            setTimeout(function() {
+                const result = authManager.loginAsGuest();
+                uiUtils.hideLoading();
+
+                if (result.success) {
+                    uiUtils.showToast(result.message, 'success');
+                    setTimeout(function() {
+                        redirectToGameSelect();
+                    }, 1000);
+                } else {
+                    uiUtils.showToast(result.message, 'error');
+                }
+            }, 1000);
+        });
+    }
+
     // Form submission
     if (loginFormElement) {
         loginFormElement.addEventListener('submit', handleLogin);
@@ -49,157 +79,149 @@ function initializeAuthPage() {
     if (registerFormElement) {
         registerFormElement.addEventListener('submit', handleRegister);
     }
-    
+
     // Message close
     const messageClose = document.getElementById('message-close');
-    messageClose.addEventListener('click', hideMessage);
-    
+    if (messageClose) messageClose.addEventListener('click', hideMessage);
+
     console.log('✅ Pagina autenticazione inizializzata');
 }
 
 function switchToRegister() {
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
-    
-    loginForm.classList.remove('active');
-    registerForm.classList.add('active');
+
+    if (loginForm) loginForm.classList.remove('active');
+    if (registerForm) registerForm.classList.add('active');
 }
 
 function switchToLogin() {
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
-    
-    registerForm.classList.remove('active');
-    loginForm.classList.add('active');
+
+    if (registerForm) registerForm.classList.remove('active');
+    if (loginForm) loginForm.classList.add('active');
 }
 
 function handleLogin(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
-    const email = formData.get('email').trim();
+    const email = (formData.get('email') || '').trim();
     const password = formData.get('password');
-    
+
     if (!email || !password) {
-        showMessage('Inserisci email e password', 'error');
+        uiUtils.showToast('Inserisci email e password', 'error');
         return;
     }
-    
-    showLoading('Accesso in corso...');
-    
+
+    uiUtils.showLoading('Accesso in corso...');
+
     // Chiamata asincrona al login
     authManager.login(email, password)
         .then(result => {
-            hideLoading();
-            
+            uiUtils.hideLoading();
+
             if (result.success) {
-                showMessage(result.message, 'success');
-                setTimeout(function() {
-                    redirectToGameSelect();
-                }, 1000);
+                uiUtils.showToast(result.message, 'success');
+                // authManager.login already sets currentUser and saves it
+                redirectToGameSelect();
             } else {
-                showMessage(result.message, 'error');
+                uiUtils.showToast(result.message, 'error');
             }
         })
         .catch(error => {
-            hideLoading();
+            uiUtils.hideLoading();
             console.error('❌ Errore login:', error);
-            showMessage('Errore durante il login. Riprova più tardi.', 'error');
+            uiUtils.showToast('Errore durante il login. Riprova più tardi.', 'error');
         });
 }
 
 function handleRegister(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
-    const email = formData.get('email').trim();
+    const email = (formData.get('email') || '').trim();
     const password = formData.get('password');
     const confirmPassword = formData.get('confirmPassword');
-    
+
     // Validazione
     if (!email || !password || !confirmPassword) {
-        showMessage('Tutti i campi sono obbligatori', 'error');
+        uiUtils.showToast('Tutti i campi sono obbligatori', 'error');
         return;
     }
-    
+
     if (password !== confirmPassword) {
-        showMessage('Le password non coincidono', 'error');
+        uiUtils.showToast('Le password non coincidono', 'error');
         return;
     }
-    
+
     if (password.length < 6) {
-        showMessage('La password deve essere di almeno 6 caratteri', 'error');
+        uiUtils.showToast('La password deve essere di almeno 6 caratteri', 'error');
         return;
     }
-    
-    showLoading('Registrazione in corso...');
-    
+
+    uiUtils.showLoading('Registrazione in corso...');
+
     // Chiamata asincrona alla registrazione (solo email e password)
     authManager.register(email, password)
         .then(result => {
-            hideLoading();
-            
+            // registration completed on server, now attempt to log the user in automatically
+            uiUtils.hideLoading();
+
             if (result.success) {
-                showMessage('Account creato con successo! Ora puoi accedere.', 'success');
-                setTimeout(function() {
-                    switchToLogin();
-                    // Pre-compila email nel form di login
-                    document.getElementById('login-email').value = email;
-                }, 2000);
+                uiUtils.showToast('Account creato con successo! Effettuo il login...', 'success');
+
+                // Try automatic login
+                uiUtils.showLoading('Accesso automatico...');
+                return authManager.login(email, password)
+                    .then(loginResult => {
+                        uiUtils.hideLoading();
+                        if (loginResult.success) {
+                            uiUtils.showToast('Accesso effettuato, reindirizzamento...', 'success');
+                            redirectToGameSelect();
+                        } else {
+                            // Fallback: mostra form di login con email prefissata
+                            switchToLogin();
+                            const loginEmail = document.getElementById('login-email');
+                            if (loginEmail) loginEmail.value = email;
+                            uiUtils.showToast('Registrazione OK. Accedi ora.', 'info');
+                        }
+                    })
+                    .catch(err => {
+                        uiUtils.hideLoading();
+                        // Fallback to login form on error
+                        switchToLogin();
+                        const loginEmail = document.getElementById('login-email');
+                        if (loginEmail) loginEmail.value = email;
+                        uiUtils.showToast('Registrazione completata. Effettua il login.', 'info');
+                    });
             } else {
-                showMessage(result.message, 'error');
+                uiUtils.showToast(result.message, 'error');
             }
         })
         .catch(error => {
-            hideLoading();
+            uiUtils.hideLoading();
             console.error('❌ Errore registrazione:', error);
-            showMessage('Errore durante la registrazione. Riprova più tardi.', 'error');
+            uiUtils.showToast('Errore durante la registrazione. Riprova più tardi.', 'error');
         });
 }
 
 function showLoading(message) {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const loadingText = loadingOverlay.querySelector('p');
-    
-    if (loadingText) {
-        loadingText.textContent = message;
-    }
-    
-    loadingOverlay.classList.remove('hidden');
+    uiUtils.showLoading(message);
 }
 
 function hideLoading() {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    loadingOverlay.classList.add('hidden');
+    uiUtils.hideLoading();
 }
 
 function showMessage(message, type) {
-    const messageOverlay = document.getElementById('message-overlay');
-    const messageText = document.getElementById('message-text');
-    const messageContent = messageOverlay.querySelector('.message-content');
-    
-    messageText.textContent = message;
-    
-    // Reset classi
-    messageContent.classList.remove('error', 'warning', 'success');
-    
-    // Aggiungi classe tipo
-    if (type === 'error') {
-        messageContent.classList.add('error');
-    } else if (type === 'warning') {
-        messageContent.classList.add('warning');
-    }
-    // success è lo stile default
-    
-    messageOverlay.classList.remove('hidden');
-    
-    // Auto-hide dopo 5 secondi
-    setTimeout(hideMessage, 5000);
+    uiUtils.showToast(message, type);
 }
 
 function hideMessage() {
-    const messageOverlay = document.getElementById('message-overlay');
-    messageOverlay.classList.add('hidden');
+    // If there is a close button, clicking it hides; otherwise use uiUtils
+    uiUtils.hideModal && uiUtils.hideModal('message-overlay');
 }
 
 function redirectToGameSelect() {

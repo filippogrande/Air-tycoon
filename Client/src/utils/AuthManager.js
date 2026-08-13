@@ -68,7 +68,9 @@ AuthManager.prototype._registerOnServer = function(email, password) {
     return fetch('/api/auth/register', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({
             email: email,
@@ -128,7 +130,9 @@ AuthManager.prototype._loginOnServer = function(email, password) {
     return fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({
             email: email,

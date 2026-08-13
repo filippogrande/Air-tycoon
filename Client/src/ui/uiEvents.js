@@ -1,6 +1,6 @@
 // Gestione eventi UI e navigazione tab per Air Tycoon 2
 
-export function setupUIEvents(game, showNotification, toggleGameMenu) {
+window.setupUIEvents = function setupUIEvents(game, showNotification, toggleGameMenu) {
     console.debug('🔧 Setup eventi UI base...');
     setupTabNavigation(game);
     window.addEventListener('resize', function() {
@@ -23,9 +23,9 @@ export function setupUIEvents(game, showNotification, toggleGameMenu) {
         }
     });
     console.debug('✅ Eventi UI base configurati');
-}
+};
 
-export function setupTabNavigation(game) {
+window.setupTabNavigation = function setupTabNavigation(game) {
     console.debug('🏷️ Setup navigazione tab...');
     var tabButtons = document.querySelectorAll('.menu-btn[data-tab]');
     var tabContents = document.querySelectorAll('.tab-content');
@@ -42,9 +42,9 @@ export function setupTabNavigation(game) {
         });
     });
     console.debug('✅ Navigazione tab configurata');
-}
+};
 
-export function switchToTab(tabName, game) {
+window.switchToTab = function switchToTab(tabName, game) {
     console.debug('🔄 Cambio a tab:', tabName);
     var allButtons = document.querySelectorAll('.menu-btn[data-tab]');
     var allContents = document.querySelectorAll('.tab-content');
@@ -59,17 +59,17 @@ export function switchToTab(tabName, game) {
         // Notify other modules that a tab was switched (useful for lazy-loading)
         document.dispatchEvent(new CustomEvent('tab-switched', { detail: { tab: tabName } }));
     } catch (e) { /* ignore */ }
-}
+};
 
-export function getCurrentActiveTab() {
+window.getCurrentActiveTab = function getCurrentActiveTab() {
     var activeButton = document.querySelector('.menu-btn[data-tab].active');
     if (activeButton) {
         return activeButton.getAttribute('data-tab');
     }
     return 'world';
-}
+};
 
-export function handleTabSwitch(tabName, game) {
+window.handleTabSwitch = function handleTabSwitch(tabName, game) {
     if (!game) {
         console.warn('⚠️ Game non disponibile per gestione tab switch');
         return;
@@ -111,4 +111,4 @@ export function handleTabSwitch(tabName, game) {
         default:
             console.debug('📋 Tab sconosciuto:', tabName);
     }
-}
+};

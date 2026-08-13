@@ -6,7 +6,7 @@
  * @param {string} scenario
  * @returns {string} data in formato YYYY-MM-DD
  */
-export function getScenarioDate(scenario) {
+window.getScenarioDate = function getScenarioDate(scenario) {
     switch (scenario) {
         case 'aviation_dawn': return '1950-01-01';
         case 'jet_age': return '1970-01-01';
@@ -19,7 +19,7 @@ export function getScenarioDate(scenario) {
 /**
  * Lista dei continenti usata in più pagine.
  */
-export const continents = [
+window.continents = [
     { code: 'Europe', label: 'Europa' },
     { code: 'Asia', label: 'Asia' },
     { code: 'NorthAmerica', label: 'Nord America' },
@@ -29,7 +29,7 @@ export const continents = [
 ];
 
 // Verifica compatibilità del browser
-export function checkBrowserCompatibility() {
+window.checkBrowserCompatibility = function checkBrowserCompatibility() {
     try {
         if (!window.localStorage) return false;
         if (!window.JSON) return false;
@@ -45,7 +45,7 @@ export function checkBrowserCompatibility() {
 }
 
 // Mostra errore all'utente
-export function showError(message) {
+window.showError = function showError(message) {
     const errorDiv = document.createElement('div');
     errorDiv.className = 'error-message';
     errorDiv.style.cssText = `
@@ -74,7 +74,7 @@ export function showError(message) {
 }
 
 // Mostra la data di gioco nell'header
-export function updateGameDateInHeader(dateString) {
+window.updateGameDateInHeader = function updateGameDateInHeader(dateString) {
     var el = document.getElementById('game-date');
     if (!el) return;
     if (!dateString) {
@@ -96,7 +96,7 @@ export function updateGameDateInHeader(dateString) {
 }
 
 // Aggiorna soldi e reputazione nell'header
-export function updateCompanyStatsInHeader(company) {
+window.updateCompanyStatsInHeader = function updateCompanyStatsInHeader(company) {
     var moneyEl = document.getElementById('money');
     if (moneyEl && company.money !== undefined) {
         let euro = Number(company.money) || 0;
@@ -109,11 +109,12 @@ export function updateCompanyStatsInHeader(company) {
 }
 
 // Carica la data di gioco dopo aver caricato la compagnia
-export function fetchAndShowGameDate(companyId) {
+window.fetchAndShowGameDate = function fetchAndShowGameDate(companyId) {
     fetch('/api/game/companies/' + companyId)
         .then(res => res.json())
         .then(response => {
             if (response.success && response.data && response.data.company) {
+                window.__currentCompanyData = response.data.company;
                 if (response.data.company.game_date) {
                     updateGameDateInHeader(response.data.company.game_date);
                 }
