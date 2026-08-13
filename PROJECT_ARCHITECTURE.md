@@ -60,9 +60,12 @@
 3. **Caricamento frontend**: `hub.html` → `<script>` in load-order → `main.js` (init) → `Game.js` → managers → `UIManager.js`
 4. **Creazione rotta**: `WorldMap.js` → `RouteUIManager.js` → moduli `Route*Manager` → API call → DB
 
-## Aree da sistemare (collegate a v2.0)
+## Backlog e Aree da sistemare
+
+Il backlog di feature e i task di refactor/cleanup sono tracciati su **TickTick** (lista "Air tycoon"), con priorità e sotto-task. Qui sotto i soli **paletti vincolanti** riassunti da `DEVELOPMENT_GUIDELINES.md` v2.0:
 
 - 🔴 `import`/`export` ES6 residui nel frontend → convertire a `window` (Regola 0)
 - 🔴 Dipendenze circolari / "Game non si inizializza" → rispettare Contratto di Load Order
 - 🔴 Fallback che mascherano errori API (ritornano `[]`/`{}`) → vietati (§no-fallback)
+- 🚫 Root `src/`, `RouteUIManager_BACKUP.js`/`_NEW.js`, `test_*.html` nel tree di produzione → da eliminare (§rimuovere)
 - 🟡 Consolidare util duplicate, rimuovere `console.log` di debug, file > 500 righe / funzioni > 50 righe
