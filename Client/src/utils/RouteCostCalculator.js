@@ -1,5 +1,4 @@
 // RouteCostCalculator - Calcoli costi e prezzi per rotte
-console.log('📂 Caricamento RouteCostCalculator.js...');
 
 var RouteCostCalculator = {
     
@@ -88,4 +87,3 @@ var RouteCostCalculator = {
 
 // Export per uso globale
 window.RouteCostCalculator = RouteCostCalculator;
-console.log('✅ RouteCostCalculator caricato');

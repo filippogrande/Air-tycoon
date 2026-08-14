@@ -1,5 +1,4 @@
 // Classe Airport compatibile con tutti i browser
-console.log('📂 Caricamento Airport.js...');
 
 function Airport(data) {
     this.code = data.code; // IATA code (es. MXP)
@@ -192,4 +191,3 @@ Airport.prototype.toString = function() {
 // Rendi disponibile globalmente
 window.Airport = Airport;
 
-console.log('✅ Airport compatibile caricato');

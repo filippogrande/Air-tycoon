@@ -1,5 +1,4 @@
 // InfrastructureManager - Gestisce l'evoluzione delle infrastrutture terrestri
-console.log('📂 Caricamento InfrastructureManager.js...');
 
 function InfrastructureManager(gameState) {
     this.gameState = gameState;
@@ -34,7 +33,6 @@ function InfrastructureManager(gameState) {
         maxHighSpeedRailImpact: 0.7  // Riduzione massima domanda per alta velocità (impatto maggiore)
     };
     
-    console.log('🏗️ InfrastructureManager inizializzato');
 }
 
 // Inizializza dati infrastrutture per una regione
@@ -104,7 +102,6 @@ InfrastructureManager.prototype.advanceMonth = function() {
         this.updateRegionInfrastructure(regionCode, currentYear);
     }
     
-    console.log('🏗️ Infrastrutture aggiornate per anno', currentYear);
 };
 
 // Aggiorna infrastrutture di una regione
@@ -334,7 +331,6 @@ InfrastructureManager.prototype.loadState = function(data) {
     if (data) {
         this.infrastructureData = data.infrastructureData || {};
         this.baseYear = data.baseYear || 1960;
-        console.log('🏗️ Stato InfrastructureManager caricato');
     }
 };
 
@@ -397,4 +393,3 @@ InfrastructureManager.prototype.getRegionalTransportCharacteristics = function(r
     return characteristics;
 };
 
-console.log('✅ InfrastructureManager caricato');

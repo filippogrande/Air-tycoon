@@ -1,5 +1,4 @@
 // DemandEstimationManager - Gestisce stime domanda persistenti
-console.log('📂 Caricamento DemandEstimationManager.js...');
 
 function DemandEstimationManager(gameState) {
     this.gameState = gameState;
@@ -20,7 +19,6 @@ function DemandEstimationManager(gameState) {
         marketAnalysisCost: 15000     // €15,000 per analisi di mercato
     };
     
-    console.log('📊 DemandEstimationManager inizializzato');
 }
 
 // Genera chiave unica per una rotta
@@ -36,7 +34,6 @@ DemandEstimationManager.prototype.getPassengerEstimate = function(origin, destin
     
     // Se già nella cache e non è forzato il ricalcolo, usa quella
     if (!forceRecalculate && this.routeEstimates[routeKey]) {
-        console.log('📋 Usando stima cached per', routeKey + ':', this.routeEstimates[routeKey].passengers, 'passeggeri');
         return this.routeEstimates[routeKey];
     }
     
@@ -60,7 +57,6 @@ DemandEstimationManager.prototype.getPassengerEstimate = function(origin, destin
         gameMonth: this.analysisState.gameMonth
     };
     
-    console.log('📊 Nuova stima per', routeKey + ':', estimates.passengers, 'passeggeri (livello:', analysisLevel + ')');
     
     return this.routeEstimates[routeKey];
 };
@@ -104,7 +100,6 @@ DemandEstimationManager.prototype.calculateEstimates = function(origin, destinat
         
         // Log per debug (solo per rotte con impatto significativo)
         if (infrastructureImpact < 0.9) {
-            console.log('🏗️ Impatto infrastrutture su', origin.code + '-' + destination.code + 
                        ': -' + Math.round((1 - infrastructureImpact) * 100) + '%');
         }
     }
@@ -227,7 +222,6 @@ DemandEstimationManager.prototype.improveAnalysis = function(originCode, destina
     // Forza ricalcolo delle stime
     delete this.routeEstimates[routeKey];
     
-    console.log('✅ Analisi migliorata per', routeKey, '- Costo: ' + uiUtils.formatCurrency(cost));
     
     return {
         success: true,
@@ -253,7 +247,6 @@ DemandEstimationManager.prototype.advanceGameTime = function() {
     // Controlla scadenze e pulisci cache se necessario
     this.cleanupExpiredAnalysis();
     
-    console.log('📅 Avanzato al mese', this.analysisState.gameMonth);
 };
 
 // Pulisci analisi scadute
@@ -272,7 +265,6 @@ DemandEstimationManager.prototype.cleanupExpiredAnalysis = function() {
     // Rimuovi analisi scadute
     for (var i = 0; i < expired.length; i++) {
         delete this.improvedEstimates[expired[i]];
-        console.log('🗑️ Analisi scaduta per', expired[i]);
     }
     
     if (expired.length > 0) {
@@ -342,11 +334,9 @@ DemandEstimationManager.prototype.loadState = function(savedState) {
         this.improvedEstimates = savedState.improvedEstimates || {};
         this.analysisState = Object.assign(this.analysisState, savedState.analysisState || {});
         
-        console.log('📊 Stato DemandEstimationManager caricato:', 
                    Object.keys(this.routeEstimates).length, 'stime cached');
     }
 };
 
 // Export
 window.DemandEstimationManager = DemandEstimationManager;
-console.log('✅ DemandEstimationManager caricato');

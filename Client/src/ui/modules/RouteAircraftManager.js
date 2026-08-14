@@ -1,5 +1,4 @@
 // RouteAircraftManager - Gestione selezione aeroplani per rotte
-console.log('📂 Caricamento RouteAircraftManager.js...');
 
 var RouteAircraftManager = {
     
@@ -28,12 +27,10 @@ var RouteAircraftManager = {
             var aircraftId = this.value;
 
             if (aircraftId === '') {
-                console.log('🚫 Nessun aeroplano selezionato');
                 if (window.RouteStateManager) {
                     window.RouteStateManager.setSelectedAircraft(null);
                 }
             } else {
-                console.log('✈️ Aeroplano selezionato:', aircraftId);
                 if (window.RouteStateManager) {
                     window.RouteStateManager.setSelectedAircraft(aircraftId);
                 }
@@ -45,7 +42,6 @@ var RouteAircraftManager = {
             }
         });
 
-        console.log('✅ Selector aeroplani configurato');
         return true;
     },
 
@@ -83,7 +79,6 @@ var RouteAircraftManager = {
             option.textContent = '🚫 Nessun aereo in flotta';
             option.disabled = true;
             selector.appendChild(option);
-            console.log('⚠️ Nessun aeroplano disponibile nella flotta');
             return false;
         }
         
@@ -101,7 +96,6 @@ var RouteAircraftManager = {
             selector.appendChild(option);
         });
         
-        console.log('✈️ Caricati', fleet.length, 'aeroplani nel dropdown');
         return true;
     },
     
@@ -128,7 +122,6 @@ var RouteAircraftManager = {
             });
         }
         
-        console.log('✈️ Trovati', compatibleAircraft.length, 'aeroplani compatibili per distanza', Math.round(distance), 'km');
         return compatibleAircraft;
     },
     
@@ -149,7 +142,6 @@ var RouteAircraftManager = {
             var confirmBtn = document.getElementById('confirm-create-route');
             if (confirmBtn) confirmBtn.disabled = true;
             
-            console.log('⚠️ Nessun aeroplano compatibile trovato');
             return false;
         } else {
             // Mostra lista aeroplani
@@ -183,7 +175,6 @@ var RouteAircraftManager = {
             var confirmBtn = document.getElementById('confirm-create-route');
             if (confirmBtn) confirmBtn.disabled = false;
             
-            console.log('✅ Lista aeroplani compatibili aggiornata');
             return true;
         }
     },
@@ -209,11 +200,9 @@ var RouteAircraftManager = {
                     window.RouteStateManager.setSelectedAircraft(aircraftId);
                 }
                 
-                console.log('✈️ Aeroplano selezionato dalla lista:', aircraftId);
             });
         });
         
-        console.log('🔧 Event listeners per selezione aeroplani configurati');
         return true;
     },
     
@@ -229,7 +218,6 @@ var RouteAircraftManager = {
             item.classList.remove('selected');
         });
         
-        console.log('🔄 Selezione aeroplani resettata');
         return true;
     },
     

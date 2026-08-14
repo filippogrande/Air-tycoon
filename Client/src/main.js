@@ -34,13 +34,11 @@ let game;
 
 // Inizializzazione del gioco quando la pagina è caricata
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🛫 Air Tycoon 2 Clone - Avvio in corso...');
     // Aspetta che Leaflet sia caricato
     function waitForLeaflet(callback) {
         if (typeof L !== 'undefined') {
             callback();
         } else {
-            console.log('⏳ Attendo caricamento Leaflet...');
             setTimeout(function() { waitForLeaflet(callback); }, 100);
         }
     }
@@ -49,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadCoreDataAndStartGame(companyId) {
         // Controlla se AircraftData è già caricato (dati temporanei)
         if (window.AircraftData) {
-            console.log('✅ AircraftData già disponibile (dati temporanei)');
             initializeGame(companyId);
             return;
         }
@@ -58,7 +55,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/api/game/aircraft-data').then(r => r.json())
             .then(aircraftData => {
                 window.AircraftData = aircraftData;
-                console.log('✅ AircraftData caricato via API');
                 initializeGame(companyId);
             })
             .catch(err => {
@@ -68,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     waitForLeaflet(function() {
-        console.log('✅ Leaflet caricato');
         const companyId = loadGameCompanyIdOrShowError(showError);
         if (!companyId) return;
         // Mostra la data di gioco nell'header
@@ -97,13 +92,11 @@ function initializeGame(companyId) {
         showError(`Errore: classi non caricate: ${missingClasses.join(', ')}`);
         return;
     }
-    console.log('✅ Tutte le classi e i dati fondamentali sono caricati');
     // Verifica compatibilità browser
     if (!checkBrowserCompatibility()) {
         showError('Il tuo browser non supporta tutte le funzionalità richieste dal gioco.');
         return;
     }
-    console.log('✅ Browser compatibile');
     // Verifica presenza e validità companyId
     if (!companyId || !/^[0-9]+$/.test(companyId)) {
         showError('Errore: companyId mancante o non valido. Impossibile avviare il gioco senza un identificativo compagnia valido.');
@@ -113,22 +106,18 @@ function initializeGame(companyId) {
     const companyIdNum = Number(companyId);
     // Inizializza il gioco
     try {
-        console.log('🎮 Creazione istanza Game...');
         game = new Game(companyIdNum);
         window.game = game;
-        console.log('✅ Game creato');
         window.addEventListener('error', handleGlobalError);
         window.addEventListener('unhandledrejection', handleUnhandledRejection);
         window.addEventListener('resize', handleWindowResize);
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        console.log('✅ Event listeners configurati');
         // Mostra messaggio di benvenuto
         showWelcomeMessage();
         // Setup eventi UI
         setupUIEvents();
         // Setup eventi del menu di gioco dopo che il game è inizializzato
         setupGameMenuEvents();
-        console.log('✅ Gioco avviato con successo!');
     } catch (error) {
         console.error('❌ Errore durante l\'inizializzazione del gioco:', error);
         console.error('❌ Stack trace:', error.stack);
@@ -170,13 +159,11 @@ function handleVisibilityChange() {
         if (game.pause) {
             game.pause();
         }
-        console.log('⏸️ Gioco in pausa (pagina nascosta)');
     } else {
         // Pagina visibile - riprendi il gioco
         if (game.start) {
             game.start();
         }
-        console.log('▶️ Gioco ripreso (pagina visibile)');
     }
 }
 
@@ -217,7 +204,6 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
     window.debugAirportData = window.AirportData || null;
     window.debugSaveLoad = SaveLoad;
     
-    console.log('🐛 Modalità debug attiva. Usa window.debugGame() per accedere al gioco.');
 }
 
 // Funzioni di utilità globali
@@ -243,7 +229,6 @@ window.gameUtils = {
 };
 
 // Comandi da console per facilitare il debug
-console.log(`
 🛫 Air Tycoon 2 Clone
 Comandi disponibili:
 - gameUtils.setGameSpeed(x) - Cambia velocità (0.1-10)
@@ -251,11 +236,9 @@ Comandi disponibili:
 `);
 
 // Inizializzazione completata
-console.log('🎮 Sistema di gioco caricato e pronto!');
 
 // Setup eventi del menu di gioco
 function setupGameMenuEvents() {
-    console.log('🎮 Setup eventi menu di gioco...');
     
     // Apri menu di gioco
     var gameMenuBtn = document.getElementById('game-menu-btn');
@@ -264,7 +247,6 @@ function setupGameMenuEvents() {
     
     if (gameMenuBtn && gameMenuModal) {
         gameMenuBtn.addEventListener('click', function() {
-            console.log('📋 Apertura menu di gioco');
             updateGameMenuInfo();
             uiUtils.showModal('game-menu-modal');
         });
@@ -280,7 +262,6 @@ function setupGameMenuEvents() {
     var saveAndContinueBtn = document.getElementById('save-and-continue');
     if (saveAndContinueBtn) {
         saveAndContinueBtn.addEventListener('click', function() {
-            console.log('💾 Salvataggio partita...');
             if (game && game.saveGame) {
                 try {
                     game.saveGame();
@@ -298,13 +279,11 @@ function setupGameMenuEvents() {
     var returnToGameSelectBtn = document.getElementById('return-to-game-select');
     if (returnToGameSelectBtn) {
         returnToGameSelectBtn.addEventListener('click', function() {
-            console.log('🔙 Ritorno alla selezione giochi...');
             if (confirm('Vuoi davvero tornare alla selezione dei giochi? Assicurati di aver salvato la partita.')) {
                 // Salva automaticamente prima di uscire
                 if (game && game.saveGame) {
                     try {
                         game.saveGame();
-                        console.log('💾 Partita salvata automaticamente prima dell\'uscita');
                     } catch (error) {
                         console.warn('⚠️ Errore nel salvataggio automatico:', error);
                     }
@@ -318,7 +297,6 @@ function setupGameMenuEvents() {
                     sessionStorage.removeItem('companyId');
                     sessionStorage.removeItem('gameState');
                     sessionStorage.removeItem('currentSave');
-                    console.log('🧹 Dati di gioco rimossi, login preservato');
                 } catch (e) {
                     console.warn('⚠️ Errore pulizia dati di gioco:', e);
                 }
@@ -339,13 +317,11 @@ function setupGameMenuEvents() {
     var logoutFromGameBtn = document.getElementById('logout-from-game');
     if (logoutFromGameBtn) {
         logoutFromGameBtn.addEventListener('click', function() {
-            console.log('🚪 Logout dal gioco...');
             if (confirm('Vuoi davvero fare il logout? Assicurati di aver salvato la partita.')) {
                 // Pulisci tutti i dati locali (localStorage, sessionStorage)
                 try {
                     localStorage.clear();
                     sessionStorage.clear();
-                    console.log('🧹 Dati locali eliminati');
                 } catch (e) {
                     console.warn('⚠️ Errore pulizia storage:', e);
                 }
@@ -361,7 +337,6 @@ function setupGameMenuEvents() {
     var saveGameBtn = document.getElementById('save-game-btn');
     if (saveGameBtn) {
         saveGameBtn.addEventListener('click', function() {
-            console.log('💾 Salvataggio rapido...');
             if (game && game.saveGame) {
                 try {
                     game.saveGame();
@@ -393,22 +368,18 @@ function setupGameMenuEvents() {
                 if (game.isPaused) {
                     game.resume();
                     pauseBtn.textContent = '⏸️ Pausa';
-                    console.log('▶️ Gioco ripreso');
                 } else {
                     game.pause();
                     pauseBtn.textContent = '▶️ Riprendi';
-                    console.log('⏸️ Gioco in pausa');
                 }
             }
         });
     }
     
-    console.log('✅ Eventi menu di gioco configurati');
 }
 
 // Aggiorna informazioni nel menu di gioco
 function updateGameMenuInfo() {
-    console.log('📊 Aggiornamento info menu di gioco...');
     
     try {
         var authManager = new AuthManager();
@@ -466,7 +437,6 @@ function updateGameMenuInfo() {
 
 // Gestione eventi UI
 function setupUIEvents() {
-    console.log('🔧 Setup eventi UI base...');
     
     // Setup tab navigation
     setupTabNavigation();
@@ -498,12 +468,10 @@ function setupUIEvents() {
         }
     });
     
-    console.log('✅ Eventi UI base configurati');
 }
 
 // Setup navigazione tra tab
 function setupTabNavigation() {
-    console.log('🏷️ Setup navigazione tab...');
     
     if (window._tabNavigationBound) {
         console.debug('🏷️ Navigazione tab già configurata, skip');
@@ -530,12 +498,10 @@ function setupTabNavigation() {
     
     window._tabNavigationBound = true;
     
-    console.log('✅ Navigazione tab configurata');
 }
 
 // Cambia tab attivo
 function switchToTab(tabName) {
-    console.log('🔄 Cambio a tab:', tabName);
     
     // Rimuovi classe active da tutti i pulsanti e contenuti
     var allButtons = document.querySelectorAll('.menu-btn[data-tab]');
@@ -619,7 +585,6 @@ function handleTabSwitch(tabName) {
         case 'infrastructure':
             // Aggiorna UI infrastrutture
             if (game.uiManager && game.uiManager.updateInfrastructureUI) {
-                console.log('🏗️ Aggiornamento UI infrastrutture...');
                 game.uiManager.updateInfrastructureUI();
             } else {
                 console.warn('⚠️ updateInfrastructureUI non disponibile');
@@ -628,11 +593,9 @@ function handleTabSwitch(tabName) {
             
         case 'research':
             // Aggiorna UI ricerca (placeholder per futuro sviluppo)
-            console.log('🔬 Tab ricerca - funzionalità in sviluppo');
             break;
             
         default:
-            console.log('📋 Tab sconosciuto:', tabName);
     }
 }
 
@@ -640,11 +603,9 @@ function handleTabSwitch(tabName) {
 
 
 // Inizializzazione completata
-console.log('🎮 Sistema di gioco caricato e pronto!');
 
 // Setup eventi del menu di gioco
 function setupGameMenuEvents() {
-    console.log('🎮 Setup eventi menu di gioco...');
     
     // Apri menu di gioco
     var gameMenuBtn = document.getElementById('game-menu-btn');
@@ -653,7 +614,6 @@ function setupGameMenuEvents() {
     
     if (gameMenuBtn && gameMenuModal) {
         gameMenuBtn.addEventListener('click', function() {
-            console.log('📋 Apertura menu di gioco');
             updateGameMenuInfo();
             uiUtils.showModal('game-menu-modal');
         });
@@ -669,7 +629,6 @@ function setupGameMenuEvents() {
     var saveAndContinueBtn = document.getElementById('save-and-continue');
     if (saveAndContinueBtn) {
         saveAndContinueBtn.addEventListener('click', function() {
-            console.log('💾 Salvataggio partita...');
             if (game && game.saveGame) {
                 try {
                     game.saveGame();
@@ -687,7 +646,6 @@ function setupGameMenuEvents() {
     var returnToGameSelectBtn = document.getElementById('return-to-game-select');
     if (returnToGameSelectBtn) {
         returnToGameSelectBtn.addEventListener('click', function() {
-            console.log('🔙 Ritorno alla selezione giochi...');
             if (confirm('Vuoi davvero tornare alla selezione dei giochi? Assicurati di aver salvato la partita.')) {
                 // Pulisci solo i dati di gioco, NON il login
                 try {
@@ -698,7 +656,6 @@ function setupGameMenuEvents() {
                     sessionStorage.removeItem('companyId');
                     sessionStorage.removeItem('gameState');
                     sessionStorage.removeItem('currentSave');
-                    console.log('🧹 Dati di gioco rimossi, login preservato');
                 } catch (e) {
                     console.warn('⚠️ Errore pulizia dati di gioco:', e);
                 }
@@ -719,13 +676,11 @@ function setupGameMenuEvents() {
     var logoutFromGameBtn = document.getElementById('logout-from-game');
     if (logoutFromGameBtn) {
         logoutFromGameBtn.addEventListener('click', function() {
-            console.log('🚪 Logout dal gioco...');
             if (confirm('Vuoi davvero fare il logout? Assicurati di aver salvato la partita.')) {
                 // Pulisci tutti i dati locali (localStorage, sessionStorage)
                 try {
                     localStorage.clear();
                     sessionStorage.clear();
-                    console.log('🧹 Dati locali eliminati');
                 } catch (e) {
                     console.warn('⚠️ Errore pulizia storage:', e);
                 }
@@ -741,7 +696,6 @@ function setupGameMenuEvents() {
     var saveGameBtn = document.getElementById('save-game-btn');
     if (saveGameBtn) {
         saveGameBtn.addEventListener('click', function() {
-            console.log('💾 Salvataggio rapido...');
             if (game && game.saveGame) {
                 try {
                     game.saveGame();
@@ -773,22 +727,18 @@ function setupGameMenuEvents() {
                 if (game.isPaused) {
                     game.resume();
                     pauseBtn.textContent = '⏸️ Pausa';
-                    console.log('▶️ Gioco ripreso');
                 } else {
                     game.pause();
                     pauseBtn.textContent = '▶️ Riprendi';
-                    console.log('⏸️ Gioco in pausa');
                 }
             }
         });
     }
     
-    console.log('✅ Eventi menu di gioco configurati');
 }
 
 // Aggiorna informazioni nel menu di gioco
 function updateGameMenuInfo() {
-    console.log('📊 Aggiornamento info menu di gioco...');
     
     try {
         var authManager = new AuthManager();
@@ -846,7 +796,6 @@ function updateGameMenuInfo() {
 
 // Gestione eventi UI
 function setupUIEvents() {
-    console.log('🔧 Setup eventi UI base...');
     
     // Setup tab navigation
     setupTabNavigation();
@@ -878,12 +827,10 @@ function setupUIEvents() {
         }
     });
     
-    console.log('✅ Eventi UI base configurati');
 }
 
 // Setup navigazione tra tab
 function setupTabNavigation() {
-    console.log('🏷️ Setup navigazione tab...');
     
     var tabButtons = document.querySelectorAll('.menu-btn[data-tab]');
     var tabContents = document.querySelectorAll('.tab-content');
@@ -903,12 +850,10 @@ function setupTabNavigation() {
         });
     });
     
-    console.log('✅ Navigazione tab configurata');
 }
 
 // Cambia tab attivo
 function switchToTab(tabName) {
-    console.log('🔄 Cambio a tab:', tabName);
     
     // Rimuovi classe active da tutti i pulsanti e contenuti
     var allButtons = document.querySelectorAll('.menu-btn[data-tab]');
@@ -992,7 +937,6 @@ function handleTabSwitch(tabName) {
         case 'infrastructure':
             // Aggiorna UI infrastrutture
             if (game.uiManager && game.uiManager.updateInfrastructureUI) {
-                console.log('🏗️ Aggiornamento UI infrastrutture...');
                 game.uiManager.updateInfrastructureUI();
             } else {
                 console.warn('⚠️ updateInfrastructureUI non disponibile');
@@ -1001,10 +945,8 @@ function handleTabSwitch(tabName) {
             
         case 'research':
             // Aggiorna UI ricerca (placeholder per futuro sviluppo)
-            console.log('🔬 Tab ricerca - funzionalità in sviluppo');
             break;
             
         default:
-            console.log('📋 Tab sconosciuto:', tabName);
     }
 }

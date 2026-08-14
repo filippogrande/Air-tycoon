@@ -1,5 +1,4 @@
 // MapVisibilityManager - Gestione intelligente della visibilità aeroporti sulla mappa
-console.log('📂 Caricamento MapVisibilityManager.js...');
 
 var MapVisibilityManager = {
     
@@ -25,7 +24,6 @@ var MapVisibilityManager = {
     
     // Calcola aeroporti da mostrare - LOGICA ORIGINALE FUNZIONANTE
     updateAirportVisibility: function(game, map, airportMarkers, zoom) {
-        console.log('🔍 Aggiornamento visibilità aeroporti intelligente, zoom:', zoom);
         // Se zoom massimo, mostra tutti gli aeroporti senza filtri
         if (zoom >= 10) {
             var visibleCount = 0;
@@ -36,7 +34,6 @@ var MapVisibilityManager = {
                     visibleCount++;
                 }
             }
-            console.log('✅ [FORZATO] Tutti gli aeroporti visibili:', visibleCount, '/', Object.keys(airportMarkers).length);
             this.updateCityLabels(map, airportMarkers, zoom);
             return;
         }
@@ -69,7 +66,6 @@ var MapVisibilityManager = {
             }
         }
         
-        console.log('✅ Aeroporti visibili:', visibleCount, '/', Object.keys(airportMarkers).length, 
                     '(da', visibleAirports.length, 'nell\'area)');
         
         // Aggiorna etichette città in base allo zoom
@@ -109,7 +105,6 @@ var MapVisibilityManager = {
             }
         }
         
-        console.log('🏷️ Etichette città per zoom', zoom + ':',
                    'Large ≥5:', zoom >= 5,
                    'Medium ≥6:', zoom >= 6, 
                    'Small ≥8:', zoom >= 8);
@@ -248,7 +243,6 @@ var MapVisibilityManager = {
         
         // Debug occasionale per verificare i calcoli
         if (Math.random() < 0.1) { // 10% delle volte
-            console.log('🧮 Rating calcolato per', airport.code + ':', 
                        'business=' + businessLevel, 
                        'tourist=' + touristLevel, 
                        'combined=' + Math.round(combinedTraffic),
@@ -303,4 +297,3 @@ var MapVisibilityManager = {
 
 // Export per uso globale
 window.MapVisibilityManager = MapVisibilityManager;
-console.log('✅ MapVisibilityManager caricato');

@@ -1,5 +1,4 @@
 // SessionStateManager - Gestisce lo stato di sessione del giocatore
-console.log('🔧 Caricamento SessionStateManager...');
 
 class SessionStateManager {
     constructor() {
@@ -20,7 +19,6 @@ class SessionStateManager {
     
     // Salva la pagina corrente
     saveCurrentPage(page, additionalData = {}) {
-        console.log('💾 Salvataggio stato sessione:', page, additionalData);
         
         const sessionData = {
             page: page,
@@ -30,7 +28,6 @@ class SessionStateManager {
         
         try {
             localStorage.setItem(this.CACHE_KEYS.CURRENT_PAGE, JSON.stringify(sessionData));
-            console.log('✅ Stato sessione salvato');
         } catch (error) {
             console.error('❌ Errore nel salvataggio stato sessione:', error);
         }
@@ -41,12 +38,10 @@ class SessionStateManager {
         try {
             const saved = localStorage.getItem(this.CACHE_KEYS.CURRENT_PAGE);
             if (!saved) {
-                console.log('ℹ️ Nessuno stato sessione salvato');
                 return null;
             }
             
             const sessionData = JSON.parse(saved);
-            console.log('📖 Stato sessione caricato:', sessionData);
             
             // Verifica che non sia troppo vecchio (24 ore)
             const savedTime = new Date(sessionData.timestamp);
@@ -54,7 +49,6 @@ class SessionStateManager {
             const hoursDiff = (now - savedTime) / (1000 * 60 * 60);
             
             if (hoursDiff > 24) {
-                console.log('⏰ Stato sessione scaduto, rimozione...');
                 this.clearSession();
                 return null;
             }
@@ -69,19 +63,16 @@ class SessionStateManager {
     
     // Pulisce completamente la sessione (quando torna al menu)
     clearSession() {
-        console.log('🧹 Pulizia completa sessione...');
         
         Object.values(this.CACHE_KEYS).forEach(key => {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
         });
         
-        console.log('✅ Sessione pulita');
     }
     
     // Salva stato di gioco attivo
     saveGameSession(companyId, companyName) {
-        console.log('🎮 Salvataggio sessione di gioco:', companyId, companyName);
         
         // Salva in sessionStorage per la sessione corrente
         sessionStorage.setItem(this.CACHE_KEYS.COMPANY_ID, companyId);
@@ -103,21 +94,18 @@ class SessionStateManager {
     
     // Reindirizza alla pagina corretta basandosi sullo stato
     redirectToCorrectPage() {
-        console.log('🧭 Determinazione pagina corretta...');
         
         const currentPath = window.location.pathname;
         const pageState = this.loadCurrentPage();
         
         // Se siamo già nella pagina corretta, non fare nulla
         if (this.isCurrentPageCorrect(currentPath, pageState)) {
-            console.log('✅ Già nella pagina corretta');
             return false;
         }
         
         if (!pageState) {
             // Nessuno stato salvato, vai al login se non ci sei già
             if (!currentPath.includes('login') && !currentPath.includes('auth')) {
-                console.log('🔀 Reindirizzo al login...');
                 window.location.href = '/game/auth/login.html';
                 return true;
             }
@@ -130,19 +118,16 @@ class SessionStateManager {
                 if (pageState.companyId) {
                     // Ripristina companyId in sessionStorage
                     sessionStorage.setItem(this.CACHE_KEYS.COMPANY_ID, pageState.companyId);
-                    console.log('🔀 Reindirizzo all\'hub con companyId:', pageState.companyId);
                     window.location.href = '/game/hub.html';
                     return true;
                 }
                 break;
                 
             case this.PAGES.GAME_SELECT:
-                console.log('🔀 Reindirizzo alla selezione partita...');
                 window.location.href = '/game/game/select.html';
                 return true;
                 
             default:
-                console.log('🔀 Stato non riconosciuto, vai al login...');
                 window.location.href = '/game/auth/login.html';
                 return true;
         }
@@ -170,4 +155,3 @@ class SessionStateManager {
 // Esporta globalmente
 window.SessionStateManager = SessionStateManager;
 
-console.log('✅ SessionStateManager caricato');

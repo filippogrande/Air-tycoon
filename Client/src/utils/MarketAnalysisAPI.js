@@ -1,5 +1,4 @@
 // Client API per gestione analisi di mercato e azioni a pagamento
-console.log('📂 Caricamento MarketAnalysisAPI.js...');
 
 var MarketAnalysisAPI = {
     
@@ -25,14 +24,12 @@ var MarketAnalysisAPI = {
      * @returns {Promise} - Risultato della verifica
      */
     checkMarketAnalysis: function(originCode, destinationCode, companyId, analysisType = 'standard') {
-        console.log('🔍 Controllo analisi di mercato esistente per:', originCode, '→', destinationCode);
         
         return this.makeRequest(
             'GET',
             `/market-analysis/${originCode}/${destinationCode}?company_id=${companyId}&analysis_type=${analysisType}`
         ).then(function(response) {
             if (response.success) {
-                console.log('✅ Controllo analisi completato:', response.has_analysis ? 'Trovata' : 'Non trovata');
                 return response;
             } else {
                 throw new Error(response.message || 'Errore controllo analisi');
@@ -46,7 +43,6 @@ var MarketAnalysisAPI = {
      * @returns {Promise} - Risultato dell'acquisto
      */
     purchaseMarketAnalysis: function(data) {
-        console.log('💰 Acquisto analisi di mercato:', data);
         
         // Validazione input
         if (!data.company_id || !data.origin_airport_code || !data.destination_airport_code || !data.cost) {
@@ -56,7 +52,6 @@ var MarketAnalysisAPI = {
         return this.makeRequest('POST', '/market-analysis', data)
             .then(function(response) {
                 if (response.success) {
-                    console.log('✅ Analisi di mercato acquistata con successo');
                     return response;
                 } else {
                     throw new Error(response.message || 'Errore acquisto analisi');
@@ -76,7 +71,6 @@ var MarketAnalysisAPI = {
      * @returns {Promise} - Lista dei miglioramenti
      */
     getDemandImprovements: function(originCode, destinationCode, companyId) {
-        console.log('🔍 Controllo miglioramenti domanda per:', originCode, '→', destinationCode);
         
         return this.makeRequest(
             'GET',
@@ -90,12 +84,10 @@ var MarketAnalysisAPI = {
      * @returns {Promise} - Risultato dell'acquisto
      */
     purchaseDemandImprovement: function(data) {
-        console.log('💰 Acquisto miglioramento domanda:', data);
         
         return this.makeRequest('POST', '/demand-improvements', data)
             .then(function(response) {
                 if (response.success) {
-                    console.log('✅ Miglioramento domanda acquistato con successo');
                     return response;
                 } else {
                     throw new Error(response.message || 'Errore acquisto miglioramento');
@@ -262,4 +254,3 @@ var MarketAnalysisAPI = {
 
 // Export per uso globale
 window.MarketAnalysisAPI = MarketAnalysisAPI;
-console.log('✅ MarketAnalysisAPI caricato');

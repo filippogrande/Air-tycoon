@@ -1,5 +1,4 @@
 // RouteCalculator - Calcoli per rotte aeree
-console.log('📂 Caricamento RouteCalculator.js...');
 
 var RouteCalculator = {
     
@@ -159,4 +158,3 @@ var RouteCalculator = {
 
 // Export per uso globale
 window.RouteCalculator = RouteCalculator;
-console.log('✅ RouteCalculator caricato');

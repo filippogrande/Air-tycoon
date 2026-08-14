@@ -1,12 +1,10 @@
 // RouteManager compatibile
-console.log('📂 Caricamento RouteManager.js...');
 
 function RouteManager(gameState) {
     this.gameState = gameState;
 }
 
 RouteManager.prototype.createRoute = function(originCode, destinationCode, aircraftId, routeConfig) {
-    console.log('🛠️ RouteManager: Creazione rotta', originCode, '→', destinationCode);
     
     // Validazioni base
     if (originCode === destinationCode) {
@@ -73,7 +71,6 @@ RouteManager.prototype.createRoute = function(originCode, destinationCode, aircr
         
         this.gameState.routes.push(route);
         
-        console.log('✅ Rotta creata con successo:', route.toString());
         
         // Trigger auto-save per creazione rotta
         if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
@@ -100,7 +97,6 @@ RouteManager.prototype.removeRoute = function(routeId) {
         if (this.gameState.routes[i].id === routeId) {
             var route = this.gameState.routes[i];
             this.gameState.routes.splice(i, 1);
-            console.log('🗑️ Rotta rimossa: ' + route.toString());
             
             // Trigger auto-save per rimozione rotta
             if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
@@ -128,4 +124,3 @@ RouteManager.prototype.getActiveRoutes = function() {
 };
 
 window.RouteManager = RouteManager;
-console.log('✅ RouteManager compatibile caricato');

@@ -1,5 +1,4 @@
 // RoutePanelManager - Gestione dei pannelli UI per creazione rotte
-console.log('📂 Caricamento RoutePanelManager.js...');
 
 var RoutePanelManager = {
     
@@ -21,13 +20,11 @@ var RoutePanelManager = {
             aircraftSelector: document.getElementById('aircraft-selector-main')
         };
         
-        console.log('🔧 Elementi DOM inizializzati per RoutePanelManager');
         return this.elements;
     },
     
     // Apri pannello creazione rotte
     openCreationPanel: function() {
-        console.log('🛣️ Apertura pannello creazione rotte...');
         
         if (!this.elements.routeCreationPanel) this.initElements();
         
@@ -37,7 +34,6 @@ var RoutePanelManager = {
         if (panel && triggerBtn) {
             panel.classList.add('active');
             uiUtils.hide(triggerId);
-            console.log('✅ Pannello rotte aperto');
             return true;
         }
         return false;
@@ -45,7 +41,6 @@ var RoutePanelManager = {
     
     // Chiudi pannello creazione rotte
     closeCreationPanel: function() {
-        console.log('🛣️ Chiusura pannello creazione rotte...');
         
         var panel = this.elements.routeCreationPanel;
         var configPanel = this.elements.routeConfigPanel;
@@ -55,13 +50,11 @@ var RoutePanelManager = {
         if (configPanel) configPanel.classList.remove('active');
         if (triggerBtn) uiUtils.show(triggerId);
         
-        console.log('✅ Pannelli rotte chiusi');
         return true;
     },
     
     // Apri pannello configurazione rotta
     openConfigPanel: function() {
-        console.log('⚙️ Apertura pannello configurazione rotta...');
         
         var selectionPanel = this.elements.routeCreationPanel;
         var configPanel = this.elements.routeConfigPanel;
@@ -69,7 +62,6 @@ var RoutePanelManager = {
         if (selectionPanel) selectionPanel.classList.remove('active');
         if (configPanel) {
             configPanel.classList.add('active');
-            console.log('✅ Pannello configurazione rotta aperto');
             return true;
         }
         
@@ -79,7 +71,6 @@ var RoutePanelManager = {
     
     // Torna alla selezione aeroporti
     backToSelection: function() {
-        console.log('⬅️ Ritorno alla selezione aeroporti...');
         
         var configPanel = this.elements.routeConfigPanel;
         var selectionPanel = this.elements.routeCreationPanel;
@@ -87,7 +78,6 @@ var RoutePanelManager = {
         if (configPanel) configPanel.classList.remove('active');
         if (selectionPanel) selectionPanel.classList.add('active');
         
-        console.log('✅ Tornato alla selezione aeroporti');
         return true;
     },
     
@@ -105,7 +95,6 @@ var RoutePanelManager = {
         slotElement.classList.add('selected');
         slotElement.classList.remove('active');
         
-        console.log('🏢 Slot', slotType, 'aggiornato:', airport.code);
         return true;
     },
     
@@ -121,7 +110,6 @@ var RoutePanelManager = {
         slotElement.innerHTML = '<span class="placeholder">' + placeholder + '</span>';
         slotElement.classList.remove('selected', 'active', 'locked');
         
-        console.log('🧹 Slot', slotType, 'pulito');
         return true;
     },
     
@@ -132,7 +120,6 @@ var RoutePanelManager = {
         var slotElement = document.getElementById(slotType + '-airport');
         if (slotElement) {
             slotElement.classList.add('active');
-            console.log('🎯 Slot attivato:', slotType);
             return true;
         }
         return false;
@@ -147,7 +134,6 @@ var RoutePanelManager = {
                 slotElement.classList.remove('active');
             }
         }
-        console.log('🧹 Tutti gli slot deattivati');
         return true;
     },
     
@@ -156,7 +142,6 @@ var RoutePanelManager = {
         var createBtn = this.elements.createRouteBtn || document.getElementById('create-route-btn');
         if (createBtn) {
             createBtn.disabled = !canCreate;
-            console.log('🔘 Bottone crea rotta:', canCreate ? 'abilitato' : 'disabilitato');
             return true;
         }
         return false;
@@ -179,7 +164,6 @@ var RoutePanelManager = {
         lockBtn.disabled = !hasOrigin;
         lockBtn.style.opacity = hasOrigin ? '1' : '0.5';
         
-        console.log('🔒 Bottone lock aggiornato:', isLocked ? 'locked' : 'unlocked');
         return true;
     },
     
@@ -194,7 +178,6 @@ var RoutePanelManager = {
             originSlot.classList.remove('locked');
         }
         
-        console.log('🎨 Aspetto origine aggiornato:', isLocked ? 'locked' : 'unlocked');
         return true;
     },
     
@@ -219,7 +202,6 @@ var RoutePanelManager = {
     
     // Carica template HTML
     loadTemplate: function(templatePath) {
-        console.log('🔧 Caricamento template:', templatePath);
         
         return fetch(templatePath)
             .then(function(response) {
@@ -241,7 +223,6 @@ var RoutePanelManager = {
                     worldTab.appendChild(tempDiv.firstChild);
                 }
                 
-                console.log('✅ Template caricato dinamicamente');
                 return true;
             })
             .catch(function(error) {

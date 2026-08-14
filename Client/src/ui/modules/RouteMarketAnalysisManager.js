@@ -1,5 +1,4 @@
 // RouteMarketAnalysisManager - Gestione analisi di mercato avanzata
-console.log('🏢 Caricamento RouteMarketAnalysisManager.js...');
 
 var RouteMarketAnalysisManager = {
     
@@ -13,7 +12,6 @@ var RouteMarketAnalysisManager = {
             return false;
         }
         
-        console.log('🏢 Avvio analisi di mercato per:', origin.name, '→', destination.name);
         
         // Mostra loading
         this.showAnalysisLoading(true);
@@ -51,7 +49,6 @@ var RouteMarketAnalysisManager = {
     
     // Fallback per analisi di mercato (simulazione)
     performMarketAnalysisFallback: function(origin, destination) {
-        console.log('🔄 Usando simulazione per analisi mercato');
         
         var cacheKey = origin.code + '-' + destination.code + '-market';
         
@@ -81,7 +78,6 @@ var RouteMarketAnalysisManager = {
         // Salva in cache
         this.marketCache[cacheKey] = marketData;
         
-        console.log('📊 Dati mercato simulati:', marketData);
         return marketData;
     },
     
@@ -247,7 +243,6 @@ var RouteMarketAnalysisManager = {
         var html = this.generateMarketAnalysisHTML(data);
         container.innerHTML = html;
         
-        console.log('✅ Analisi di mercato visualizzata');
         return true;
     },
     
@@ -407,7 +402,6 @@ var RouteMarketAnalysisManager = {
     // Pulisci cache
     clearCache: function() {
         this.marketCache = {};
-        console.log('🗑️ Cache analisi mercato ripulita');
     }
 };
 

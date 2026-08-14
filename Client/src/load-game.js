@@ -8,13 +8,9 @@ function loadGameCompanyIdOrShowError(showError) {
 	const companyId = sessionStorage.getItem('selectedCompanyId');
 	
 	// Debug: mostra tutte le chiavi del sessionStorage
-	console.log('🔍 Debug sessionStorage keys:', Object.keys(sessionStorage));
-	console.log('🔍 selectedCompanyId trovato:', companyId);
-	console.log('🔍 Tipo di companyId:', typeof companyId);
 	
 	// Debug: mostra tutti i valori del sessionStorage per debug completo
 	for (let key in sessionStorage) {
-		console.log(`🔍 sessionStorage[${key}] =`, sessionStorage.getItem(key));
 	}
 	
 	if (!companyId) {
@@ -26,11 +22,9 @@ function loadGameCompanyIdOrShowError(showError) {
 		return null;
 	}
 	if (!isValidCompanyId(companyId)) {
-		console.log('🔍 companyId non valido:', companyId, 'isValid:', isValidCompanyId(companyId));
 		showError('Errore: companyId non valido. Seleziona una compagnia valida dalla schermata di selezione partita.');
 		return null;
 	}
-	console.log('✅ companyId valido:', companyId);
 	return companyId;
 }
 

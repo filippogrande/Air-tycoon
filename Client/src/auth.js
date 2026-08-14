@@ -1,5 +1,4 @@
 // Script per la pagina di autenticazione - Sistema Unificato
-console.log('🔐 Caricamento auth.js...');
 
 let authManager;
 
@@ -12,13 +11,11 @@ const uiUtils = window.uiUtils || {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔐 Inizializzazione pagina autenticazione...');
 
     authManager = new AuthManager();
 
     // Controlla se utente già loggato
     if (authManager.loadCurrentUser()) {
-        console.log('✅ Utente già loggato, reindirizzo...');
         redirectToGameSelect();
         return;
     }
@@ -84,7 +81,6 @@ function initializeAuthPage() {
     const messageClose = document.getElementById('message-close');
     if (messageClose) messageClose.addEventListener('click', hideMessage);
 
-    console.log('✅ Pagina autenticazione inizializzata');
 }
 
 function switchToRegister() {
@@ -225,8 +221,6 @@ function hideMessage() {
 }
 
 function redirectToGameSelect() {
-    console.log('🎮 Reindirizzamento alla selezione gioco...');
     window.location.href = '/game/game/select.html';
 }
 
-console.log('✅ auth.js caricato');

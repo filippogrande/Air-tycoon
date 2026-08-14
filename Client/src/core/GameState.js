@@ -1,5 +1,4 @@
 // GameState compatibile con tutti i browser
-console.log('📂 Caricamento GameState.js...');
 
 // Prima definiamo GameTime
 function GameTime() {
@@ -212,7 +211,6 @@ GameState.prototype.loadFromData = function(data) {
             totalExpenses: 0
         };
         
-        console.log('📊 Stato del gioco caricato:', data.saveDate);
     } catch (error) {
         console.error('❌ Errore durante il caricamento dello stato:', error);
         throw error;
@@ -322,4 +320,3 @@ GameState.prototype.earnMoney = function(amount) {
 window.GameState = GameState;
 window.GameTime = GameTime;
 
-console.log('✅ GameState compatibile caricato');

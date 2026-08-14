@@ -1,11 +1,9 @@
 // RouteCreationManager - Gestione creazione e configurazione rotte
-console.log('🛫 Caricamento RouteCreationManager.js...');
 
 var RouteCreationManager = {
     
     // Crea una nuova rotta
     createRoute: function() {
-        console.log('🛫 Avvio creazione rotta...');
         
         // Ottieni stato corrente
         var state = window.RouteStateManager ? window.RouteStateManager.getCurrentState() : null;
@@ -37,7 +35,6 @@ var RouteCreationManager = {
         try {
             // Prepara dati rotta
             var routeData = this.prepareRouteData(state);
-            console.log('📝 Dati rotta preparati:', routeData);
             
             // Simula processo di creazione asincrono
             setTimeout(function() {
@@ -45,7 +42,6 @@ var RouteCreationManager = {
                     // Usa il manager delle rotte reale
                     gameRef.routeManager.createRoute(routeData)
                         .then(function(result) {
-                            console.log('✅ Rotta creata con successo:', result);
                             self.showCreationSuccess(result);
                             self.resetCreationForm();
                         })
@@ -101,7 +97,6 @@ var RouteCreationManager = {
             return false;
         }
         
-        console.log('✅ Validazione dati rotta superata');
         return true;
     },
     
@@ -239,7 +234,6 @@ var RouteCreationManager = {
     simulateRouteCreation: function(state) {
         var self = this;
         
-        console.log('🎭 Simulazione creazione rotta...');
         
         setTimeout(function() {
             var success = Math.random() > 0.2; // 80% successo
@@ -253,11 +247,9 @@ var RouteCreationManager = {
                     createdAt: new Date().toISOString()
                 };
                 
-                console.log('✅ Rotta simulata creata:', routeResult);
                 self.showCreationSuccess(routeResult);
                 self.resetCreationForm();
             } else {
-                console.log('❌ Simulazione fallita');
                 self.showCreationError('Simulazione: aeroplano non disponibile');
             }
             
@@ -335,7 +327,6 @@ var RouteCreationManager = {
         var viewButton = document.getElementById('view-route-details');
         if (viewButton) {
             viewButton.addEventListener('click', function() {
-                console.log('📋 Apertura dettagli rotta:', routeResult.id);
                 // Qui si potrebbe aprire un modal con i dettagli
             });
         }
@@ -396,7 +387,6 @@ var RouteCreationManager = {
         if (errorContainer) errorContainer.style.display = 'none';
         if (successContainer) successContainer.style.display = 'none';
         
-        console.log('🔄 Form creazione rotta resettato');
     },
     
     // Calcola distanza tra aeroporti
@@ -433,7 +423,6 @@ var RouteCreationManager = {
         
         try {
             localStorage.setItem(draftKey, JSON.stringify(draftData));
-            console.log('💾 Draft rotta salvato:', draftKey);
             
             // Mostra conferma
             var notification = document.createElement('div');
@@ -476,7 +465,6 @@ var RouteCreationManager = {
             return new Date(b.data.savedAt) - new Date(a.data.savedAt);
         });
         
-        console.log('📂 Caricati', drafts.length, 'drafts');
         return drafts;
     }
 };

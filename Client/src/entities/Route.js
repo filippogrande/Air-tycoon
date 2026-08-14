@@ -1,5 +1,4 @@
 // Classe Route compatibile con tutti i browser
-console.log('📂 Caricamento Route.js...');
 
 function Route(originCode, destinationCode, aircraftId) {
     this.id = this.generateId();
@@ -67,7 +66,6 @@ Route.prototype.initialize = function() {
     // Calcola prezzo suggerito
     this.ticketPrice = this.calculateOptimalPrice();
     
-    console.log('Rotta creata: ' + this.origin + ' → ' + this.destination + 
                 ' (' + this.distance + 'km, €' + this.ticketPrice + ')');
 };
 
@@ -233,4 +231,3 @@ Route.prototype.toString = function() {
 // Rendi disponibile globalmente
 window.Route = Route;
 
-console.log('✅ Route compatibile caricato');

@@ -1,5 +1,4 @@
 // RouteDemandAnalysisManager - Gestione analisi domanda e previsioni traffico
-console.log('📊 Caricamento RouteDemandAnalysisManager.js...');
 
 var RouteDemandAnalysisManager = {
     
@@ -30,7 +29,6 @@ var RouteDemandAnalysisManager = {
         if (loadingElement) loadingElement.style.display = 'block';
         if (demandContent) demandContent.style.display = 'none';
         
-        console.log('📊 Caricamento stime domanda per rotta:', origin.name, '→', destination.name);
         
         var self = this;
         // Simula caricamento asincrono
@@ -56,7 +54,6 @@ var RouteDemandAnalysisManager = {
         
         // Controlla cache
         if (this.analysisCache[cacheKey]) {
-            console.log('💾 Usando stime cached per', cacheKey);
             return this.analysisCache[cacheKey];
         }
         
@@ -99,7 +96,6 @@ var RouteDemandAnalysisManager = {
         // Salva in cache
         this.analysisCache[cacheKey] = estimates;
         
-        console.log('📊 Stime domanda calcolate:', estimates);
         return estimates;
     },
     
@@ -180,7 +176,6 @@ var RouteDemandAnalysisManager = {
             </div>
         `;
         
-        console.log('✅ Stime domanda visualizzate nel DOM');
         return true;
     },
     
@@ -276,7 +271,6 @@ var RouteDemandAnalysisManager = {
     // Resetta cache analisi
     clearCache: function() {
         this.analysisCache = {};
-        console.log('🗑️ Cache analisi domanda ripulita');
     },
     
     // Ottieni analisi cached

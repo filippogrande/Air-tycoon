@@ -19,7 +19,6 @@ class APIClient {
     async request(endpoint, options = {}) {
         // Se in modalità offline, restituisci dati mock
         if (this.offlineMode) {
-            console.log('🔌 APIClient in modalità offline, endpoint:', endpoint);
             return this._getMockResponse(endpoint, options);
         }
         
@@ -272,7 +271,6 @@ class EnhancedSaveLoad {
     async testDatabaseConnection() {
         try {
             await this.api.healthCheck();
-            console.log('✅ Database connesso e disponibile');
             this.useDatabase = true;
         } catch (error) {
             console.warn('⚠️ Database non disponibile, uso solo localStorage:', error.message);
@@ -295,7 +293,6 @@ class EnhancedSaveLoad {
         // Salva sempre in localStorage per backup
         try {
             localStorage.setItem(`air_tycoon_${saveName}`, JSON.stringify(saveData));
-            console.log(`💾 Gioco salvato in localStorage: ${saveName}`);
         } catch (error) {
             console.error('❌ Errore salvataggio localStorage:', error);
         }
@@ -304,7 +301,6 @@ class EnhancedSaveLoad {
         if (this.useDatabase && this.currentCompanyId) {
             try {
                 await this.api.saveGame(this.currentCompanyId, saveName, saveData);
-                console.log(`🌐 Gioco salvato nel database: ${saveName}`);
                 return { success: true, location: 'database', timestamp };
             } catch (error) {
                 console.error('❌ Errore salvataggio database:', error);
@@ -324,7 +320,6 @@ class EnhancedSaveLoad {
                 
                 if (save) {
                     const saveData = await this.api.loadGame(save.id);
-                    console.log(`🌐 Gioco caricato dal database: ${saveName}`);
                     return saveData.data.game_data;
                 }
             } catch (error) {
@@ -336,7 +331,6 @@ class EnhancedSaveLoad {
         try {
             const saveData = localStorage.getItem(`air_tycoon_${saveName}`);
             if (saveData) {
-                console.log(`💾 Gioco caricato da localStorage: ${saveName}`);
                 return JSON.parse(saveData);
             }
         } catch (error) {
@@ -434,7 +428,6 @@ class EnhancedSaveLoad {
                     await this.api.saveGame(this.currentCompanyId, saveName, saveData);
                 }
             }
-            console.log('✅ Sincronizzazione al database completata');
             return true;
         } catch (error) {
             console.error('❌ Errore sincronizzazione database:', error);
