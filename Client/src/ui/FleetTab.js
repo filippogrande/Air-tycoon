@@ -632,4 +632,3 @@ window.openFleetPurchaseUI = openFleetPurchaseUI;
 window.resolveGameDate = resolveGameDate;
 window.groupAircraft = groupAircraft;
 
-console.log('✅ FleetTab caricato con sistema avanzato di acquisto aeromobili');

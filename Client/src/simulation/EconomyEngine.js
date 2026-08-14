@@ -1,5 +1,4 @@
 // EconomyEngine - Sistema economico dinamico per Air Tycoon
-console.log('📂 Caricamento EconomyEngine.js...');
 
 var EconomyEngine = {
     
@@ -25,7 +24,6 @@ var EconomyEngine = {
     
     // Inizializza l'engine economico
     initialize: function(gameState) {
-        console.log('🏦 Inizializzazione Economy Engine...');
         
         // Carica stato salvato o inizializza
         var savedEconomy = this.loadEconomyState(gameState);
@@ -36,7 +34,6 @@ var EconomyEngine = {
         // Avvia ciclo di aggiornamento
         this.startUpdateCycle();
         
-        console.log('✅ Economy Engine attivo');
         return true;
     },
     
@@ -49,7 +46,6 @@ var EconomyEngine = {
             self.updateEconomy();
         }, 60000); // 1 minuto per test, poi 3600000 per 1 ora reale
         
-        console.log('🔄 Ciclo economico avviato');
     },
     
     // Aggiorna l'economia periodicamente
@@ -60,7 +56,6 @@ var EconomyEngine = {
         
         if (monthsPassed < 0.1) return; // Non aggiornare troppo spesso
         
-        console.log('📊 Aggiornamento economia:', monthsPassed.toFixed(2), 'mesi');
         
         // Applica crescita di base
         this.applyBaselineGrowth(monthsPassed);
@@ -193,8 +188,6 @@ var EconomyEngine = {
         
         this.economyState.activeEvents.push(economicEvent);
         
-        console.log('📈 Evento economico:', event.name, '|', event.description);
-        console.log('⚡ Effetti:', event.effects);
     },
     
     // Rimuove eventi scaduti
@@ -214,7 +207,6 @@ var EconomyEngine = {
                 }
                 
                 eventsToRemove.push(i);
-                console.log('📉 Evento scaduto:', event.name);
             }
         }
         
@@ -249,7 +241,6 @@ var EconomyEngine = {
     notifyEconomicChanges: function() {
         // Per ora log, in futuro può essere UI notification
         if (Math.random() < 0.1) { // 10% delle volte
-            console.log('💹 Stato economia:', {
                 GDP: Math.round(this.economyState.globalGDP),
                 Business: Math.round(this.economyState.businessTravelIndex),
                 Leisure: Math.round(this.economyState.leisureTravelIndex),
@@ -309,4 +300,3 @@ var EconomyEngine = {
 
 // Export per uso globale
 window.EconomyEngine = EconomyEngine;
-console.log('✅ EconomyEngine caricato');

@@ -1,5 +1,4 @@
 // AuthManager - Gestione autenticazione con SERVER-FIRST
-console.log('📂 Caricamento AuthManager.js...');
 
 function AuthManager() {
     this.currentUser = null;
@@ -47,7 +46,6 @@ AuthManager.prototype.register = function(email, password) {
     return this._registerOnServer(email, password)
         .then(serverResult => {
             if (serverResult.success) {
-                console.log('✅ Utente registrato su server:', email);
                 
                 // Aggiorna SOLO la cache localStorage (NON per auth)
                 this._updateUserCache(email, serverResult.data);
@@ -113,7 +111,6 @@ AuthManager.prototype.login = function(email, password) {
                 // Aggiorna cache utenti 
                 this._updateUserCache(email, userData);
                 
-                console.log('✅ Login server effettuato:', email);
                 return { 
                     success: true, 
                     message: 'Login effettuato con successo!',
@@ -178,7 +175,6 @@ AuthManager.prototype.logout = function() {
     // Pulisci anche la cache interna
     this.users = {};
     
-    console.log('👋 Logout completo - localStorage pulito');
 };
 
 // Controlla se utente è loggato
@@ -301,4 +297,3 @@ AuthManager.prototype.verifyPassword = function(password, hash) {
 
 // Esporta
 window.AuthManager = AuthManager;
-console.log('✅ AuthManager caricato');

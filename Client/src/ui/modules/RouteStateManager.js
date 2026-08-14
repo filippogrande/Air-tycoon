@@ -1,5 +1,4 @@
 // RouteStateManager - Gestione dello stato UI per creazione rotte
-console.log('📂 Caricamento RouteStateManager.js...');
 
 var RouteStateManager = {
     
@@ -26,21 +25,18 @@ var RouteStateManager = {
             selectedRouteType: 'passenger'
         };
         
-        console.log('🔄 Stato rotte resettato');
         return this.state;
     },
     
     // Aggiorna stato origine
     setOrigin: function(airport) {
         this.state.originAirport = airport;
-        console.log('🛫 Origine impostata:', airport ? airport.code : null);
         return this.state.originAirport;
     },
     
     // Aggiorna stato destinazione
     setDestination: function(airport) {
         this.state.destinationAirport = airport;
-        console.log('🛬 Destinazione impostata:', airport ? airport.code : null);
         return this.state.destinationAirport;
     },
     
@@ -52,7 +48,6 @@ var RouteStateManager = {
         
         this.state.originLocked = !this.state.originLocked;
         var status = this.state.originLocked ? 'bloccata' : 'sbloccata';
-        console.log('🔒 Origine', status, ':', this.state.originAirport.code);
         
         return { success: true, message: 'Origine ' + status, locked: this.state.originLocked };
     },
@@ -60,35 +55,30 @@ var RouteStateManager = {
     // Imposta aeroplano selezionato
     setSelectedAircraft: function(aircraftId) {
         this.state.selectedAircraftId = aircraftId;
-        console.log('✈️ Aeroplano selezionato:', aircraftId);
         return this.state.selectedAircraftId;
     },
     
     // Imposta tipo rotta
     setRouteType: function(type) {
         this.state.selectedRouteType = type;
-        console.log('🎯 Tipo rotta selezionato:', type);
         return this.state.selectedRouteType;
     },
     
     // Imposta slot attivo
     setActiveSlot: function(slotType) {
         this.state.activeSlot = slotType;
-        console.log('🎯 Slot attivo:', slotType);
         return this.state.activeSlot;
     },
     
     // Apri pannello
     openPanel: function() {
         this.state.isOpen = true;
-        console.log('📂 Pannello aperto');
         return this.state.isOpen;
     },
     
     // Chiudi pannello
     closePanel: function() {
         this.state.isOpen = false;
-        console.log('📂 Pannello chiuso');
         return this.state.isOpen;
     },
     

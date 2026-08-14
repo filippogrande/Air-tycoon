@@ -1,5 +1,4 @@
 // HubManager - Gestione hub aeroportuali del giocatore
-console.log('📂 Caricamento HubManager.js...');
 
 function HubManager(gameState) {
     this.gameState = gameState;
@@ -9,7 +8,6 @@ function HubManager(gameState) {
 
 // Inizializza il primo hub gratuito
 HubManager.prototype.initializeStartingHub = function(airportCode) {
-    console.log('🏢 Inizializzazione hub di partenza:', airportCode);
     
     var airport = AirportData.getAirportByCode(airportCode);
     if (!airport) {
@@ -96,7 +94,6 @@ HubManager.prototype.buildHub = function(airportCode) {
         reputation: 30
     };
     
-    console.log('🏗️ Hub costruito:', airportCode, 'Costo:', buildCost);
     
     // Trigger auto-save per costruzione hub
     if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
@@ -189,7 +186,6 @@ HubManager.prototype.applyMonthlyMaintenance = function() {
     
     if (this.gameState.company.money >= totalCost) {
         this.gameState.company.money -= totalCost;
-        console.log('💰 Manutenzione hub pagata:', totalCost);
         return { success: true, cost: totalCost };
     } else {
         // Penalità per mancato pagamento
@@ -237,4 +233,3 @@ HubManager.prototype.deserialize = function(data) {
 };
 
 window.HubManager = HubManager;
-console.log('✅ HubManager caricato');

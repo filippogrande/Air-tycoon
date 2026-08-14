@@ -1,5 +1,4 @@
 // WeatherEngine - Sistema meteorologico e eventi straordinari
-console.log('📂 Caricamento WeatherEngine.js...');
 
 var WeatherEngine = {
     
@@ -156,7 +155,6 @@ var WeatherEngine = {
     
     // Inizializza il sistema meteo
     initialize: function(gameState) {
-        console.log('🌦️ Inizializzazione Weather Engine...');
         
         // Carica stato meteo salvato
         var savedWeather = this.loadWeatherState(gameState);
@@ -170,7 +168,6 @@ var WeatherEngine = {
         // Avvia ciclo di controllo meteo
         this.startWeatherCycle();
         
-        console.log('✅ Weather Engine attivo');
         return true;
     },
     
@@ -187,7 +184,6 @@ var WeatherEngine = {
             this.weatherState.regionalSeasons[region] = season;
         }
         
-        console.log('🗓️ Stagioni inizializzate:', this.weatherState.regionalSeasons);
     },
     
     // Avvia ciclo di controllo meteo
@@ -199,7 +195,6 @@ var WeatherEngine = {
             self.updateWeather();
         }, 1800000); // 30 minuti per test
         
-        console.log('🔄 Ciclo meteorologico avviato');
     },
     
     // Aggiorna condizioni meteo
@@ -208,7 +203,6 @@ var WeatherEngine = {
         
         if (now < this.weatherState.nextWeatherCheck) return;
         
-        console.log('🌤️ Controllo condizioni meteorologiche...');
         
         // Rimuovi eventi scaduti
         this.removeExpiredWeatherEvents();
@@ -236,7 +230,6 @@ var WeatherEngine = {
             var newSeason = Math.floor(adjustedMonth / 3);
             
             if (this.weatherState.regionalSeasons[region] !== newSeason) {
-                console.log('🍂 Cambio stagione in', region + ':', this.getSeasonName(newSeason));
                 this.weatherState.regionalSeasons[region] = newSeason;
                 updated = true;
             }
@@ -318,8 +311,6 @@ var WeatherEngine = {
         
         this.weatherState.activeWeatherEvents[region] = weatherEvent;
         
-        console.log('⛈️ Evento meteo in', region + ':', eventType.displayName);
-        console.log('📊 Durata:', Math.round(duration), 'ore | Severità:', eventType.severity);
     },
     
     // Seleziona evento pesato per stagione
@@ -359,7 +350,6 @@ var WeatherEngine = {
             var event = this.weatherState.activeWeatherEvents[region];
             if (now > event.endTime) {
                 expiredRegions.push(region);
-                console.log('🌤️ Evento meteo terminato in', region + ':', event.displayName);
             }
         }
         
@@ -465,4 +455,3 @@ var WeatherEngine = {
 
 // Export per uso globale
 window.WeatherEngine = WeatherEngine;
-console.log('✅ WeatherEngine caricato');

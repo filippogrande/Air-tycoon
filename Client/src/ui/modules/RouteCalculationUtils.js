@@ -162,6 +162,5 @@
         window.RouteCalculationUtils = RouteCalculationUtils;
     }
 
-    console.log('✅ RouteCalculationUtils caricato');
 
 })();

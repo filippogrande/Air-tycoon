@@ -1,5 +1,4 @@
 // FleetManager compatibile con tutti i browser
-console.log('📂 Caricamento FleetManager.js...');
 
 function FleetManager(gameState) {
     this.gameState = gameState;
@@ -13,7 +12,6 @@ FleetManager.prototype.addAircraft = function(aircraftData, customName) {
         var aircraft = new Aircraft(aircraftData.type, customName);
         this.gameState.fleet.push(aircraft);
         
-        console.log('✈️ Aeromobile aggiunto alla flotta: ' + aircraft.name + ' (' + aircraft.id + ')');
         
         // Trigger auto-save per aggiunta aeromobile
         if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
@@ -33,7 +31,6 @@ FleetManager.prototype.removeAircraft = function(aircraftId) {
         if (this.gameState.fleet[i].id === aircraftId) {
             var aircraft = this.gameState.fleet[i];
             this.gameState.fleet.splice(i, 1);
-            console.log('🗑️ Aeromobile rimosso dalla flotta: ' + aircraft.name);
             
             // Trigger auto-save per rimozione aeromobile
             if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
@@ -102,7 +99,6 @@ FleetManager.prototype.purchaseAircraft = function(aircraftType, customName) {
     var aircraft = this.addAircraft(aircraftData, customName);
     if (aircraft) {
         this.gameState.subtractMoney(aircraftData.price);
-        console.log('💰 Acquistato ' + aircraft.name + ' per ' + uiUtils.formatCurrency(aircraftData.price));
         
         // Aggiorna i soldi della compagnia
         if (window.game && window.game.state) {
@@ -125,7 +121,6 @@ FleetManager.prototype.sellAircraft = function(aircraftId) {
     this.removeAircraft(aircraftId);
     this.gameState.addMoney(sellPrice);
     
-    console.log('💰 Venduto ' + aircraft.name + ' per ' + uiUtils.formatCurrency(sellPrice));
     return true;
 };
 
@@ -140,7 +135,6 @@ FleetManager.prototype.performMaintenance = function(aircraftId) {
     var cost = aircraft.performMaintenance();
     if (this.gameState.canAfford(cost)) {
         this.gameState.subtractMoney(cost);
-        console.log('🔧 Manutenzione completata per ' + aircraft.name + ' (' + uiUtils.formatCurrency(cost) + ')');
         return true;
     } else {
         console.error('❌ Fondi insufficienti per la manutenzione');
@@ -251,4 +245,3 @@ FleetManager.prototype.update = function(deltaTime) {
 // Rendi disponibile globalmente
 window.FleetManager = FleetManager;
 
-console.log('✅ FleetManager compatibile caricato');

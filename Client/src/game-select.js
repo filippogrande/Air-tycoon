@@ -1,24 +1,20 @@
 // Script per la selezione dei salvataggi - Sistema Unificato
-console.log('🎮 Caricamento game-select.js...');
 
 let authManager;
 let currentUser;
 let selectedSaveToDelete = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎮 Inizializzazione pagina selezione giochi...');
     
     authManager = new AuthManager();
     
     // Verifica autenticazione
     if (!authManager.loadCurrentUser()) {
-        console.log('❌ Utente non autenticato, reindirizzo al login...');
         window.location.href = 'pages/auth/login.html';
         return;
     }
     
     currentUser = authManager.getCurrentUser();
-    console.log('✅ Utente autenticato:', currentUser.email);
     
     // Carica i modali necessari
     loadAllModals().then(() => {
@@ -28,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function loadAllModals() {
-    console.log('📂 Caricamento modali...');
     const modalsToLoad = [
         { id: 'delete-modal', path: '/game/pages/modals/delete-modal.html' },
         { id: 'new-game-modal', path: '/game/pages/modals/new-game-modal.html' },
@@ -37,7 +32,6 @@ async function loadAllModals() {
     
     for (const modal of modalsToLoad) {
         try {
-            console.log(`📄 Caricamento modal: ${modal.id} da ${modal.path}`);
             const response = await fetch(modal.path);
             if (response.ok) {
                 const html = await response.text();
@@ -45,7 +39,6 @@ async function loadAllModals() {
                 if (container) {
                     // Invece di mettere il contenuto dentro il container, sostituiamo il container
                     container.outerHTML = html;
-                    console.log(`✅ Modal ${modal.id} caricato con successo`);
                     
                     // Assicuriamoci che sia nascosto
                     const loadedModal = document.getElementById(modal.id);
@@ -75,11 +68,9 @@ function setupDeleteModalListeners() {
 }
 
 function attachNewGameModalListeners() {
-    console.log('🔗 Attivazione listeners new-game-modal...');
     const newGameFormEl = document.getElementById('new-game-form');
     if (newGameFormEl) {
         newGameFormEl.addEventListener('submit', handleNewGame);
-        console.log('✅ Listener form nuovo gioco attivato');
     }
     
     const openHubBtn = document.getElementById('open-hub-modal-btn');
@@ -88,7 +79,6 @@ function attachNewGameModalListeners() {
             const scenario = document.getElementById('scenario')?.value; 
             openSelectHubModal(scenario); 
         });
-        console.log('✅ Listener apertura hub modal attivato');
     }
     
     const cancelBtn = document.getElementById('cancel-new-game');
@@ -97,7 +87,6 @@ function attachNewGameModalListeners() {
             const modal = document.getElementById('new-game-modal');
             if (modal) uiUtils.hideModal(modal.id);
         });
-        console.log('✅ Listener annulla nuovo gioco attivato');
     }
     
     const closeBtn = document.getElementById('close-modal');
@@ -106,19 +95,16 @@ function attachNewGameModalListeners() {
             const modal = document.getElementById('new-game-modal');
             if (modal) uiUtils.hideModal(modal.id);
         });
-        console.log('✅ Listener chiudi modal attivato');
     }
 }
 
 function attachHubModalListeners() {
-    console.log('🔗 Attivazione listeners hub-modal...');
     const closeHubModalBtn = document.getElementById('close-hub-modal');
     if (closeHubModalBtn) {
         closeHubModalBtn.addEventListener('click', function() {
             const modal = document.getElementById('select-hub-modal');
             if (modal) uiUtils.hideModal(modal.id);
         });
-        console.log('✅ Listener chiudi hub modal attivato');
     }
 }
 
@@ -132,7 +118,6 @@ async function initializeGameSelectPage() {
     // Setup event listeners
     setupEventListeners();
     
-    console.log('✅ Pagina selezione giochi inizializzata');
 }
 
 function updateUserInfo() {
@@ -146,10 +131,6 @@ async function loadUserSaves() {
     const noSavesDiv = document.getElementById('no-saves');
     savesContainer.innerHTML = '';
 
-    console.log('🔍 Debug: inizio loadUserSaves');
-    console.log('🔍 savesContainer:', savesContainer);
-    console.log('🔍 noSavesDiv:', noSavesDiv);
-    console.log('🔍 noSavesDiv classes:', noSavesDiv?.classList.toString());
 
     // Utente autenticato: carica compagnie dal backend
     try {
@@ -158,22 +139,17 @@ async function loadUserSaves() {
         const result = await res.json();
         const companies = (result && result.data) ? result.data : [];
         
-        console.log('🔍 Compagnie trovate:', companies.length);
         
         if (companies.length === 0) {
-            console.log('🔍 Nessuna compagnia, mostro no-saves div');
             savesContainer.style.display = 'none';
             uiUtils.show('no-saves');
             
             // Debug: verifico che il pulsante sia visibile dopo aver mostrato no-saves
             setTimeout(() => {
                 const startFirstBtn = document.getElementById('start-first-game');
-                console.log('🔍 start-first-game dopo timeout:', startFirstBtn);
-                console.log('🔍 start-first-game visibile?', startFirstBtn?.offsetParent !== null);
             }, 100);
             
         } else {
-            console.log('🔍 Compagnie trovate, mostro saves container');
             savesContainer.style.display = 'grid';
             uiUtils.hide('no-saves');
             companies.forEach(company => {
@@ -181,9 +157,7 @@ async function loadUserSaves() {
                 savesContainer.appendChild(card);
             });
         }
-        console.log('📂 Caricate', companies.length, 'compagnie dal server');
     } catch (e) {
-        console.log('🔍 Errore, mostro no-saves div');
         savesContainer.style.display = 'none';
         uiUtils.show('no-saves');
         uiUtils.showToast('Errore caricamento compagnie: ' + e.message, 'error');
@@ -258,7 +232,6 @@ function createCompanyCard(company) {
 window.startGameFromCompany = function(companyId) {
     // Salva il companyId selezionato in sessionStorage e reindirizza
     sessionStorage.setItem('selectedCompanyId', companyId);
-    console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage:', companyId, '| typeof:', typeof companyId);
     
     // Redirect alla pagina hub (che ha tutti gli script necessari)
     window.location.href = '/game/pages/hub.html';
@@ -270,22 +243,17 @@ let allAirportsData = null; // Cache globale aeroporti
 
 async function loadAirportsData(selectedScenario = null) {
     if (allAirportsData) {
-        console.log('🎯 Usando cache aeroporti esistente');
         return allAirportsData; // Usa cache se già caricati
     }
     
     try {
-        console.log('🛫 Caricamento aeroporti dal database...');
         const response = await fetch('/api/airports');
-        console.log('📡 Response status:', response.status, response.statusText);
         
         if (!response.ok) {
             throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
         
         const airports = await response.json();
-        console.log(`✅ Caricati ${airports.length} aeroporti dal server`);
-        console.log('📊 Sample airport:', airports[0]); // Log del primo aeroporto per debug
         
         // Se non c'è uno scenario selezionato, prova a prenderlo dal form
         if (!selectedScenario) {
@@ -302,7 +270,6 @@ async function loadAirportsData(selectedScenario = null) {
         };
         
         const targetYear = scenarioYears[selectedScenario] || 1950;
-        console.log(`🎯 Scenario: ${selectedScenario}, Anno target: ${targetYear}`);
         
         // Costruisci URL con parametri per filtrare per anno e dimensione aeroporto
         const apiUrl = new URL('/api/airports', window.location.origin);
@@ -310,23 +277,18 @@ async function loadAirportsData(selectedScenario = null) {
         apiUrl.searchParams.set('size', 'large,medium'); // Solo aeroporti grandi e medi per la partenza
         apiUrl.searchParams.set('limit', '1000'); // Aumenta il limite per avere più opzioni
         
-        console.log('🌐 URL API completo:', apiUrl.toString());
         
         // Richiama l'API con i parametri corretti
         const responseWithParams = await fetch(apiUrl);
-        console.log('📡 Response status con parametri:', responseWithParams.status, responseWithParams.statusText);
         
         if (!responseWithParams.ok) {
             throw new Error(`API error: ${responseWithParams.status} ${responseWithParams.statusText}`);
         }
         
         const airportsFiltered = await responseWithParams.json();
-        console.log(`✅ Caricati ${airportsFiltered.length} aeroporti filtrati dal server`);
-        console.log('📊 Sample airport filtrato:', airportsFiltered[0]); // Log del primo aeroporto per debug
         
         // Il server ha già filtrato per anno e dimensione, non serve filtrare ulteriormente
         allAirportsData = airportsFiltered;
-        console.log(`💾 Cache aggiornata con ${allAirportsData.length} aeroporti`);
         
         return allAirportsData;
         return allAirportsData;
@@ -433,7 +395,6 @@ function getAirportsFromCountry(airports, selectedCountry) {
 }
 
 async function populateContinents() {
-    console.log('🌍 populateContinents chiamata');
     const continentSelect = document.getElementById('continent-select');
     if (!continentSelect) {
         console.error('❌ continent-select non trovato');
@@ -441,9 +402,7 @@ async function populateContinents() {
     }
     
     try {
-        console.log('📡 Chiamata loadAirportsData...');
         const airports = await loadAirportsData();
-        console.log('✈️ Aeroporti ricevuti:', airports?.length || 0);
         
         if (!airports || airports.length === 0) {
             console.error('❌ Nessun aeroporto ricevuto');
@@ -452,7 +411,6 @@ async function populateContinents() {
         }
         
         const continents = getContinentsFromAirports(airports);
-        console.log('🌍 Continenti estratti:', continents);
         
         continentSelect.innerHTML = '<option value="">Seleziona continente...</option>';
         
@@ -463,7 +421,6 @@ async function populateContinents() {
             continentSelect.appendChild(option);
         });
         
-        console.log(`✅ Popolati ${continents.length} continenti`);
         
     } catch (error) {
         console.error('❌ Errore popolamento continenti:', error);
@@ -513,7 +470,6 @@ function populateCountries(selectedContinent) {
         countrySelect.appendChild(option);
     });
     
-    console.log(`✅ Popolate ${countries.length} nazioni per ${selectedContinent}`);
 }
 
 function populateAirports(selectedCountry) {
@@ -551,24 +507,16 @@ function populateAirports(selectedCountry) {
         airportSelect.appendChild(option);
     });
     
-    console.log(`✅ Popolati ${airports.length} aeroporti per ${selectedCountry}`);
 }
 
 // Funzione di compatibilità con il sistema esistente
 async function populateStartingAirports(selectedScenario = null) {
-    console.log('🔄 Inizializzando sistema drill-down aeroporti...');
     await populateContinents();
 }
 
 function setupEventListeners() {
-    console.log('🔧 Setup event listeners...');
     
     // Debug: verifica tutti i pulsanti nel DOM
-    console.log('🔍 Verifica pulsanti nel DOM:');
-    console.log('  - new-game-btn:', document.getElementById('new-game-btn'));
-    console.log('  - start-first-game:', document.getElementById('start-first-game'));
-    console.log('  - no-saves div:', document.getElementById('no-saves'));
-    console.log('  - no-saves hidden?', document.getElementById('no-saves')?.classList.contains('hidden'));
     
     // Logout button
     const logoutBtn = document.getElementById('logout-btn');
@@ -580,7 +528,6 @@ function setupEventListeners() {
                 window.location.href = '/game/pages/auth/login.html';
             }, 500);
         });
-        console.log('✅ Logout button event listener attivato');
     } else {
         console.warn('[game-select] logout-btn non trovato in DOM');
     }
@@ -589,10 +536,8 @@ function setupEventListeners() {
     const newGameBtn = document.getElementById('new-game-btn');
     if (newGameBtn) {
         newGameBtn.addEventListener('click', function(e) {
-            console.log('🎯 Click su new-game-btn!');
             showNewGameModal();
         });
-        console.log('✅ new-game-btn event listener attivato');
     } else {
         console.warn('[game-select] new-game-btn non trovato');
     }
@@ -600,21 +545,17 @@ function setupEventListeners() {
     const startFirstBtn = document.getElementById('start-first-game');
     if (startFirstBtn) {
         startFirstBtn.addEventListener('click', function(e) {
-            console.log('🎯 Click su start-first-game!');
             showNewGameModal();
         });
-        console.log('✅ start-first-game event listener attivato');
     } else {
         console.warn('[game-select] start-first-game non trovato');
     }
     
-    console.log('🔧 Setup event listeners completato');
     
     // Scenario change listener - ricarica aeroporti quando cambia lo scenario
     document.addEventListener('change', async function(e) {
         if (e.target && e.target.id === 'scenario') {
             const selectedScenario = e.target.value;
-            console.log('📅 Scenario cambiato:', selectedScenario);
             // Reset cache per ricaricare con nuovo scenario
             allAirportsData = null;
             await populateStartingAirports(selectedScenario);
@@ -628,7 +569,6 @@ function setupEventListeners() {
         if (e.target && e.target.id === 'continent-select') {
             const selectedContinent = e.target.value;
             if (selectedContinent) {
-                console.log('🌍 Continente selezionato:', selectedContinent);
                 populateCountries(selectedContinent);
             } else {
                 // Reset se deselezionato
@@ -654,7 +594,6 @@ function setupEventListeners() {
         if (e.target && e.target.id === 'country-select') {
             const selectedCountry = e.target.value;
             if (selectedCountry) {
-                console.log('🏳️ Nazione selezionata:', selectedCountry);
                 populateAirports(selectedCountry);
             } else {
                 // Reset se deselezionato
@@ -683,7 +622,6 @@ function setupEventListeners() {
                 const airportCountry = option.getAttribute('data-airport-country');
                 const airportSize = option.getAttribute('data-airport-size');
                 
-                console.log('✈️ Aeroporto selezionato:', selectedAirport, '-', airportName);
                 confirmBtn.disabled = false;
                 confirmBtn.textContent = `✅ Conferma ${airportName} (${selectedAirport})`;
             } else if (confirmBtn) {
@@ -745,7 +683,6 @@ function setupEventListeners() {
 // Hook used by selectPage.js after it injects modal HTML. This ensures listeners
 // that depend on modal DOM are attached even if templates were loaded asynchronously.
 window.onModalInjected = function(modalId) {
-    console.log(`🔗 Modal ${modalId} iniettato, attivazione listeners...`);
     
     if (modalId === 'new-game-modal') {
         attachNewGameModalListeners();
@@ -762,12 +699,10 @@ window.onModalInjected = function(modalId) {
 
 // Funzione per mostrare la modale di eliminazione salvataggio
 window.showDeleteSaveModal = function(saveId, saveName) {
-    console.log('🗑️ Richiesta apertura modal eliminazione per:', saveId, saveName);
     
     const modal = document.getElementById('delete-modal');
     const saveNameSpan = document.getElementById('delete-save-name');
     
-    console.log('🔍 Elementi DOM trovati:', {
         modal: !!modal,
         saveNameSpan: !!saveNameSpan,
         modalClasses: modal ? Array.from(modal.classList) : 'n/a',
@@ -783,8 +718,6 @@ window.showDeleteSaveModal = function(saveId, saveName) {
         uiUtils.showModal(modal.id);
         modal.style.display = 'flex'; // Forza display flex per i modal
         
-        console.log('✅ Modal eliminazione mostrato per:', saveName);
-        console.log('🔍 Stato finale modal:', {
             classes: Array.from(modal.classList),
             display: getComputedStyle(modal).display,
             visible: modal.offsetParent !== null
@@ -797,7 +730,6 @@ window.showDeleteSaveModal = function(saveId, saveName) {
         
         // Prova a ricaricare i modali se non sono stati caricati
         loadAllModals().then(() => {
-            console.log('🔄 Riprovo ad aprire il modal dopo ricaricamento...');
             const retryModal = document.getElementById('delete-modal');
             const retrySaveNameSpan = document.getElementById('delete-save-name');
             
@@ -806,7 +738,6 @@ window.showDeleteSaveModal = function(saveId, saveName) {
                 retrySaveNameSpan.textContent = saveName;
                 uiUtils.showModal('retry-modal');
                 retryModal.style.display = 'flex';
-                console.log('✅ Modal eliminazione mostrato al secondo tentativo');
             } else {
                 uiUtils.showToast('Errore apertura modal eliminazione', 'error');
             }
@@ -819,7 +750,6 @@ function attachDeleteModalListeners() {
     const cancelDeleteBtn = document.getElementById('cancel-delete');
     const confirmDeleteBtn = document.getElementById('confirm-delete');
     
-    console.log('🔌 Attivazione listeners modal eliminazione:', {
         close: !!closeDeleteBtn,
         cancel: !!cancelDeleteBtn,
         confirm: !!confirmDeleteBtn
@@ -827,21 +757,18 @@ function attachDeleteModalListeners() {
     
     if (closeDeleteBtn) {
         closeDeleteBtn.addEventListener('click', hideDeleteModal);
-        console.log('✅ Listener "close" attivato');
     } else {
         console.warn('⚠️ Pulsante close-delete-modal non trovato');
     }
     
     if (cancelDeleteBtn) {
         cancelDeleteBtn.addEventListener('click', hideDeleteModal);
-        console.log('✅ Listener "cancel" attivato');
     } else {
         console.warn('⚠️ Pulsante cancel-delete non trovato');
     }
     
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', confirmDelete);
-        console.log('✅ Listener "confirm" attivato');
     } else {
         console.warn('⚠️ Pulsante confirm-delete non trovato');
     }
@@ -849,16 +776,11 @@ function attachDeleteModalListeners() {
 
 
 async function showNewGameModal() {
-    console.log('🎬 showNewGameModal chiamata!');
     
     const modal = document.getElementById('new-game-modal');
     const companyNameInput = document.getElementById('company-name-input');
     const scenarioSelect = document.getElementById('scenario');
 
-    console.log('🔍 Modal elements:');
-    console.log('  - new-game-modal:', modal);
-    console.log('  - company-name-input:', companyNameInput);
-    console.log('  - scenario:', scenarioSelect);
 
     if (!modal) {
         console.warn('[game-select] new-game-modal element not present yet; will attempt to open after injection');
@@ -867,9 +789,6 @@ async function showNewGameModal() {
 
     // Verifica stile computed prima
     const computedStyle = window.getComputedStyle(modal);
-    console.log('🎨 Display prima:', computedStyle.display);
-    console.log('🔍 Visibilità prima:', computedStyle.visibility);
-    console.log('📄 Modal innerHTML:', modal.innerHTML);
 
     // Pre-popola nome compagnia con suggerimento (solo se input esiste)
     if (companyNameInput && !companyNameInput.value) {
@@ -880,23 +799,17 @@ async function showNewGameModal() {
         ];
         const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
         companyNameInput.value = randomSuggestion;
-        console.log('✅ Nome compagnia suggerito:', randomSuggestion);
     }
 
     uiUtils.showModal(modal.id);
-    console.log('👁️ Classe hidden rimossa, classList ora:', modal.classList.toString());
     
     // Verifica stile computed dopo
     const computedStyleAfter = window.getComputedStyle(modal);
-    console.log('🎨 Display dopo:', computedStyleAfter.display);
-    console.log('🔍 Visibilità dopo:', computedStyleAfter.visibility);
     
     // Force display se necessario
     if (computedStyleAfter.display === 'none') {
-        console.log('🔧 Forzo display flex');
         modal.style.display = 'flex';
     }
-    console.log('✅ Modal mostrato!');
 }
 
 function hideNewGameModal() {
@@ -936,7 +849,6 @@ async function openSelectHubModal(scenario = 'aviation_dawn') {
 
     // Carica i continenti per lo scenario selezionato
     try {
-        console.log('🌍 Caricamento continenti per scenario:', scenario);
         // Reset cache per nuovo scenario
         allAirportsData = null;
         await populateStartingAirports(scenario);
@@ -990,7 +902,6 @@ function confirmHubSelection() {
     // Chiudi il modal
     closeSelectHubModal();
     
-    console.log('✅ Hub selezionato:', selectedValue, '-', airportName);
     uiUtils.showToast(`Hub selezionato: ${airportName}`, 'success');
 }
 
@@ -1112,7 +1023,6 @@ async function syncGameWithServer(saveName, gameData) {
             throw new Error('Utente non valido per la sincronizzazione');
         }
         
-        console.log('🔄 Inizio sincronizzazione con server...', {
             userId: user.id,
             saveName: saveName,
             companyName: gameData.company.name
@@ -1142,7 +1052,6 @@ async function syncGameWithServer(saveName, gameData) {
             user_id: user.id // <--- AGGIUNTO
         };
         
-        console.log('📊 Creazione compagnia sul server...', companyPayload);
         
         const companyResponse = await fetch('/api/game/companies/create-or-update', {
             method: 'POST',
@@ -1153,7 +1062,6 @@ async function syncGameWithServer(saveName, gameData) {
             body: JSON.stringify(companyPayload)
         });
         
-        console.log('📊 Risposta server compagnia:', companyResponse.status, companyResponse.statusText);
         
         if (!companyResponse.ok) {
             let errorMessage = `Errore HTTP ${companyResponse.status}`;
@@ -1172,12 +1080,10 @@ async function syncGameWithServer(saveName, gameData) {
             throw new Error('Risposta compagnia non valida dal server');
         }
         
-        console.log('✅ Compagnia creata/aggiornata:', companyData.data?.name || 'Nome non disponibile');
         
         // SEMPLIFICATO: salva solo l'UUID in sessionStorage e avvia subito il gioco
         if (companyData.data && companyData.data.id) {
             sessionStorage.setItem('selectedCompanyId', companyData.data.id);
-            console.log('[DEBUG] Salvato selectedCompanyId in sessionStorage (nuovo gioco):', companyData.data.id, '| typeof:', typeof companyData.data.id);
             window.location.href = 'index.html';
             return;
         }
@@ -1199,12 +1105,10 @@ async function syncGameWithServer(saveName, gameData) {
 
 
 function hideDeleteModal() {
-    console.log('❌ Chiusura modal eliminazione');
     const modal = document.getElementById('delete-modal');
     if (modal) {
         uiUtils.hideModal(modal.id);
         modal.style.display = 'none'; // Forza nascondere
-        console.log('✅ Modal nascosto');
     }
     selectedSaveToDelete = null;
 }
@@ -1241,4 +1145,3 @@ function confirmDelete() {
     });
 }
 
-console.log('✅ game-select.js caricato');

@@ -1,56 +1,42 @@
 // Game compatibile con tutti i browser
-console.log('📂 Caricamento Game.js...');
 
 function Game(companyId) {
-    console.log('🎮 Inizializzazione Game...');
     
     try {
         // Inizializza componenti
         this.state = new GameState(companyId);
-        console.log('✅ GameState creato');
         
         this.fleetManager = new FleetManager(this.state);
-        console.log('✅ FleetManager creato');
         
         this.routeManager = new RouteManager(this.state);
-        console.log('✅ RouteManager creato');
         
         this.financeManager = new FinanceManager(this.state);
-        console.log('✅ FinanceManager creato');
         
         this.hubManager = new HubManager(this.state);
-        console.log('✅ HubManager creato');
         
         // Inizializza DemandEstimationManager
         this.demandManager = new DemandEstimationManager(this.state);
-        console.log('✅ DemandEstimationManager creato');
         
         // Inizializza InfrastructureManager
         this.infrastructureManager = new InfrastructureManager(this.state);
         this.state.infrastructureManager = this.infrastructureManager; // Riferimento per altri manager
-        console.log('✅ InfrastructureManager creato');
         
         // Inizializza EconomyEngine se disponibile
         if (typeof EconomyEngine !== 'undefined') {
             EconomyEngine.initialize(this.state);
-            console.log('✅ EconomyEngine inizializzato');
         }
         
         this.uiManager = new UIManager(this);
-        console.log('✅ UIManager creato');
         
         // Riferimento al RouteUIManager globale per coerenza
         this.routeUIManager = window.RouteUIManager;
-        console.log('✅ RouteUIManager collegato');
         
         this.worldMap = new WorldMap(this);
-        console.log('✅ WorldMap creato');
         
         this.isRunning = false;
         this.gameSpeed = 1; // 1x velocità normale
         this.lastUpdate = 0;
         
-        console.log('🎮 Avvio inizializzazione...');
         this.init();
         
     } catch (error) {
@@ -60,45 +46,35 @@ function Game(companyId) {
 }
 
 Game.prototype.init = function() {
-    console.log('🛫 Air Tycoon 2 Clone - Inizializzazione...');
     try {
         // Avvio sempre nuova partita
         this.setupNewGame();
         // Inizializza UI
-        console.log('🎨 Inizializzazione UI...');
         try {
             this.uiManager.init();
-            console.log('✅ UI inizializzata');
         } catch (error) {
             console.error('❌ Errore inizializzazione UI:', error);
             throw error;
         }
-        console.log('🗺️ Inizializzazione WorldMap...');
         try {
             this.worldMap.init();
-            console.log('✅ WorldMap inizializzata');
         } catch (error) {
             console.error('❌ Errore inizializzazione WorldMap:', error);
             throw error;
         }
-        console.log('🔄 Aggiornamento UI...');
         try {
             this.updateUI();
-            console.log('✅ UI aggiornata');
         } catch (error) {
             console.error('❌ Errore aggiornamento UI:', error);
             throw error;
         }
         // Avvia il game loop
-        console.log('▶️ Avvio game loop...');
         try {
             this.start();
-            console.log('✅ Game loop avviato');
         } catch (error) {
             console.error('❌ Errore avvio game loop:', error);
             throw error;
         }
-        console.log('✅ Gioco inizializzato correttamente');
     } catch (error) {
         console.error('❌ Errore durante l\'inizializzazione:', error);
         throw error;
@@ -106,7 +82,6 @@ Game.prototype.init = function() {
 };
 
 Game.prototype.setupNewGame = function() {
-    console.log('🆕 Setup nuova partita...');
     
     // Se abbiamo già i dati della company dal server, usa quelli invece dei default.
     var companySnapshot = window.__currentCompanyData || null;
@@ -127,26 +102,22 @@ Game.prototype.setupNewGame = function() {
 
     this.state.money = this.state.company.money;
     
-    console.log('✅ Nuova partita configurata');
 };
 
 Game.prototype.start = function() {
     this.isRunning = true;
     this.lastUpdate = Date.now();
     this.gameLoop();
-    console.log('▶️ Game loop avviato');
 };
 
 Game.prototype.pause = function() {
     this.isRunning = false;
-    console.log('⏸️ Gioco in pausa');
 };
 
 Game.prototype.resume = function() {
     this.isRunning = true;
     this.lastUpdate = Date.now();
     this.gameLoop();
-    console.log('▶️ Gioco ripreso');
 };
 
 Game.prototype.gameLoop = function() {
@@ -197,7 +168,6 @@ Game.prototype.loadGame = function() {
 
 // Avanza di un mese nel gioco
 Game.prototype.advanceMonth = function() {
-    console.log('📅 Avanzamento di un mese...');
     
     try {
         // Avanza il tempo nel DemandEstimationManager
@@ -233,7 +203,6 @@ Game.prototype.advanceMonth = function() {
             this.uiManager.showNotification('📅 Avanzato a ' + dateStr, 'info');
         }
         
-        console.log('✅ Mese avanzato a:', dateStr);
         
         // Auto-save triggered dall'avanzamento mese
         if (typeof SaveLoad !== 'undefined' && SaveLoad.triggerAutoSave) {
@@ -310,7 +279,6 @@ Game.prototype.processMonthlyFinances = function() {
         this.state.monthlyStats.shift();
     }
     
-    console.log('💰 Finanze mensili:', {
         ricavi: uiUtils.formatNumber(totalRevenue),
         costi: uiUtils.formatNumber(totalCosts),
         profitto: uiUtils.formatNumber(netProfit),
@@ -368,7 +336,6 @@ Game.prototype.newGame = function() {
         this.state = new GameState();
         this.setupNewGame();
         this.updateUI();
-        console.log('🆕 Nuova partita avviata');
         return true;
     } catch (error) {
         console.error('❌ Errore creazione nuova partita:', error);
@@ -379,4 +346,3 @@ Game.prototype.newGame = function() {
 // Rendi disponibile globalmente
 window.Game = Game;
 
-console.log('✅ Game compatibile caricato');

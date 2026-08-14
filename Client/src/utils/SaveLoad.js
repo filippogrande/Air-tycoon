@@ -1,5 +1,4 @@
 // Sistema di salvataggio avanzato: Server-first (solo database)
-console.log('📂 Caricamento SaveLoad avanzato...');
 
 // Oggetto SaveLoad con strategia server-first
 window.SaveLoad = {
@@ -15,7 +14,6 @@ window.SaveLoad = {
         }
         this._companyId = Number(companyId);
         this._useDatabase = true;
-        console.log('🔧 SaveLoad inizializzato con compagnia ID:', companyId);
         this._testDatabaseConnection();
     },
 
@@ -25,7 +23,6 @@ window.SaveLoad = {
         fetch('/api/game/companies')
             .then(response => {
                 if (response.ok) {
-                    console.log('🌐 Connessione database attiva');
                     return true;
                 } else {
                     console.warn('⚠️ Database non raggiungibile (status:', response.status, ')');
@@ -43,12 +40,10 @@ window.SaveLoad = {
     // Metodi di controllo per debug
     enableDatabase: function() {
         this._useDatabase = true;
-        console.log('🌐 Database riabilitato');
         this._testDatabaseConnection();
     },
     disableDatabase: function() {
         this._useDatabase = false;
-        console.log('💾 Database disabilitato');
     },
     getDatabaseStatus: function() {
         return {
@@ -58,14 +53,10 @@ window.SaveLoad = {
     }
 };
 
-console.log('✅ SaveLoad avanzato caricato');
 
 // Comandi debug per la console del browser
 window.SaveLoadDebug = {
     status: function() {
-        console.log('📊 Stato SaveLoad:', SaveLoad.getDatabaseStatus());
-        console.log('🏢 Company ID:', SaveLoad._companyId);
-        console.log('🌐 Database attivo:', SaveLoad._useDatabase);
     },
     enableDatabase: function() {
         SaveLoad.enableDatabase();
@@ -75,7 +66,3 @@ window.SaveLoadDebug = {
     }
 };
 
-console.log('🔧 Comandi debug disponibili in SaveLoadDebug:');
-console.log('  SaveLoadDebug.status() - Mostra stato sistema');
-console.log('  SaveLoadDebug.enableDatabase() - Riabilita database');
-console.log('  SaveLoadDebug.disableDatabase() - Disabilita database');

@@ -1,5 +1,4 @@
 // Classe Aircraft compatibile con tutti i browser
-console.log('📂 Caricamento Aircraft.js...');
 
 function Aircraft(type, customName) {
     // Compatibilità parametri di default
@@ -161,4 +160,3 @@ Aircraft.prototype.loadFromData = function(data) {
 // Rendi disponibile globalmente
 window.Aircraft = Aircraft;
 
-console.log('✅ Aircraft compatibile caricato');
