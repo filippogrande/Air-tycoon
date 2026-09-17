@@ -1,7 +1,7 @@
 # Air Tycoon 2 - Linee Guida per lo Sviluppo
 
-> Versione 2.0 - Paletti vincolanti. Ogni regola qui sotto è OBBLIGATORIA, non un suggerimento.
-> Ultimo aggiornamento: 13 agosto 2026
+> Versione 2.1 - Paletti vincolanti. Ogni regola qui sotto è OBBLIGATORIA, non un suggerimento.
+> Ultimo aggiornamento: 17 settembre 2026
 
 ## 📋 Indice
 
@@ -19,6 +19,7 @@
 12. [Lista Cose da Fare](#todo)
 13. [Lista Cose da Rimuovere (hard bans)](#rimuovere)
 14. [Verifica Coerenza & Aggiornamento Doc](#coerenza)
+15. [Dipendenze & Dependabot](#dipendenze)
 
 ---
 
@@ -44,3 +45,16 @@ window.FleetTab = {
 export class FleetTab {}
 export function showAircraftPurchase() {}
 ```
+
+---
+
+## 📦 Dipendenze & Dependabot {#dipendenze}
+
+- Ogni manifest di dipendenze — `package.json` + `package-lock.json`, i `Dockerfile`, `docker-compose.yml`, i file in `.github/workflows/` — deve avere la sua voce in `.github/dependabot.yml`, con la directory corretta.
+- ✅ **Regola operativa**: quando aggiungi o modifichi un manifest, aggiorni `.github/dependabot.yml` **nella stessa PR**. Mai "lo faccio dopo".
+- ✅ Manifest in sottocartelle: usa `directories: ["...", "..."]` per lo stesso ecosystem (es. più Dockerfile in directory diverse).
+- ✅ **Le dipendenze Python vanno vincolate a una versione** (se un giorno ne serviranno): un `requirements.txt` con i soli nomi è invisibile a Dependabot — niente aggiornamenti e niente alert di sicurezza, perché il dependency graph non risolve nulla. Usare `==` o un lock.
+- ✅ Il pin va preso dalla versione realmente in uso in produzione, non scelta a caso.
+- ❌ Mai manifest "finti" per far contento Dependabot, e mai config per repo archiviati (Dependabot non li scansiona).
+- Il file è operativo **solo se è sul branch di default**: aggiungerlo in una PR non basta, va mergiata.
+- Config attuale: `npm` (root), `docker` (root), `docker-compose` (root), schedule settimanale lunedì 06:00 Europe/Rome, minor+patch raggruppate, major come PR separate.
