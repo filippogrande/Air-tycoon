@@ -1,76 +1,65 @@
 # Air Tycoon 2
 
 > Ricreazione browser-based del gioco di gestione compagnie aeree *Air Tycoon 2*.
-> Progetto personale/hobby: giocabile subito in locale, con salvataggio persistente su database.
+> Progetto personale/hobby: giocabile in locale, con salvataggio persistente su PostgreSQL.
 
 Gestisci una compagnia aerea: compra aeromobili da un catalogo realistico, pianifica rotte
 tra aeroporti di tutto il mondo su una mappa interattiva, e tieni in equilibrio i conti.
 
-## ✨ Cosa puoi fare
+## Cosa puoi fare
 
 - **Compagnia aerea**: crea partite, scegli scenario (dall'era pionieristica al 2024) e hub di partenza
 - **Flotta**: acquisto aeromobili con drill-down produttore → categoria → modello, manutenzione e statistiche
 - **Rotte**: creazione/modifica su mappa interattiva, analisi domanda e profittabilità
-- **Economia**: bilancio, cash flow, prestiti, report finanziari
-- **Salvataggio**: locale (localStorage) e persistente (PostgreSQL) con sincronizzazione
+- **Economia**: bilancio, cash flow, report finanziari
+- **Salvataggio**: persistente su PostgreSQL, con cache locale
 
-## 🛠️ Stack tecnologico
+## Stack
 
 | Livello | Tecnologie |
 |---------|------------|
-| Frontend | JavaScript (pattern global `window`, nessun build step), HTML5, CSS3, Leaflet (mappa) |
+| Frontend | JavaScript (globale su `window`, nessun build step), HTML5, CSS3, Leaflet |
 | Backend | Node.js + Express, API REST |
-| Dati | PostgreSQL, sistema migrazioni, pool connessioni |
+| Dati | PostgreSQL, schema iniziale + migrazioni + seed |
 
-> Il frontend **non** usa ES6 `import`/`export` (tutto esposto su `window`) e i dati
-> provengono **sempre** dal database via API. Vedi `DEVELOPMENT_GUIDELINES.md` per i paletti.
+Il frontend **non** usa ES6 `import`/`export` e i dati arrivano **sempre** dal database via API.
+Le regole sono in `docs/CONVENTIONS.md`.
 
-## 🚀 Quick Start
+## Avvio rapido
 
-### Prerequisiti
-- Node.js ≥ 16, npm, PostgreSQL ≥ 12
-
-### Installazione
 ```bash
 npm install
-cp .env.example .env      # inserisci le tue credenziali PostgreSQL
-npm run setup             # crea DB, schema e dati iniziali
+cp .env.example .env      # credenziali PostgreSQL
+bash database/reset_database.sh   # crea DB, schema e dati iniziali
+npm run dev                        # -> http://localhost:3001
 ```
 
-### Avvio
-```bash
-npm run dev               # sviluppo (auto-restart)  → http://localhost:3001
-npm start                 # produzione
-```
-Apri `index.html` in un browser. Funziona anche offline (solo localStorage) e si sincronizza
-col database quando disponibile.
+Oppure con Docker: `docker compose up --build` (DB su `5433`, app su `3001`).
 
-### Comandi utili
-```bash
-npm run db:reset                     # reset DB (ATTENZIONE: elimina tutti i dati)
-curl http://localhost:3001/health    # test connessione server
-```
+Dettagli, comandi e produzione: `docs/OPERATIONS.md`.
 
-## 📚 Documentazione
+## Documentazione
 
-| File | Contenuto |
-|------|-----------|
-| `PROJECT_ARCHITECTURE.md` | Struttura completa del progetto e flusso architetturale |
-| `PAGES_GUIDE.md` | Mappa funzionale delle pagine e stato di implementazione |
-| `DEVELOPMENT_GUIDELINES.md` | **Paletti vincolanti** di sviluppo (Regola 0, load order, no-fallback) |
+| File | Tipo | Contenuto |
+|------|------|-----------|
+| `AGENTS.md` | — | Radice: convenzione dei doc, mappa rapida |
+| `docs/REFERENCE.md` | reference | **La mappa**: richiesta → file → entry point |
+| `docs/ARCHITECTURE.md` | explanation | Come funziona (client/server, auth, DB, deploy) |
+| `docs/CONVENTIONS.md` | how-to | Le regole di sviluppo |
+| `docs/PAGES.md` | reference | Le pagine del gioco e cosa mostra ciascuna |
+| `docs/OPERATIONS.md` | how-to | Avvio, deploy, comandi, troubleshooting |
+
+Per una richiesta ("dove vive X?") si legge `docs/REFERENCE.md` e basta.
+
+## Sviluppare
+
+Leggi `AGENTS.md` e `docs/CONVENTIONS.md`. In breve: niente `import`/`export` nel frontend,
+niente fallback che maschera errori API, max 500 righe/file.
+Aggiungendo un endpoint aggiorna `server/openapi/`; spostando qualcosa aggiorna `docs/REFERENCE.md`
+— **nella stessa PR**.
 
 Il backlog di feature e i task di refactor vivono su **TickTick** (lista "Air tycoon").
 
-## 🤝 Sviluppare
-
-Prima di contribuire, leggi `DEVELOPMENT_GUIDELINES.md`: definisce regole obbligatorie
-(es. niente `import`/`export` ES6 nel frontend, niente fallback che mascherano errori,
-max 500 righe/file). Aggiungendo un endpoint, aggiorna `/server/openapi/`.
-
-## 📄 Licenza
+## Licenza
 
 Progetto a scopo personale/didattico. Vedi file `LICENSE` (se presente) per i dettagli.
-
----
-
-_Ultimo aggiornamento: 13 agosto 2026_
